@@ -37,7 +37,7 @@ catalog:
   '@iconify-json/tabler': ^1.2.26
   '@lancedb/lancedb': ^0.26.2
   '@moeru/eslint-config': 0.1.0-beta.15
-  '@moeru/eventa': '1.0.0-alpha.14'
+  '@moeru/eventa': 1.0.0-alpha.14
   '@moeru/std': 0.1.0-beta.14
   '@nekopaw/tempora': 0.4.0-alpha.1
   '@pinia/testing': ^1.0.3
@@ -80,6 +80,7 @@ catalog:
   ofetch: ^1.5.1
   pinia: ^3.0.4
   posthog-js: 1.306.1
+  sharp: ^0.34.5
   splitpanes: ^4.0.4
   std-env: ^3.10.0
   superjson: ^2.2.6
