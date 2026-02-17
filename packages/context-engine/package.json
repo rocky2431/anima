@@ -37,7 +37,8 @@
   },
   "dependencies": {
     "@lancedb/lancedb": "catalog:",
-    "better-sqlite3": "catalog:"
+    "better-sqlite3": "catalog:",
+    "sharp": "catalog:"
   },
   "devDependencies": {
     "@types/better-sqlite3": "catalog:",

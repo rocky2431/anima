@@ -33,7 +33,7 @@ export interface ActivityContext {
  * Implementations wrap platform-specific APIs (e.g., Electron desktopCapturer).
  */
 export interface ScreenshotProvider {
-  capture(): Promise<Buffer>
+  capture: () => Promise<Buffer>
 }
 
 /**
@@ -44,4 +44,41 @@ export interface ScreenshotResult {
   buffer: Buffer
   /** Capture timestamp in milliseconds */
   timestamp: number
+}
+
+/**
+ * Interface for Vision Language Model providers.
+ * Implementations wrap specific LLM SDKs (e.g., AI SDK 6, xsAI).
+ */
+export interface VlmProvider {
+  describeImage: (imageBuffer: Buffer) => Promise<VlmResult>
+}
+
+/**
+ * Raw result from a VLM image description call.
+ */
+export interface VlmResult {
+  /** Natural language description of what the user is doing */
+  description: string
+  /** Entities detected in the screenshot (apps, tools, content types) */
+  entities: string[]
+  /** High-level activity category (e.g., 'coding', 'browsing', 'writing') */
+  activity: string
+}
+
+/**
+ * Processed screenshot context after VLM understanding and pHash computation.
+ * This is the final output of the screenshot pipeline.
+ */
+export interface ProcessedScreenshotContext {
+  /** Natural language description */
+  description: string
+  /** Detected entities */
+  entities: string[]
+  /** Activity category */
+  activity: string
+  /** Capture timestamp in milliseconds */
+  timestamp: number
+  /** 64-bit perceptual hash as a binary string */
+  hash: string
 }

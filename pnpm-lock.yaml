@@ -171,6 +171,9 @@ catalogs:
     posthog-js:
       specifier: 1.306.1
       version: 1.306.1
+    sharp:
+      specifier: ^0.34.5
+      version: 0.34.5
     splitpanes:
       specifier: ^4.0.4
       version: 4.0.4
@@ -1867,6 +1870,9 @@ importers:
       better-sqlite3:
         specifier: 'catalog:'
         version: 12.6.2
+      sharp:
+        specifier: 'catalog:'
+        version: 0.34.5
     devDependencies:
       '@types/better-sqlite3':
         specifier: 'catalog:'
