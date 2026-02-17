@@ -1,0 +1,123 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260217-172644-feat-task-2-context-engine-storage-iter1",
+  "timestamp": "2026-02-18T01:30:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/storage/vector-store.ts",
+      "packages/context-engine/src/storage/document-store.ts",
+      "packages/context-engine/src/storage/types.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 315,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 4, "P2": 2, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "security",
+      "subcategory": "injection",
+      "title": "VectorStore.delete() accepts raw filter string (injection risk)",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 82,
+      "line_end": 85,
+      "code_snippet": "async delete(tableName: string, filter: string): Promise<void> {\n    const table = await this.db.openTable(tableName)\n    await table.delete(filter)\n  }",
+      "description": "The delete method accepts a raw string filter and passes it directly to LanceDB's table.delete(filter). If 'filter' is ever constructed from user input, this is a filter-injection vector (analogous to SQL injection). The JSDoc examples show string-interpolated patterns like \"id = 'v1'\", encouraging unsafe usage at call sites. Even if callers are currently safe, the API surface is inherently dangerous.",
+      "suggestion": "Change the API to accept structured filter parameters (e.g., { field: string, op: '=' | 'IN', value: string | string[] }) and build the filter expression internally with proper escaping. Alternatively, accept only known field/value pairs and construct the filter string safely inside the method.",
+      "claude_md_rule": "security.forbidden_patterns.sql_string_concat"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "VectorStore: zero error handling on all I/O operations",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 16,
+      "line_end": 103,
+      "code_snippet": "static async create(dataDir: string): Promise<VectorStore> {\n    const db = await lancedb.connect(dataDir)\n    return new VectorStore(db)\n  }",
+      "description": "VectorStore has 7 async methods (create, createTable, insert, search, delete, count, close) performing I/O against LanceDB. None of them have try/catch blocks. Failures such as disk full, corrupted data, missing directory, or invalid table names will propagate as untyped library errors with no context about what operation failed or what input caused it. Per CLAUDE.md error_handling rules: operational errors should be handled gracefully with context (what failed, why, what input).",
+      "suggestion": "Wrap each I/O operation in try/catch. Catch errors, add context (operation name, table name, data dir), and re-throw as a typed ContextEngineStorageError. Example: try { const db = await lancedb.connect(dataDir) } catch (err) { throw new StorageError('Failed to connect to vector store', { dataDir, cause: err }) }",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "DocumentStore: zero error handling on all SQLite operations",
+      "file": "packages/context-engine/src/storage/document-store.ts",
+      "line": 13,
+      "line_end": 133,
+      "code_snippet": "constructor(dbPath: string) {\n    this.db = new Database(dbPath)\n    this.db.pragma('journal_mode = WAL')\n    this.db.pragma('synchronous = NORMAL')\n    this.initTables()\n  }",
+      "description": "DocumentStore has 10 methods performing SQLite I/O (constructor, initTables, insertConversation, getRecentConversations, upsertTodo, getTodos, getSetting, setSetting, getIntimacy, updateIntimacy). None have try/catch blocks. SQLite operations can fail due to disk errors, constraint violations, locked databases, etc. Errors will surface as raw better-sqlite3 exceptions with no application-level context. Per CLAUDE.md: 'Catch -> Log with context -> Re-throw typed error or handle gracefully' is required.",
+      "suggestion": "Wrap each method's database operations in try/catch. Add context (method name, relevant IDs/keys) and re-throw as a typed DocumentStoreError. At minimum, the constructor should handle initTables() failure and close the database connection in case of error to prevent resource leaks.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "unsafe-state",
+      "title": "VectorStore.close() nullifies db without use-after-close guard",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 98,
+      "line_end": 103,
+      "code_snippet": "async close(): Promise<void> {\n    // LanceDB Connection doesn't have an explicit close method;\n    // dropping the reference is sufficient.\n    this.db = null as unknown as lancedb.Connection\n  }",
+      "description": "After close() is called, this.db is set to null via unsafe type cast. Any subsequent call to insert(), search(), delete(), count(), or createTable() will throw a TypeError like 'Cannot read properties of null (reading openTable)' with no meaningful error message. There is no guard to check if the store has been closed, creating a class of silent/confusing failures.",
+      "suggestion": "Add a private 'closed' boolean flag. Set it to true in close(). Add a guard at the top of each method: if (this.closed) throw new StorageError('VectorStore is closed'). This produces a clear, debuggable error instead of a cryptic null-dereference TypeError.",
+      "claude_md_rule": "error_handling.classification"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "error-handling",
+      "subcategory": "null-dereference",
+      "title": "DocumentStore.getIntimacy() assumes row always exists",
+      "file": "packages/context-engine/src/storage/document-store.ts",
+      "line": 116,
+      "line_end": 119,
+      "code_snippet": "getIntimacy(): number {\n    const stmt = this.db.prepare('SELECT level FROM intimacy WHERE id = 1')\n    const row = stmt.get() as { level: number }\n    return row.level\n  }",
+      "description": "stmt.get() can return undefined if no row matches (e.g., if the intimacy row was manually deleted or the database was externally modified). The result is cast to { level: number } and immediately accessed as row.level, which would throw an unhandled TypeError: 'Cannot read properties of undefined (reading level)'. While the CHECK constraint and INSERT OR IGNORE in initTables() normally ensure the row exists, defensive coding is warranted for a database that can be externally modified.",
+      "suggestion": "Add a null check: if (!row) throw new DocumentStoreError('Intimacy record not found — database may be corrupted'). Alternatively, use a fallback: return row?.level ?? 0.",
+      "claude_md_rule": "error_handling.classification"
+    },
+    {
+      "id": "review-errors-006",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "resource-leak",
+      "title": "DocumentStore constructor leaks DB connection if initTables() fails",
+      "file": "packages/context-engine/src/storage/document-store.ts",
+      "line": 13,
+      "line_end": 18,
+      "code_snippet": "constructor(dbPath: string) {\n    this.db = new Database(dbPath)\n    this.db.pragma('journal_mode = WAL')\n    this.db.pragma('synchronous = NORMAL')\n    this.initTables()\n  }",
+      "description": "If initTables() throws an error (e.g., due to malformed SQL or disk error), the Database connection opened at line 14 is never closed. The caller receives an error but has no reference to the partially-constructed DocumentStore to call close(). This causes a resource leak — the SQLite file handle remains open.",
+      "suggestion": "Wrap initTables() in a try/catch. In the catch block, call this.db.close() before re-throwing: try { this.initTables() } catch (err) { this.db.close(); throw new DocumentStoreError('Failed to initialize tables', { dbPath, cause: err }) }"
+    }
+  ],
+  "positive_observations": [
+    "DocumentStore uses parameterized queries (?) consistently for all SQL operations — no string concatenation in SQL queries",
+    "DocumentStore uses WAL mode for better concurrent read/write performance",
+    "VectorStore.search() correctly handles empty tables by checking rowCount before searching",
+    "Type definitions in types.ts are clean with proper JSDoc documentation"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

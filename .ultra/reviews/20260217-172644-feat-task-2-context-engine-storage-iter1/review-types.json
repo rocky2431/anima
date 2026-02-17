@@ -1,0 +1,109 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260217-172644-feat-task-2-context-engine-storage-iter1",
+  "timestamp": "2026-02-18T01:30:00+08:00",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/storage/types.ts",
+      "packages/context-engine/src/storage/vector-store.ts",
+      "packages/context-engine/src/storage/document-store.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 315,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 2, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "Conversation.role is string but documents a finite union",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 36,
+      "line_end": 37,
+      "code_snippet": "/** 'user' | 'assistant' | 'system' */\nrole: string",
+      "description": "Encapsulation: 3/10, Expression: 2/10, Usefulness: 5/10, Enforcement: 1/10 (Aggregate: 2.8). The JSDoc comment explicitly lists three valid values ('user' | 'assistant' | 'system') but the type is plain `string`. This means the type system cannot catch invalid roles at compile time, and DocumentStore.insertConversation will happily accept role: 'admin' or role: '' with no error. This is a textbook case where the documented invariant should be expressed in the type itself.",
+      "suggestion": "Define `export type ConversationRole = 'user' | 'assistant' | 'system'` and use it: `role: ConversationRole`. This makes the JSDoc comment redundant (the type IS the documentation) and gives compile-time safety.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "ContextVector.source is string but documents a finite union",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 9,
+      "line_end": 9,
+      "code_snippet": "/** Source of the vector (e.g., 'screenshot', 'conversation', 'document') */\nsource: string",
+      "description": "Encapsulation: 3/10, Expression: 2/10, Usefulness: 5/10, Enforcement: 1/10 (Aggregate: 2.8). The JSDoc enumerates known source values but the type is `string`, allowing any arbitrary source value. VectorStore.insert has no validation, so misspelled sources (e.g., 'screensht') would silently create unsearchable records. This also affects VectorSearchResult which mirrors the same field.",
+      "suggestion": "Define `export type VectorSource = 'screenshot' | 'conversation' | 'document'` and use it in both ContextVector and VectorSearchResult. If extensibility is needed, use a branded string or `VectorSource | (string & {})` pattern.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "illegal-state-representable",
+      "title": "Todo allows completed:true with completedAt:null",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 47,
+      "line_end": 58,
+      "code_snippet": "completed: boolean\n/** Unix timestamp in milliseconds */\ncreatedAt: number\n/** Unix timestamp in milliseconds when completed */\ncompletedAt: number | null",
+      "description": "Encapsulation: 3/10, Expression: 4/10, Usefulness: 6/10, Enforcement: 2/10 (Aggregate: 3.8). The Todo interface allows two illegal states: (1) completed=true with completedAt=null, and (2) completed=false with completedAt=<some timestamp>. These states are contradictory but representable. In a walking skeleton context this is P2 rather than P1, but as the domain grows this will cause bugs.",
+      "suggestion": "Use a discriminated union: `type Todo = { id: string; title: string; createdAt: number } & ({ completed: false; completedAt: null } | { completed: true; completedAt: number })`. Alternatively, derive `completed` as a getter from `completedAt !== null` and eliminate the boolean entirely.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "no-validation",
+      "title": "DocumentStore accepts domain types without input validation",
+      "file": "packages/context-engine/src/storage/document-store.ts",
+      "line": 53,
+      "line_end": 58,
+      "code_snippet": "insertConversation(conv: Conversation): void {\n  const stmt = this.db.prepare(\n    'INSERT INTO conversations (id, role, content, created_at) VALUES (?, ?, ?, ?)',\n  )\n  stmt.run(conv.id, conv.role, conv.content, conv.createdAt)\n}",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 2/10 (Aggregate: 4.0). DocumentStore.insertConversation and upsertTodo accept their respective types but perform no validation. An empty id, empty content, negative createdAt, or invalid role will be persisted without error. Since DocumentStore is Imperative Shell (boundary), it should validate inputs at the boundary using Valibot schemas before persisting.",
+      "suggestion": "Create Valibot schemas for Conversation and Todo (e.g., `const ConversationSchema = v.object({ id: v.pipe(v.string(), v.minLength(1)), role: v.picklist(['user','assistant','system']), ... })`) and validate at the boundary in insertConversation/upsertTodo. This is the project standard per CLAUDE.md (Valibot, not Zod).",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "Timestamps use bare number throughout all interfaces",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 14,
+      "line_end": 14,
+      "code_snippet": "/** Unix timestamp in milliseconds when this record was created */\ncreatedAt: number",
+      "description": "Encapsulation: N/A, Expression: 3/10, Usefulness: 4/10, Enforcement: N/A (Aggregate: 3.5). All four interfaces use bare `number` for timestamps (createdAt, completedAt) and the intimacy level. This is a recurring pattern across context-engine (previously noted in activity types). In a walking skeleton this is acceptable but worth tracking as a codebase-wide pattern to address before the skeleton gains complexity.",
+      "suggestion": "Consider a branded type `type UnixMillis = number & { readonly __brand: 'UnixMillis' }` with a smart constructor. This prevents accidentally passing seconds-precision timestamps or arbitrary numbers as timestamps. Low priority for walking skeleton phase."
+    }
+  ],
+  "positive_observations": [
+    "VectorStore uses private constructor + static factory pattern, properly encapsulating the LanceDB connection",
+    "DocumentStore uses parameterized SQL queries throughout, avoiding SQL injection",
+    "DocumentStore initializes WAL mode and creates tables in constructor, establishing infrastructure invariants at construction time",
+    "Intimacy table uses CHECK (id = 1) constraint to enforce singleton row at the database level",
+    "VectorSearchResult is a separate type from ContextVector, avoiding leaking internal vector data to search consumers"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260217-172644-feat-task-2-context-engine-storage-iter1",
+  "timestamp": "2026-02-18T09:30:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/__tests__/vector-store.test.ts",
+      "packages/context-engine/src/__tests__/document-store.test.ts",
+      "packages/context-engine/src/storage/vector-store.ts",
+      "packages/context-engine/src/storage/document-store.ts",
+      "packages/context-engine/src/storage/types.ts"
+    ],
+    "total_lines_analyzed": 569,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 4, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "No test for operations on non-existent table",
+      "file": "packages/context-engine/src/__tests__/vector-store.test.ts",
+      "line": 35,
+      "code_snippet": "await store.createTable('memories', DIMENSION)\nconst vectors = [\n  makeVector('v1', [0.1, 0.2, 0.3, 0.4], 'first memory'),\n]",
+      "description": "VectorStore.insert, search, delete, and count all call this.db.openTable(tableName) which will throw if the table does not exist. No test verifies the error behavior when operating on a table that was never created. This is an important error path -- callers need to know what exception to expect.",
+      "suggestion": "Add a test case: `it('throws when operating on non-existent table', async () => { await expect(store.search('nonexistent', [0.1, 0.2, 0.3, 0.4], 5)).rejects.toThrow(); })` covering search, insert, delete, and count on a table name that was never created.",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "No test for createTable idempotency",
+      "file": "packages/context-engine/src/__tests__/vector-store.test.ts",
+      "line": 36,
+      "code_snippet": "await store.createTable('memories', DIMENSION)",
+      "description": "VectorStore.createTable contains explicit idempotency logic (lines 26-29 of vector-store.ts: checks existing table names and returns early if present). This behavior is never tested. If the idempotency guard breaks, callers will get errors when creating tables that already exist.",
+      "suggestion": "Add a test: `it('createTable is idempotent', async () => { await store.createTable('memories', DIMENSION); await store.insert('memories', [makeVector('v1', [0.1, 0.2, 0.3, 0.4], 'data')]); await store.createTable('memories', DIMENSION); const count = await store.count('memories'); expect(count).toBe(1); })` -- verifying the second call does not destroy existing data."
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "No test for dimension mismatch in vector search",
+      "file": "packages/context-engine/src/__tests__/vector-store.test.ts",
+      "line": 47,
+      "code_snippet": "const results = await store.search('memories', [0.9, 0.1, 0.0, 0.0], 2)\nexpect(results).toHaveLength(2)",
+      "description": "All tests use DIMENSION=4 consistently. There is no test verifying behavior when a query vector has a different dimension than the stored vectors (e.g., inserting dimension-4 vectors but searching with a dimension-3 query). LanceDB may throw or produce incorrect results. Since vector dimension mismatches are a common runtime error in embedding systems, this boundary should be tested.",
+      "suggestion": "Add a test: `it('handles dimension mismatch in search query', async () => { await store.createTable('memories', DIMENSION); await store.insert('memories', [makeVector('v1', [1,0,0,0], 'data')]); await expect(store.search('memories', [1,0,0], 2)).rejects.toThrow(); })` -- or verify that LanceDB handles it gracefully and document the behavior."
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "No test for duplicate conversation ID insertion",
+      "file": "packages/context-engine/src/__tests__/document-store.test.ts",
+      "line": 26,
+      "code_snippet": "const conv: Conversation = {\n  id: 'c1',\n  role: 'user',\n  content: 'Hello Anima',\n  createdAt: Date.now(),\n}\nstore.insertConversation(conv)",
+      "description": "DocumentStore.insertConversation uses a plain INSERT with a PRIMARY KEY on id. Inserting a duplicate id will throw a SQLite constraint error. No test verifies this behavior. Callers need to know whether duplicate insertion is silently handled, throws, or overwrites.",
+      "suggestion": "Add a test: `it('throws on duplicate conversation id', () => { const conv = { id: 'c1', role: 'user', content: 'first', createdAt: Date.now() }; store.insertConversation(conv); expect(() => store.insertConversation(conv)).toThrow(); })` -- or if the intent is to allow overwrites, change to INSERT OR REPLACE and test idempotency."
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "No test for empty collections (getTodos, getRecentConversations)",
+      "file": "packages/context-engine/src/__tests__/document-store.test.ts",
+      "line": 68,
+      "code_snippet": "describe('todos', () => {\n  it('inserts and retrieves todos', () => {",
+      "description": "Neither getTodos() nor getRecentConversations() is tested against an empty database. While the behavior is likely correct (return empty array), explicitly testing empty-state queries documents the contract and prevents regressions if the SQL changes.",
+      "suggestion": "Add tests: `it('returns empty array when no conversations exist', () => { expect(store.getRecentConversations(10)).toEqual([]); })` and `it('returns empty array when no todos exist', () => { expect(store.getTodos()).toEqual([]); })`."
+    }
+  ],
+  "positive_observations": [
+    "Both test suites use real databases (LanceDB on disk, better-sqlite3 on disk) with no mocks, fakes, or in-memory substitutes -- fully aligned with Dev/Prod Parity principle",
+    "Persistence/reconnect tests verify data survives close and reopen, proving durable storage contracts",
+    "DocumentStore intimacy tests cover the floor-at-zero boundary condition (negative delta beyond zero)",
+    "Proper test isolation via temp directories with cleanup in afterEach prevents cross-test contamination",
+    "VectorStore tests verify search result ordering by distance, not just presence -- testing actual semantic behavior"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}
