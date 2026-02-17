@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.8.4",
   "private": true,
-  "description": "Context awareness engine: screenshot capture, activity monitoring, VLM understanding",
+  "description": "Context awareness engine: screenshot capture, activity monitoring, VLM understanding, vector/document storage",
   "author": {
     "name": "Moeru AI Project AIRI Team",
     "email": "airi@moeru.ai",
@@ -35,7 +35,12 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
+  "dependencies": {
+    "@lancedb/lancedb": "catalog:",
+    "better-sqlite3": "catalog:"
+  },
   "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
     "vitest": "catalog:vitest"
   }
 }

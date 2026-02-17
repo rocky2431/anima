@@ -1,0 +1,143 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260217-172644-feat-task-2-context-engine-storage-iter1",
+  "timestamp": "2026-02-18T00:00:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/storage/vector-store.ts",
+      "packages/context-engine/src/storage/document-store.ts",
+      "packages/context-engine/src/storage/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/package.json",
+      "packages/context-engine/tsdown.config.ts",
+      "pnpm-workspace.yaml"
+    ],
+    "total_lines_analyzed": 370,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 4, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "security",
+      "subcategory": "injection",
+      "title": "VectorStore.delete accepts raw filter string (injection risk)",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 82,
+      "line_end": 85,
+      "code_snippet": "async delete(tableName: string, filter: string): Promise<void> {\n    const table = await this.db.openTable(tableName)\n    await table.delete(filter)\n  }",
+      "description": "The delete method accepts a raw SQL-like filter expression string and passes it directly to LanceDB's table.delete(). If any caller constructs this filter by interpolating user-controlled data (e.g., `store.delete('memories', \\`source = '${userInput}'\\`)`), it becomes a deletion injection vector. LanceDB filter expressions support SQL-like predicates, so an attacker could craft input like `' OR 1=1 --` to delete all records. The test file already demonstrates this pattern: `store.delete('memories', \\`id = 'v2'\\`)` -- any real-world usage with dynamic values would be vulnerable.",
+      "suggestion": "Replace the raw filter string API with a structured approach. Option A: Accept a key-value object and build the filter internally with proper escaping: `async delete(tableName: string, field: string, value: string | number)`. Option B: Accept a predicate builder function that uses a safe API. At minimum, document that the filter must never include user-supplied data without escaping, and add a helper method like `deleteById(tableName, id)` for the most common case.",
+      "claude_md_rule": "security.forbidden_patterns.sql_string_concat"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "DocumentStore and VectorStore not wired to any entry point",
+      "file": "packages/context-engine/src/index.ts",
+      "line": 18,
+      "line_end": 19,
+      "code_snippet": "export { DocumentStore } from './storage/document-store'\nexport { VectorStore } from './storage/vector-store'",
+      "description": "Both DocumentStore and VectorStore are exported from the package index but are not instantiated or consumed by any entry point. The existing setupContextEngine() in apps/stage-tamagotchi/src/main/services/anima/context-engine.ts only wires ScreenshotCapture. Neither store is registered with injeca, connected via IPC, or invoked by any timer, event listener, or handler. This is orphan code -- exported but unreachable from any live execution path.",
+      "suggestion": "Wire both stores into setupContextEngine() and expose relevant operations via IPC handlers or injeca service providers. At minimum, instantiate DocumentStore and VectorStore in the service setup function so they are reachable: `const docStore = new DocumentStore(path.join(dataDir, 'anima.db')); const vecStore = await VectorStore.create(path.join(dataDir, 'vectors'));` and return them from the setup function. If this is intentionally a walking-skeleton step, add a follow-up task reference in a code comment (not a TODO).",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "subcategory": "missing-integration-test",
+      "title": "No app-level integration test proving store wiring",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/context-engine.ts",
+      "line": 33,
+      "line_end": 42,
+      "code_snippet": "export function setupContextEngine() {\n  const provider = new ElectronScreenshotProvider()\n  const screenshotCapture = new ScreenshotCapture(provider)\n  log.info('ContextEngine initialized')\n  return { screenshotCapture }\n}",
+      "description": "The package-level tests for DocumentStore and VectorStore use real SQLite and LanceDB (good). However, there is no integration test at the app level (stage-tamagotchi) proving these stores can be instantiated, wired into injeca, and invoked through the service layer. The boundary between context-engine package and the Electron app has zero test coverage for the new storage components.",
+      "suggestion": "Add an integration test in apps/stage-tamagotchi that instantiates DocumentStore and VectorStore via the service setup function, performs a round-trip operation (insert + read), and verifies the data flows through. Since Electron APIs require a Test Double (acceptable per CLAUDE.md), the storage components themselves should use real temp directories.",
+      "claude_md_rule": "integration.integration_proof"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "architecture",
+      "subcategory": "type-safety",
+      "title": "Conversation.role is untyped string instead of union type",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 36,
+      "code_snippet": "  /** 'user' | 'assistant' | 'system' */\n  role: string",
+      "description": "The Conversation interface documents role as 'user' | 'assistant' | 'system' in a JSDoc comment, but the actual type is `string`. This means any arbitrary string can be inserted as a role with no compile-time or runtime validation. The comment and the type contradict each other. Additionally, DocumentStore.insertConversation() performs no validation on the role value.",
+      "suggestion": "Change the type to a union: `role: 'user' | 'assistant' | 'system'`. Optionally add runtime validation in insertConversation() if the role comes from external input. Remove the redundant JSDoc comment since the type itself will be self-documenting.",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "race-condition",
+      "title": "updateIntimacy read-then-write is not atomic",
+      "file": "packages/context-engine/src/storage/document-store.ts",
+      "line": 121,
+      "line_end": 127,
+      "code_snippet": "updateIntimacy(delta: number): number {\n    const current = this.getIntimacy()\n    const newLevel = Math.max(0, current + delta)\n    const stmt = this.db.prepare('UPDATE intimacy SET level = ? WHERE id = 1')\n    stmt.run(newLevel)\n    return newLevel\n  }",
+      "description": "updateIntimacy performs a read (getIntimacy) followed by a write (UPDATE) as two separate operations. While better-sqlite3 is synchronous and single-threaded within one Node.js process, if multiple Electron windows or worker threads share the same database file, this is a classic read-then-write race condition. The atomicity guarantee only holds if there is exactly one connection.",
+      "suggestion": "Use a single atomic SQL statement: `UPDATE intimacy SET level = MAX(0, level + ?) WHERE id = 1`. Then read back the new value. Alternatively, wrap in a transaction: `this.db.transaction(() => { ... })()`. The single-statement approach is simpler and eliminates the race entirely.",
+      "claude_md_rule": "architecture.critical_state_persistable"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "unsafe-state",
+      "title": "VectorStore.close() nullifies db via unsafe cast",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 98,
+      "line_end": 103,
+      "code_snippet": "async close(): Promise<void> {\n    // LanceDB Connection doesn't have an explicit close method;\n    // dropping the reference is sufficient. This method exists for\n    // interface symmetry and future compatibility.\n    this.db = null as unknown as lancedb.Connection\n  }",
+      "description": "After close() is called, this.db is set to null via an unsafe double cast (`null as unknown as lancedb.Connection`). Any subsequent call to insert(), search(), delete(), or count() will throw a confusing runtime error like 'Cannot read properties of null' rather than a clear 'store is closed' error. This violates the principle of failing fast with meaningful errors.",
+      "suggestion": "Add a `private closed = false` flag. In close(), set `this.closed = true`. Add a guard at the top of each public method: `if (this.closed) throw new Error('VectorStore is closed')`. This provides clear error messages and prevents use-after-close bugs. Alternatively, make the db property nullable (`private db: lancedb.Connection | null`) and check for null explicitly.",
+      "claude_md_rule": "error_handling.fail_fast"
+    },
+    {
+      "id": "review-code-007",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "missing-validation",
+      "title": "No validation on VectorStore.createTable dimension parameter",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 25,
+      "line_end": 42,
+      "code_snippet": "async createTable(name: string, dimension: number): Promise<void> {\n    const existing = await this.db.tableNames()\n    if (existing.includes(name)) {\n      return\n    }\n    const dummyVector = Array.from({ length: dimension }, () => 0)",
+      "description": "The createTable method accepts a dimension parameter with no validation. A dimension of 0 would create an empty vector column, a negative dimension would create an empty array (Array.from with negative length returns []), and a very large dimension could cause memory issues. Since this is a boundary method that external callers invoke, input validation is required.",
+      "suggestion": "Add input validation at the top of createTable: `if (!Number.isInteger(dimension) || dimension < 1) throw new Error(\\`Invalid vector dimension: ${dimension}. Must be a positive integer.\\`)`. Consider also adding an upper bound check (e.g., dimension <= 65536) to prevent accidental memory exhaustion.",
+      "claude_md_rule": "security.input_validation"
+    }
+  ],
+  "positive_observations": [
+    "Tests use real SQLite and LanceDB databases with temp directories -- no mocks or in-memory fakes for storage boundaries.",
+    "Persistence tests verify data survives across reconnect (close + reopen), proving real durability.",
+    "SQL uses parameterized queries throughout DocumentStore (INSERT/SELECT/UPDATE all use ? placeholders).",
+    "WAL mode enabled for SQLite, demonstrating awareness of concurrent read/write performance.",
+    "Clean separation between types, storage implementations, and package exports.",
+    "DocumentStore schema uses proper constraints (PRIMARY KEY, NOT NULL, CHECK) for data integrity."
+  ],
+  "metadata": {
+    "duration_ms": 30000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

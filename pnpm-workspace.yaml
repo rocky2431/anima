@@ -35,6 +35,7 @@ catalog:
   '@histoire/plugin-vue': 1.0.0-beta.1
   '@iconify-json/logos': ^1.2.10
   '@iconify-json/tabler': ^1.2.26
+  '@lancedb/lancedb': ^0.26.2
   '@moeru/eslint-config': 0.1.0-beta.15
   '@moeru/eventa': '1.0.0-alpha.14'
   '@moeru/std': 0.1.0-beta.14
@@ -43,6 +44,7 @@ catalog:
   '@proj-airi/drizzle-duckdb-wasm': ^0.4.29
   '@proj-airi/iconify-meteocons': ^0.1.4
   '@types/audioworklet': ^0.0.93
+  '@types/better-sqlite3': ^7.6.13
   '@types/hast': ^3.0.4
   '@types/splitpanes': ^2.2.6
   '@types/unist': ^3.0.3
@@ -60,6 +62,7 @@ catalog:
   '@xsai/utils-chat': 0.4.0-beta.13
   async-mutex: 0.5.0
   better-auth: ^1.4.16
+  better-sqlite3: ^12.6.2
   builder-util-runtime: ^9.5.1
   drizzle-valibot: ^0.4.2
   electron: ^40.0.0
@@ -103,14 +106,15 @@ catalogs:
 
 ignoredBuiltDependencies:
   - '@prisma/client'
-  - better-sqlite3
 
 onlyBuiltDependencies:
   - '@discordjs/opus'
+  - '@lancedb/lancedb'
   - '@ffmpeg-installer/darwin-arm64'
   - '@ffmpeg-installer/linux-x64'
   - '@napi-rs/image'
   - '@parcel/watcher'
+  - better-sqlite3
   - bufferutil
   - core-js
   - electron

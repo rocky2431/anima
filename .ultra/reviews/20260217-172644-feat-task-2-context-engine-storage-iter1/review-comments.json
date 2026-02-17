@@ -1,0 +1,91 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260217-172644-feat-task-2-context-engine-storage-iter1",
+  "timestamp": "2026-02-18T00:30:00+08:00",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/storage/vector-store.ts",
+      "packages/context-engine/src/storage/document-store.ts",
+      "packages/context-engine/src/storage/types.ts"
+    ],
+    "total_lines_analyzed": 296,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 1, "P3": 3 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "comments",
+      "subcategory": "comment-will-rot",
+      "title": "Role values documented in comment instead of type union",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 37,
+      "line_end": 38,
+      "code_snippet": "  /** 'user' | 'assistant' | 'system' */\n  role: string",
+      "description": "The comment enumerates allowed role values ('user' | 'assistant' | 'system') but the field type is plain `string`. If new roles are added or existing ones change, the comment will silently become stale. The allowed values should be enforced by the type system, not by a comment that will rot.",
+      "suggestion": "Define a string literal union type: `type ConversationRole = 'user' | 'assistant' | 'system'` and use it as the field type instead of documenting the constraint in a comment.",
+      "claude_md_rule": "code_quality"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "misleading-terminology",
+      "title": "Delete method JSDoc calls LanceDB filter a 'SQL filter expression'",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 79,
+      "line_end": 80,
+      "code_snippet": "  /**\n   * Delete vectors matching the SQL filter expression.\n   * Example filter: \"id = 'v1'\" or \"source = 'screenshot'\"\n   */",
+      "description": "The JSDoc refers to the filter parameter as a 'SQL filter expression.' LanceDB uses its own filter expression syntax which is SQL-like but not actual SQL. Calling it 'SQL filter' could mislead maintainers into thinking full SQL syntax (JOINs, subqueries, etc.) is supported, or that injection risks apply the same way.",
+      "suggestion": "Change 'SQL filter expression' to 'LanceDB filter expression' or simply 'filter expression' and link to LanceDB documentation for supported syntax."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Count method JSDoc restates the method name",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 88,
+      "line_end": 89,
+      "code_snippet": "  /**\n   * Count the number of rows in the named table.\n   */\n  async count(tableName: string): Promise<number> {",
+      "description": "The JSDoc 'Count the number of rows in the named table' adds no information beyond what the method signature `count(tableName: string): Promise<number>` already communicates. It has negative ROI because it must be maintained alongside the code.",
+      "suggestion": "Either remove the JSDoc or enhance it with useful context, such as documenting that this counts all rows including soft-deleted ones, or clarifying performance characteristics."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "comments",
+      "subcategory": "forward-looking-comment",
+      "title": "Close method comment references 'future compatibility' (rot risk)",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 99,
+      "line_end": 101,
+      "code_snippet": "    // LanceDB Connection doesn't have an explicit close method;\n    // dropping the reference is sufficient. This method exists for\n    // interface symmetry and future compatibility.",
+      "description": "The comment mentions 'future compatibility' as a justification for the close method's existence. While the explanation of the current LanceDB behavior is valuable, the forward-looking 'future compatibility' claim may rot if LanceDB never adds an explicit close method, leaving a misleading rationale.",
+      "suggestion": "Keep the factual explanation about LanceDB's behavior but rephrase: 'This method exists for interface symmetry so callers can consistently clean up resources regardless of the underlying storage.' Drop the speculative 'future compatibility' framing."
+    }
+  ],
+  "positive_observations": [
+    "JSDoc is consistently applied to all exported classes, methods, and interface fields -- good for API discoverability.",
+    "The dummy-row creation comment in createTable (line 30) is an excellent 'why' comment explaining a non-obvious LanceDB workaround.",
+    "Type documentation in types.ts includes units ('Unix timestamp in milliseconds') and example values ('screenshot', 'conversation', 'document'), which meaningfully reduces ambiguity.",
+    "The _distance field documents its semantics ('lower = more similar for L2'), which is critical context that cannot be inferred from the type alone.",
+    "No forbidden patterns (TODO, FIXME, HACK, PLACEHOLDER, TEMP) found in any of the files."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}
