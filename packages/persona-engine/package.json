@@ -35,6 +35,9 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
+  "dependencies": {
+    "xstate": "^5.20.1"
+  },
   "devDependencies": {
     "vitest": "catalog:vitest"
   }
