@@ -1,0 +1,112 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260219-003505-feat-task-10-skills-engine-iter1",
+  "timestamp": "2026-02-19T00:40:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/skills-engine/src/__tests__/skill-loader.test.ts",
+      "packages/skills-engine/src/__tests__/skill-registry.test.ts",
+      "packages/skills-engine/src/__tests__/context-integration.test.ts",
+      "packages/skills-engine/src/skill-loader.ts",
+      "packages/skills-engine/src/skill-registry.ts",
+      "packages/skills-engine/src/context-integration.ts",
+      "packages/skills-engine/src/types.ts"
+    ],
+    "total_lines_analyzed": 962,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 3, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-error-path-test",
+      "title": "Silent catch in discoverSkills has no test for malformed SKILL.md",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 117,
+      "line_end": 123,
+      "code_snippet": "try {\n  const skill = await loadSkillFromDir(path.join(baseDir, entry.name), source)\n  skills.push(skill)\n}\ncatch {\n  // Skip invalid skills during discovery\n}",
+      "description": "The discoverSkills function silently swallows errors when a subdirectory contains a malformed SKILL.md (e.g., invalid frontmatter, missing required fields). No test exercises this code path. The bare catch block with no logging is also a code quality concern (silent error swallowing), but from a test perspective the critical issue is that this error resilience behavior is entirely untested. A regression that turns this into a rethrow would break discovery for directories containing any malformed skill file, and no test would catch that.",
+      "suggestion": "Add a test in skill-loader.test.ts that creates a directory with a malformed SKILL.md (e.g., missing required frontmatter fields) alongside a valid one, calls discoverSkills, and verifies: (1) the valid skill is returned, (2) the malformed one is skipped, (3) no error is thrown. Example: create two subdirs, one with valid SKILL.md, one with '---\\nbad: true\\n---\\nBody.' and assert discoverSkills returns only the valid skill.",
+      "claude_md_rule": "testing.coverage.error_paths"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "No test for dependencies field parsing in parseSkillMd",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 59,
+      "line_end": 61,
+      "code_snippet": "if (Array.isArray(parsed.data.dependencies)) {\n  metadata.dependencies = parsed.data.dependencies\n}",
+      "description": "The parseSkillMd function has explicit handling for the optional 'dependencies' array field (lines 59-61), but no test in skill-loader.test.ts exercises this path. The 'tags' and 'allowedTools' optional fields are tested via VALID_SKILL_MD, but 'dependencies' is never included in any test fixture. This means a regression in dependency parsing would go undetected.",
+      "suggestion": "Add a test case with a SKILL.md that includes a dependencies field in the frontmatter, e.g., 'dependencies:\\n  - other-skill\\n  - another-skill', and assert that skill.metadata.dependencies equals ['other-skill', 'another-skill']. Also test that dependencies is undefined when not provided (already implicitly covered by MINIMAL_SKILL_MD test).",
+      "claude_md_rule": "testing.coverage.boundary_conditions"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "error-assertion-specificity",
+      "title": "Error path tests use bare .toThrow() without message/type check",
+      "file": "packages/skills-engine/src/__tests__/skill-loader.test.ts",
+      "line": 90,
+      "line_end": 99,
+      "code_snippet": "expect(() => parseSkillMd(badMd, 'builtin', '/fake')).toThrow()\n// ...\nexpect(() => parseSkillMd('', 'builtin', '/fake')).toThrow()\n// ...\nexpect(() => parseSkillMd('# Just a heading...', 'builtin', '/fake')).toThrow()",
+      "description": "Four error path tests (lines 90, 94, 98, and loadSkillFromDir tests at 162, 166) assert only that an error is thrown (.toThrow()) without verifying the error message or type. This means any error (including unexpected ones like TypeError from null access) would satisfy the assertion. The implementation throws specific error messages ('SKILL.md content is empty', 'SKILL.md is missing YAML frontmatter', 'SKILL.md metadata is missing required fields: ...') that should be verified to ensure the correct error path is exercised.",
+      "suggestion": "Use .toThrow(/specific message pattern/) or .toThrow('exact message') to verify the correct error is thrown. For example: expect(() => parseSkillMd('', 'builtin', '/fake')).toThrow('SKILL.md content is empty') and expect(() => parseSkillMd('# Just a heading', 'builtin', '/fake')).toThrow('missing YAML frontmatter').",
+      "claude_md_rule": "testing.error_paths"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-state-transition-test",
+      "title": "No test for SkillRegistry.loadAll() idempotency (re-load)",
+      "file": "packages/skills-engine/src/skill-registry.ts",
+      "line": 21,
+      "line_end": 33,
+      "code_snippet": "async loadAll(): Promise<void> {\n  this.entries.clear()\n  const builtinSkills = await discoverSkills(this.config.builtinSkillsDir, 'builtin')\n  // ...\n}",
+      "description": "The loadAll() method calls this.entries.clear() at the start, which is an important state transition: previously loaded skills (including any that were activated) are wiped. No test verifies that calling loadAll() a second time correctly resets state. Specifically: if a skill was activated, then loadAll() is called again, the activation state should be reset. This is a state transition that could regress if the clear() call is accidentally removed or if activation state is stored elsewhere.",
+      "suggestion": "Add a test: load skills, activate one, call loadAll() again, verify the previously-activated skill is now inactive (active: false). Also verify the total count is correct after reload.",
+      "claude_md_rule": "testing.state_transitions"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "buildSkillsContext not tested with all skills active",
+      "file": "packages/skills-engine/src/__tests__/context-integration.test.ts",
+      "line": 97,
+      "line_end": 123,
+      "code_snippet": "it('combines Layer 1 summary and Layer 2 bodies', () => {\n  const context = buildSkillsContext([SKILL_A, SKILL_B], [SKILL_A])\n  // Only checks SKILL_A body is present\n})",
+      "description": "The buildSkillsContext tests cover: (1) partial active skills (SKILL_A active out of A+B), (2) no active skills, (3) no skills at all. Missing: the case where all skills are active, which should include all Layer 2 bodies. While this is a minor gap (the loop logic is straightforward), it would catch regressions where the concatenation of multiple Layer 2 bodies has formatting issues.",
+      "suggestion": "Add a test: buildSkillsContext([SKILL_A, SKILL_B], [SKILL_A, SKILL_B]) and verify both 'Detailed instructions for skill A.' and 'Detailed instructions for skill B.' appear in the output."
+    }
+  ],
+  "positive_observations": [
+    "No mock violations detected: all tests use real filesystem operations with temp directories, direct class instantiation, and pure function calls. This aligns with Functional Core / Imperative Shell testing discipline.",
+    "Good use of beforeEach/afterEach with mkdtemp/rmSync for clean filesystem isolation between tests.",
+    "Test coverage of the Functional Core (parseSkillMd, validateMetadata, extractLayer1, formatLayer1Summary, formatLayer2Body, buildSkillsContext) uses direct instantiation with no mocks -- exactly correct for pure logic.",
+    "Edge cases are well covered: nonexistent directories, empty directories, missing frontmatter, empty content, nonexistent skill IDs for getById/activate/deactivate.",
+    "User-overrides-builtin behavior is tested (skill-registry line 97), which is a critical business rule."
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

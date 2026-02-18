@@ -1,0 +1,94 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260219-003505-feat-task-10-skills-engine-iter1",
+  "timestamp": "2026-02-19T00:40:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/skills-engine/src/skill-loader.ts",
+      "packages/skills-engine/src/skill-registry.ts",
+      "packages/skills-engine/src/context-integration.ts",
+      "packages/skills-engine/src/types.ts",
+      "packages/skills-engine/src/__tests__/skill-loader.test.ts",
+      "packages/skills-engine/src/__tests__/skill-registry.test.ts",
+      "packages/skills-engine/src/__tests__/context-integration.test.ts"
+    ],
+    "total_lines_analyzed": 969,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "unnecessary-async",
+      "title": "loadSkillFromDir is async but uses only synchronous I/O",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 79,
+      "line_end": 91,
+      "code_snippet": "export async function loadSkillFromDir(dirPath: string, source: SkillSource): Promise<Skill> {\n  const skillPath = path.join(dirPath, 'SKILL.md')\n  let content: string\n  try {\n    content = fs.readFileSync(skillPath, 'utf-8')\n  }",
+      "description": "The function is declared async and returns Promise<Skill>, but its body only uses fs.readFileSync (synchronous). There is no await or asynchronous operation inside the function. This creates an unnecessary promise wrapper and misleads callers into thinking the function performs async I/O. Similarly, discoverSkills (line 96) is async but only calls synchronous fs methods plus loadSkillFromDir (which itself is sync in practice).",
+      "suggestion": "BEFORE:\nexport async function loadSkillFromDir(dirPath: string, source: SkillSource): Promise<Skill> {\n  ...\n  content = fs.readFileSync(skillPath, 'utf-8')\n  ...\n}\n\nAFTER (option A - make truly async):\nexport async function loadSkillFromDir(dirPath: string, source: SkillSource): Promise<Skill> {\n  ...\n  content = await fs.promises.readFile(skillPath, 'utf-8')\n  ...\n}\n\nAFTER (option B - make synchronous):\nexport function loadSkillFromDir(dirPath: string, source: SkillSource): Skill {\n  ...\n  content = fs.readFileSync(skillPath, 'utf-8')\n  ...\n}\n\nWHY: Either commit to async I/O (fs.promises) or drop the async keyword. Mixing async function signatures with synchronous bodies adds cognitive overhead and misleads about blocking behavior."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "activate-deactivate-duplication",
+      "title": "activate() and deactivate() are near-identical methods",
+      "file": "packages/skills-engine/src/skill-registry.ts",
+      "line": 52,
+      "line_end": 71,
+      "code_snippet": "  activate(id: string): boolean {\n    const entry = this.entries.get(id)\n    if (!entry) { return false }\n    entry.active = true\n    return true\n  }\n  deactivate(id: string): boolean {\n    const entry = this.entries.get(id)\n    if (!entry) { return false }\n    entry.active = false\n    return true\n  }",
+      "description": "The activate() and deactivate() methods are structurally identical -- the only difference is the boolean value assigned to entry.active. This is 10 lines of near-duplicate code. While the codebase prefers clarity over premature abstraction (and three similar lines are acceptable), these two methods could share a private helper to reduce the duplication while maintaining clear public API names.",
+      "suggestion": "BEFORE:\n  activate(id: string): boolean {\n    const entry = this.entries.get(id)\n    if (!entry) { return false }\n    entry.active = true\n    return true\n  }\n  deactivate(id: string): boolean {\n    const entry = this.entries.get(id)\n    if (!entry) { return false }\n    entry.active = false\n    return true\n  }\n\nAFTER:\n  activate(id: string): boolean {\n    return this.setActive(id, true)\n  }\n  deactivate(id: string): boolean {\n    return this.setActive(id, false)\n  }\n  private setActive(id: string, active: boolean): boolean {\n    const entry = this.entries.get(id)\n    if (!entry) { return false }\n    entry.active = active\n    return true\n  }\n\nWHY: Extracts the shared pattern into a private method while keeping the public API clear and descriptive. The duplication is mild enough that this is optional -- the current code is also fine."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "simplification",
+      "subcategory": "optional-array-fields",
+      "title": "Three identical Array.isArray checks could use a loop",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 55,
+      "line_end": 65,
+      "code_snippet": "  if (Array.isArray(parsed.data.allowedTools)) {\n    metadata.allowedTools = parsed.data.allowedTools\n  }\n  if (Array.isArray(parsed.data.dependencies)) {\n    metadata.dependencies = parsed.data.dependencies\n  }\n  if (Array.isArray(parsed.data.tags)) {\n    metadata.tags = parsed.data.tags\n  }",
+      "description": "Three consecutive blocks each check Array.isArray on an optional field and assign it to metadata. The pattern is identical -- only the field name varies. Per the project convention of 'three similar lines > premature abstraction', the current form is acceptable for clarity. However, if more optional array fields are added in the future, a loop over field names would be cleaner.",
+      "suggestion": "Current code is acceptable per project conventions. If this grows beyond 3 fields, consider:\n\nconst OPTIONAL_ARRAY_FIELDS = ['allowedTools', 'dependencies', 'tags'] as const\nfor (const field of OPTIONAL_ARRAY_FIELDS) {\n  if (Array.isArray(parsed.data[field])) {\n    (metadata as any)[field] = parsed.data[field]\n  }\n}\n\nWHY: Only recommended if more optional array fields are added. The explicit version is currently more readable and type-safe."
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "test-setup-repetition",
+      "title": "Registry test recreates identical config object in every test case",
+      "file": "packages/skills-engine/src/__tests__/skill-registry.test.ts",
+      "line": 41,
+      "line_end": 44,
+      "code_snippet": "    const registry = new SkillRegistry({\n      builtinSkillsDir: tmpBuiltin,\n      userSkillsDir: tmpUser,\n    })",
+      "description": "The same SkillRegistry instantiation with identical config appears 12 times across the test file. Each test case repeats the 3-line constructor call. While test explicitness is valued, a helper function or shared setup would reduce noise without sacrificing clarity.",
+      "suggestion": "BEFORE (repeated 12 times):\n    const registry = new SkillRegistry({\n      builtinSkillsDir: tmpBuiltin,\n      userSkillsDir: tmpUser,\n    })\n\nAFTER (add a factory helper at the top of the describe block):\n  function createRegistry(): SkillRegistry {\n    return new SkillRegistry({\n      builtinSkillsDir: tmpBuiltin,\n      userSkillsDir: tmpUser,\n    })\n  }\n\n  // Then in each test:\n  const registry = createRegistry()\n\nWHY: Reduces 3 lines to 1 per test while keeping the intent clear. The factory is defined inside the describe scope so it captures the beforeEach-initialized tmpBuiltin/tmpUser variables."
+    }
+  ],
+  "positive_observations": [
+    "All source functions are short (<45 lines) with low cyclomatic complexity (max CC=5 in parseSkillMd), well within project thresholds",
+    "Consistent use of early returns and guard clauses keeps nesting depth at 2 or below in all source files",
+    "Type definitions are clean and well-documented with JSDoc comments explaining each interface's purpose",
+    "The context-integration module is a textbook example of small pure functions composed together (extractLayer1 -> formatLayer1Summary -> buildSkillsContext)",
+    "No nested ternaries, no magic numbers, no deep nesting -- the code follows established codebase conventions"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260219-003505-feat-task-10-skills-engine-iter1",
+  "timestamp": "2026-02-19T00:50:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/skills-engine/src/skill-loader.ts",
+      "packages/skills-engine/src/skill-registry.ts",
+      "packages/skills-engine/src/context-integration.ts",
+      "packages/skills-engine/src/types.ts",
+      "packages/skills-engine/src/index.ts",
+      "packages/skills-engine/package.json",
+      "packages/skills-engine/tsconfig.json",
+      "packages/skills-engine/tsdown.config.ts",
+      "packages/skills-engine/vitest.config.ts",
+      "packages/skills-engine/skills/companion-persona/SKILL.md",
+      "packages/skills-engine/skills/proactive-care/SKILL.md",
+      "vitest.config.ts"
+    ],
+    "total_lines_analyzed": 556,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 8,
+    "by_severity": { "P0": 1, "P1": 3, "P2": 4, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P0",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "silent-catch",
+      "title": "Silent bare catch blocks swallow errors in discoverSkills",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 101,
+      "line_end": 103,
+      "code_snippet": "  catch {\n    return []\n  }",
+      "description": "Two bare `catch {}` blocks in discoverSkills silently discard errors. Lines 101-103 swallow directory read failures (returning empty array as if no skills exist). Lines 121-123 swallow individual skill parse failures with a bare `catch {}` and only a comment `// Skip invalid skills during discovery`. Per CLAUDE.md, `catch (e) {}` and `catch (e) { return null }` are forbidden patterns. Silent error swallowing hides bugs -- a permissions error, corrupted file, or disk failure would be invisible to operators. The second catch block at line 121 is even worse: it has no logging, no context, no way to diagnose why a skill that exists on disk failed to load.",
+      "suggestion": "Inject or accept a logger parameter. At minimum, log a warning with the directory path and error message: `logger.warn('Failed to read skills directory', { baseDir, error: (err as Error).message })` for the first catch, and `logger.warn('Skipping invalid skill', { skillDir: entry.name, error: (err as Error).message })` for the second. Both catches should log context before continuing. This is especially important for user skills where a typo in SKILL.md frontmatter would otherwise be silently ignored.",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "Entire skills-engine package has no consumer in any app",
+      "file": "packages/skills-engine/src/index.ts",
+      "line": 1,
+      "line_end": 25,
+      "code_snippet": "export { buildSkillsContext, extractLayer1, formatLayer1Summary, formatLayer2Body } from './context-integration'\nexport { discoverSkills, loadSkillFromDir, parseSkillMd, validateMetadata } from './skill-loader'\nexport { SkillRegistry } from './skill-registry'",
+      "description": "Grep for `@proj-airi/skills-engine` across the entire monorepo returns only the package's own package.json. No app (stage-tamagotchi, stage-web, server) imports this package. No service registers it via injeca. No IPC handler, event listener, or scheduled job calls into SkillRegistry or buildSkillsContext. The entire package is dead-on-arrival orphan code. Per CLAUDE.md integration rules: 'Code written but not reachable from any entry point is dead-on-arrival. Every new module must trace to at least one live entry point.'",
+      "suggestion": "Wire skills-engine into at least one consumer before committing. The most natural integration point is the Anima orchestrator in `apps/stage-tamagotchi/src/main/services/anima/` which already assembles system prompts. Add `@proj-airi/skills-engine` as a dependency there, instantiate SkillRegistry during service init, and call buildSkillsContext() to inject skill context into the LLM system prompt. This makes the package reachable from the Electron main process entry point.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "architecture",
+      "subcategory": "in-memory-state",
+      "title": "Skill activation state stored only in memory (Map), not persisted",
+      "file": "packages/skills-engine/src/skill-registry.ts",
+      "line": 10,
+      "line_end": 10,
+      "code_snippet": "  private entries = new Map<string, SkillRegistryEntry>()",
+      "description": "SkillRegistry stores all skill activation state (`active: boolean`) in a closure-scoped Map. If the Electron process restarts, all activation state is lost -- every skill reverts to `active: false`. This is the recurring 'in-memory state in Electron services' pattern flagged in previous reviews (task-9 mcp-hub, task-7). Per CLAUDE.md: 'Business state in memory' is a forbidden pattern; the alternative is 'Persist to DB'. Skill activation is a user preference that must survive restarts.",
+      "suggestion": "Add a persistence layer for activation state. Options: (1) Accept a `storage` adapter in SkillsEngineConfig that persists Map<skillId, boolean> to SQLite/better-sqlite3, consistent with the existing context-engine storage pattern. (2) At minimum, add save/load methods that serialize the active state to a JSON file. The `activate()` and `deactivate()` methods should trigger persistence. loadAll() should restore previously-active state after discovery.",
+      "claude_md_rule": "forbidden_patterns.arch.business_state_in_memory"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "subcategory": "missing-integration-test",
+      "title": "No boundary integration test for skills-engine package",
+      "file": "packages/skills-engine/src/skill-registry.ts",
+      "line": 21,
+      "line_end": 33,
+      "code_snippet": "  async loadAll(): Promise<void> {\n    this.entries.clear()\n    const builtinSkills = await discoverSkills(this.config.builtinSkillsDir, 'builtin')\n    ...\n  }",
+      "description": "While the package has good unit tests (skill-loader.test.ts, skill-registry.test.ts, context-integration.test.ts), there is no integration test proving the full flow: loadAll() -> activate skills -> buildSkillsContext() produces valid output that could be injected into an LLM system prompt. The unit tests test each component in isolation. Per CLAUDE.md integration rules: 'Every component that produces or consumes data across a boundary must have at least one test proving the connection works.' The boundary here is skills-engine -> LLM prompt assembly. While the package has no consumer yet (finding 002), even within the package there's no test proving Registry + ContextIntegration work together end-to-end with real SKILL.md files from the `skills/` directory.",
+      "suggestion": "Add an integration test that: (1) Points SkillRegistry at the real `skills/companion-persona` and `skills/proactive-care` directories bundled with the package. (2) Calls loadAll(). (3) Activates companion-persona. (4) Calls buildSkillsContext(registry.getAll().map(e => e.skill), registry.getActive()). (5) Asserts the output contains Layer 1 summaries for both skills and Layer 2 body only for companion-persona. This proves the real SKILL.md files parse correctly and the full pipeline works.",
+      "claude_md_rule": "integration.integration_proof"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "code-quality",
+      "subcategory": "missing-logging",
+      "title": "No logging infrastructure in skills-engine package",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 1,
+      "line_end": 5,
+      "code_snippet": "import * as fs from 'node:fs'\nimport * as path from 'node:path'\nimport matter from 'gray-matter'",
+      "description": "The entire skills-engine package contains zero logging. No import of `@guiiai/logg`, no `useLogg` calls anywhere. Key operations that should log: skill discovery start/complete with count, individual skill load success, skill activation/deactivation, validation failures. This is a recurring finding across new packages (also flagged in mcp-hub task-9). Without logging, debugging skill loading issues in production requires adding temporary console.log statements -- which are themselves forbidden by CLAUDE.md.",
+      "suggestion": "Add `@guiiai/logg` as a dependency. Create a logger in each module: `const logger = useLogg('skills-engine:loader')`. Log at INFO level: skill discovered, skill loaded, skill activated/deactivated. Log at WARN level: skill validation failure (with details), directory not found. Log at DEBUG level: raw metadata parsed, file path resolved.",
+      "claude_md_rule": "logging.forbidden.console_log"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "sync-in-async",
+      "title": "Synchronous fs calls inside async functions block event loop",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 79,
+      "line_end": 91,
+      "code_snippet": "export async function loadSkillFromDir(dirPath: string, source: SkillSource): Promise<Skill> {\n  const skillPath = path.join(dirPath, 'SKILL.md')\n  let content: string\n  try {\n    content = fs.readFileSync(skillPath, 'utf-8')\n  }",
+      "description": "Both `loadSkillFromDir` (line 84: `fs.readFileSync`) and `discoverSkills` (line 99: `fs.readdirSync`, line 113: `fs.existsSync`) are declared `async` but use synchronous `fs` APIs. This is misleading -- callers expect these to be non-blocking (they return Promises), but they actually block the Node.js event loop. With many skill directories, `discoverSkills` would block the main thread for the duration of all file reads. In the Electron main process, this would freeze the UI.",
+      "suggestion": "Replace synchronous calls with their async equivalents: `fs.promises.readFile`, `fs.promises.readdir`, `fs.promises.access` (or `fs.promises.stat`). Since the functions are already async, the change is straightforward: `content = await fs.promises.readFile(skillPath, 'utf-8')` etc. Alternatively, if synchronous is intentional (startup-only), remove the `async` keyword and return synchronously to avoid misleading callers.",
+      "claude_md_rule": "code_quality"
+    },
+    {
+      "id": "review-code-007",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "integration",
+      "subcategory": "horizontal-only",
+      "title": "Change is horizontal-only: no end-to-end path exercisable",
+      "file": "packages/skills-engine/src/index.ts",
+      "line": 1,
+      "line_end": 25,
+      "code_snippet": "export { buildSkillsContext, extractLayer1, ... } from './context-integration'\nexport { SkillRegistry } from './skill-registry'",
+      "description": "This task delivers a complete internal library (loader, registry, context builder) but no vertical slice. There is no way for a user to exercise this code: no IPC handler, no UI setting, no CLI command, no event listener calls into skills-engine. Per CLAUDE.md: 'Every task delivers a thin, working end-to-end path (Entry Point -> Use Case -> Domain -> Persistence). Horizontal-only tasks are a forbidden task structure.' The package is well-structured internally, but without at least one thin integration path, it cannot be verified in a running system.",
+      "suggestion": "Deliver a minimal vertical slice: (1) Register SkillRegistry in the Electron main process via injeca. (2) Add an IPC handler (e.g., `skills:getAll`, `skills:activate`) that the renderer can call. (3) Wire buildSkillsContext() into the system prompt assembly pipeline. Even a single IPC endpoint that returns the skill list would make this a vertical slice.",
+      "claude_md_rule": "integration.vertical_slice"
+    },
+    {
+      "id": "review-code-008",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "unused-type",
+      "title": "SkillLayer2 type exported but never used anywhere",
+      "file": "packages/skills-engine/src/types.ts",
+      "line": 39,
+      "line_end": 42,
+      "code_snippet": "export interface SkillLayer2 {\n  metadata: SkillMetadata\n  body: string\n}",
+      "description": "The `SkillLayer2` interface is defined and exported from the package but never referenced by any code in the codebase. It duplicates the fields already present in the `Skill` interface (which has `metadata` and `body` plus `source` and `filePath`). The `formatLayer2Body` function takes a `Skill`, not a `SkillLayer2`. This is dead code that adds confusion about the intended type hierarchy.",
+      "suggestion": "Either remove `SkillLayer2` if it serves no purpose (the `Skill` type already covers Layer 2 data), or refactor `formatLayer2Body` to accept `SkillLayer2` as its parameter type to establish a clear Layer 1 / Layer 2 type boundary. If removed, also remove it from the `index.ts` re-export."
+    }
+  ],
+  "positive_observations": [
+    "Clean functional core design: parseSkillMd, validateMetadata, extractLayer1, formatLayer1Summary, formatLayer2Body are all pure functions with clear input/output -- excellent for unit testing",
+    "Good test coverage for each module: skill-loader.test.ts (11 tests), skill-registry.test.ts (12 tests), context-integration.test.ts (10 tests) using real temp directories and real file I/O rather than mocks",
+    "Well-defined type hierarchy (SkillMetadata, Skill, SkillLayer1, SkillRegistryEntry) with clear separation between metadata layers",
+    "User skills properly override built-in skills with same ID via simple Map insertion order, with test coverage for this edge case",
+    "Input validation on SKILL.md frontmatter is thorough: checks for empty content, missing frontmatter, missing required fields with descriptive error messages listing the specific missing fields",
+    "Build configuration (tsdown, vitest, tsconfig) follows existing monorepo patterns correctly; vitest.config.ts properly added to root workspace config"
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

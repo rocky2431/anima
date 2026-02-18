@@ -8,6 +8,7 @@ export default defineConfig({
       'packages/context-engine',
       'packages/mcp-hub',
       'packages/persona-engine',
+      'packages/skills-engine',
       'packages/stage-ui',
       'packages/plugin-sdk',
       'packages/vite-plugin-warpdrive',

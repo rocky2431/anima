@@ -1,0 +1,108 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260219-003505-feat-task-10-skills-engine-iter1",
+  "timestamp": "2026-02-19T00:40:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/skills-engine/src/skill-loader.ts",
+      "packages/skills-engine/src/skill-registry.ts",
+      "packages/skills-engine/src/context-integration.ts"
+    ],
+    "total_lines_analyzed": 270,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 2, "P1": 1, "P2": 1, "P3": 1 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P0",
+      "confidence": 97,
+      "category": "error-handling",
+      "subcategory": "silent-swallow",
+      "title": "Bare catch silently swallows directory read errors",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 101,
+      "line_end": 103,
+      "code_snippet": "catch {\n    return []\n  }",
+      "description": "discoverSkills() catches all errors from readdirSync (including permission denied, broken symlinks, OS-level failures) without binding the error parameter and returns an empty array. If builtinSkillsDir or userSkillsDir is misconfigured or inaccessible, the caller (SkillRegistry.loadAll) silently gets zero skills with no indication anything went wrong. This is indistinguishable from a legitimately empty directory. Per CLAUDE.md error_handling rules, `catch (e) {}` and silent swallowing are absolutely forbidden.",
+      "suggestion": "Bind the error and either (a) log a warning with baseDir and source context before returning [], or (b) re-throw a typed error so the caller can decide. At minimum: `catch (err) { console.warn('Failed to read skills directory', { baseDir, source, error: (err as Error).message }); return [] }`. Ideally, distinguish 'directory does not exist' (ENOENT, acceptable) from other errors (permission denied, etc.) which should propagate.",
+      "claude_md_rule": "error_handling.forbidden.catch_empty"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P0",
+      "confidence": 97,
+      "category": "error-handling",
+      "subcategory": "silent-swallow",
+      "title": "Bare catch silently drops invalid skills during discovery",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 121,
+      "line_end": 123,
+      "code_snippet": "catch {\n      // Skip invalid skills during discovery\n    }",
+      "description": "When loadSkillFromDir throws (invalid YAML, missing required fields, file read error), the error is silently swallowed with no logging and no error parameter binding. A skill with a subtle frontmatter typo (e.g., 'naem' instead of 'name') silently disappears from the registry. The comment 'Skip invalid skills during discovery' documents the intent but does not constitute handling. Per CLAUDE.md, `catch (e) {}` is a forbidden pattern -- a bare catch without even binding the error is strictly worse.",
+      "suggestion": "At minimum bind the error and log: `catch (err) { console.warn('Skipping invalid skill', { dir: entry.name, error: (err as Error).message }) }`. Better yet, collect failed skills and return them alongside successful ones (e.g., `{ skills: Skill[], errors: { dir: string, error: Error }[] }`) so the caller can surface issues to operators.",
+      "claude_md_rule": "error_handling.forbidden.catch_empty"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "missing-context",
+      "title": "parseSkillMd error messages omit filePath parameter",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 33,
+      "line_end": 44,
+      "code_snippet": "throw new Error('SKILL.md content is empty')\n  ...\n  throw new Error('SKILL.md is missing YAML frontmatter')\n  ...\n  throw new Error(`SKILL.md metadata is missing required fields: ${missing.join(', ')}`)",
+      "description": "parseSkillMd receives a filePath parameter but none of its three throw statements include it in the error message. When scanning dozens of skill directories, these errors are undebuggable without knowing which file failed. The filePath is already available as a parameter -- it just needs to be included. Per CLAUDE.md error_handling rules: 'Include context in errors: what failed, why, what input caused it'.",
+      "suggestion": "Include filePath in all error messages: `throw new Error(`SKILL.md content is empty: ${filePath}`)`, `throw new Error(`SKILL.md is missing YAML frontmatter: ${filePath}`)`, and `throw new Error(`SKILL.md metadata missing required fields [${missing.join(', ')}]: ${filePath}`)`.",
+      "claude_md_rule": "error_handling.rules.context_in_errors"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "error-as-valid-state",
+      "title": "activate/deactivate return false for both not-found and already-in-state",
+      "file": "packages/skills-engine/src/skill-registry.ts",
+      "line": 52,
+      "line_end": 71,
+      "code_snippet": "activate(id: string): boolean {\n    const entry = this.entries.get(id)\n    if (!entry) {\n      return false\n    }\n    entry.active = true\n    return true\n  }",
+      "description": "activate() and deactivate() return false when the skill ID is not found in the registry. This is the same return value that would be expected for a legitimate failure case, and there is no way for the caller to distinguish 'ID not found' from success. Additionally, activating an already-active skill returns true, which is fine for idempotency but the lack of distinction for the not-found case means callers cannot detect typos in skill IDs. This follows the same 'error-as-valid-state' pattern seen in ScreenshotPipeline.tick().",
+      "suggestion": "Consider throwing an error or returning a discriminated union for the not-found case: `throw new Error(`Skill not found: ${id}`)` or return `{ found: boolean, activated: boolean }`. Alternatively, return undefined for not-found vs. true/false for state change.",
+      "claude_md_rule": "error_handling.classification.operational_errors"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "result-pattern-opportunity",
+      "title": "discoverSkills could use Result pattern to surface partial failures",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 96,
+      "line_end": 127,
+      "code_snippet": "export async function discoverSkills(baseDir: string, source: SkillSource): Promise<Skill[]> {",
+      "description": "discoverSkills currently returns Skill[] and silently drops any skills that fail to load. Per CLAUDE.md architecture guidance (Functional Core), a Result/Either pattern would allow the function to return both successful skills and structured error information. This would let SkillRegistry.loadAll() surface load failures to operators (e.g., via structured logging or a health check endpoint) without aborting the entire discovery process.",
+      "suggestion": "Return a result type like `Promise<{ skills: Skill[], errors: Array<{ dir: string, error: Error }> }>` so callers can handle partial failures explicitly. The caller (loadAll) can then log errors at WARN level while still registering the valid skills.",
+      "claude_md_rule": "architecture.functional_core.result_pattern"
+    }
+  ],
+  "positive_observations": [
+    "loadSkillFromDir wraps fs.readFileSync with a try/catch that re-throws with file path context -- good error wrapping pattern",
+    "parseSkillMd validates input thoroughly: checks for empty content, missing frontmatter, and missing required fields with specific error messages listing the missing field names",
+    "context-integration.ts is a clean set of pure functions with no I/O, no error handling needed -- good Functional Core design",
+    "validateMetadata uses type narrowing with 'is' return type for safe metadata validation"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}
