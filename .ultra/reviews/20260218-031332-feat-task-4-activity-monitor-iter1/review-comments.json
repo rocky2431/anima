@@ -1,0 +1,76 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260218-031332-feat-task-4-activity-monitor-iter1",
+  "timestamp": "2026-02-18T03:15:00+08:00",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/consumption/activity-monitor.ts",
+      "packages/context-engine/src/__tests__/activity-monitor.test.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 518,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Exported class ActivityMonitor lacks class-level JSDoc",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 24,
+      "code_snippet": "export class ActivityMonitor {",
+      "description": "ActivityMonitor is an exported public class (re-exported from index.ts) but has no class-level JSDoc. All other exported interfaces in this codebase (ActivityEvent, ActivityContext, ActivityState, ProcessedContext, etc.) have interface-level JSDoc. This class is the primary consumer-facing component of the activity monitoring subsystem and would benefit from a summary describing its role, lifecycle (start/stop), and relationship to ProcessedContext output.",
+      "suggestion": "Add a class-level JSDoc comment, e.g.:\n/**\n * Monitors user activity events and periodically aggregates them into ProcessedContext snapshots.\n * Call recordEvent() to feed raw events, start()/stop() to control periodic aggregation,\n * and tick() to manually trigger a snapshot.\n */"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Public method tick() has non-obvious side effects undocumented",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 82,
+      "line_end": 102,
+      "code_snippet": "tick(): ProcessedContext {\n    const state = this.getState()\n    ...\n    this.screenshotContext = undefined",
+      "description": "The tick() method has two non-obvious side effects that are not documented: (1) it clears the screenshot context after building the ProcessedContext, meaning screenshot data is only included in a single tick; (2) it invokes the onContext callback and swallows errors into onError. A future maintainer calling tick() may not expect either behavior without reading the implementation. The other public methods (recordEvent, setScreenshotContext, start, stop) are sufficiently self-documenting, but tick() is not.",
+      "suggestion": "Add JSDoc to tick():\n/**\n * Produce a ProcessedContext snapshot from current state.\n * Clears the screenshot context after use (consumed once per tick).\n * Invokes onContext callback; errors are forwarded to onError.\n */"
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "VlmProvider JSDoc references version-specific SDK name 'AI SDK 6'",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 87,
+      "line_end": 89,
+      "code_snippet": "/**\n * Interface for Vision Language Model providers.\n * Implementations wrap specific LLM SDKs (e.g., AI SDK 6, xsAI).\n */",
+      "description": "The comment references 'AI SDK 6' as a specific example SDK. Version-specific references in interface documentation rot quickly -- when a new version ships or the SDK is replaced, this comment becomes misleading. The 'xsAI' reference is less problematic since it is the project's actual LLM SDK dependency.",
+      "suggestion": "Remove the version number or generalize: 'Implementations wrap specific LLM SDKs (e.g., xsAI, Vercel AI SDK).'"
+    }
+  ],
+  "positive_observations": [
+    "All exported interfaces in types.ts have thorough JSDoc with field-level documentation -- consistent with project conventions",
+    "ActivityMonitorOptions has accurate default values documented in JSDoc that match the corresponding constants",
+    "No forbidden patterns (TODO/FIXME/HACK/PLACEHOLDER/TEMP) found in any changed file",
+    "Test file uses clear descriptive test names that serve as living documentation of expected behavior",
+    "Error wrapping in tick() uses the cause chain pattern (new Error(msg, { cause })) which is well-documented by the error message"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

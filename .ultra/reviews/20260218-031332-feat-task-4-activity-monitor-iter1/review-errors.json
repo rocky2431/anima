@@ -1,0 +1,79 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260218-031332-feat-task-4-activity-monitor-iter1",
+  "timestamp": "2026-02-18T03:15:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/consumption/activity-monitor.ts",
+      "packages/context-engine/src/__tests__/activity-monitor.test.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 620,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 1, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "silent-swallow",
+      "title": "Error silently swallowed when onError callback is not provided",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 96,
+      "line_end": 99,
+      "code_snippet": "catch (cause) {\n  const error = new Error('ActivityMonitor tick failed', { cause })\n  this.onError?.(error)\n}",
+      "description": "When the onContext callback throws and no onError handler is configured, the optional chaining `this.onError?.(error)` silently discards the error. The caller has no way to know that context delivery failed. This is the same pattern previously flagged in ScreenshotPipeline -- the error is wrapped properly but then may vanish entirely if onError is undefined. Since onError is optional in ActivityMonitorOptions, any consumer that omits it will never learn about tick failures.",
+      "suggestion": "Either (1) make onError required in ActivityMonitorOptions so callers must handle errors, or (2) add a fallback: `if (this.onError) { this.onError(error) } else { throw error }` so errors propagate when no handler is registered, or (3) emit a warning via console.warn as a last-resort fallback (though console.log is forbidden, console.warn is allowed per CLAUDE.md).",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "missing-error-context",
+      "title": "Error message lacks input context for debugging",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 97,
+      "line_end": 97,
+      "code_snippet": "const error = new Error('ActivityMonitor tick failed', { cause })",
+      "description": "The wrapped error message 'ActivityMonitor tick failed' does not include any context about the state when the failure occurred: number of events in the buffer, current app, whether screenshot context was present, or the timestamp. When this error surfaces in logs, there is no way to correlate it with what the monitor was doing. CLAUDE.md error_handling rules require: 'Include context in errors: what failed, why, what input caused it'.",
+      "suggestion": "Include diagnostic context in the error message or as structured data: `new Error(`ActivityMonitor tick failed (events=${this.events.length}, app=${state.activity.currentApp}, hasScreenshot=${!!this.screenshotContext})`, { cause })`",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "error-as-valid-state",
+      "title": "tick() returns context even when onContext callback fails",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 93,
+      "line_end": 101,
+      "code_snippet": "try {\n  this.onContext?.(context)\n}\ncatch (cause) {\n  const error = new Error('ActivityMonitor tick failed', { cause })\n  this.onError?.(error)\n}\n\nreturn context",
+      "description": "When onContext throws, the catch block reports the error but tick() still returns the ProcessedContext as if delivery succeeded. Callers of tick() cannot distinguish between successful delivery and failed delivery by inspecting the return value. This creates an ambiguous contract: did the consumer receive this context or not? The setInterval-based callers discard the return value, but manual callers of tick() may rely on it.",
+      "suggestion": "Consider returning a Result type (e.g., `{ context: ProcessedContext, delivered: boolean }`) or re-throwing after calling onError so manual callers can detect delivery failure. Alternatively, document that tick() always returns the produced context regardless of delivery status."
+    }
+  ],
+  "positive_observations": [
+    "Error wrapping uses Error cause chaining (new Error(msg, { cause })) which preserves the original stack trace -- a good practice for debuggability.",
+    "The onError callback pattern provides a structured way to handle errors without crashing the periodic timer, which is appropriate for a long-running interval-based component.",
+    "The tick() method separates context production (getState) from context delivery (onContext), so a callback failure does not corrupt internal state.",
+    "Guard clause in start() prevents double-starting the timer, avoiding resource leaks from duplicate intervals.",
+    "Event trimming in recordEvent() prevents unbounded memory growth -- defensive coding against long-running sessions."
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

@@ -45,7 +45,7 @@
       "type": "feature",
       "priority": "P0",
       "complexity": 4,
-      "status": "pending",
+      "status": "completed",
       "dependencies": ["2"],
       "estimated_days": 2,
       "context_file": "contexts/task-4.md",
@@ -294,8 +294,8 @@
   ],
   "stats": {
     "total": 24,
-    "completed": 3,
+    "completed": 4,
     "in_progress": 0,
-    "pending": 22
+    "pending": 20
   }
 }

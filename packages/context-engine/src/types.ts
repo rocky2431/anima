@@ -29,6 +29,30 @@ export interface ActivityContext {
 }
 
 /**
+ * Extended activity state including recent app history and active/inactive status.
+ * Extends ActivityContext with additional fields for richer monitoring output.
+ */
+export interface ActivityState extends ActivityContext {
+  /** Whether the user is currently active */
+  isActive: boolean
+  /** Recently used application names (most recent first, deduplicated) */
+  recentApps: string[]
+}
+
+/**
+ * Combined context output from the ActivityMonitor,
+ * ready to be sent as a context:update event payload.
+ */
+export interface ProcessedContext {
+  /** User activity state */
+  activity: ActivityState
+  /** Optional screenshot context if available */
+  screenshot?: ProcessedScreenshotContext
+  /** Timestamp when this context was produced */
+  timestamp: number
+}
+
+/**
  * Interface for capturing screenshots.
  * Implementations wrap platform-specific APIs (e.g., Electron desktopCapturer).
  */

@@ -1,0 +1,111 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260218-031332-feat-task-4-activity-monitor-iter1",
+  "timestamp": "2026-02-18T03:13:32.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/consumption/activity-monitor.ts",
+      "packages/context-engine/src/__tests__/activity-monitor.test.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 620,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 2, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "forbidden-pattern",
+      "subcategory": "in-memory-state",
+      "title": "Business state stored only in memory without persistence",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 25,
+      "line_end": 27,
+      "code_snippet": "private events: ActivityEvent[] = []\nprivate timer: ReturnType<typeof setInterval> | null = null\nprivate screenshotContext: ProcessedScreenshotContext | undefined",
+      "description": "ActivityMonitor stores all activity events, screenshot context, and timer state in closure-scoped private fields. On Electron process restart, all accumulated context is lost. Per CLAUDE.md forbidden patterns: 'Business state in memory -> Persist to DB' and twelve-factor principle #6 (Stateless): 'Critical state persisted (DB/KV/Event Store); restart-safe'. The events array is the core business state that drives context emission -- losing it silently degrades the AI character's awareness without any observable failure.",
+      "suggestion": "Persist events to SQLite (DocumentStore already exists in this package) or at minimum to a file-backed store. On startup, rehydrate from persistent storage. If persistence is deferred, add a clear comment referencing the follow-up task and ensure the onContext callback downstream persists the ProcessedContext output.",
+      "claude_md_rule": "forbidden_patterns.arch.business_state_in_memory"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "ActivityMonitor exported but not wired to any entry point",
+      "file": "packages/context-engine/src/index.ts",
+      "line": 5,
+      "line_end": 6,
+      "code_snippet": "export { ActivityMonitor } from './consumption/activity-monitor'\nexport type { ActivityMonitorOptions } from './consumption/activity-monitor'",
+      "description": "ActivityMonitor is exported from the package barrel but not instantiated or wired anywhere in the application. The Electron app's setupContextEngine() in apps/stage-tamagotchi/src/main/services/anima/context-engine.ts only creates a ScreenshotCapture instance -- it does not create or start an ActivityMonitor. No IPC handler, timer, or event listener invokes it. Per CLAUDE.md integration rules: 'Code written but not reachable from any entry point is dead-on-arrival.' This is the same orphan export pattern observed in prior walking skeleton PRs.",
+      "suggestion": "Wire ActivityMonitor into setupContextEngine() alongside ScreenshotCapture. Create an instance, call monitor.start(), and ensure monitor.stop() is called on app shutdown. Connect it to a real ActivityEvent source (e.g., Electron's powerMonitor or a periodic window-focus check).",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "architecture",
+      "subcategory": "race-condition",
+      "title": "setInterval tick has no concurrency guard for async consumers",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 108,
+      "line_end": 108,
+      "code_snippet": "this.timer = setInterval(() => this.tick(), this.aggregationIntervalMs)",
+      "description": "While tick() itself is synchronous today, the onContext callback is called within it and could trigger async operations (e.g., persisting to DB, sending over IPC). If a future change makes tick() async or the onContext callback takes longer than the interval, overlapping ticks will fire before the previous completes. Additionally, recordEvent() and trimEvents() can mutate the events array concurrently with a tick in progress if events arrive during callback execution. This is the same 'Race conditions in async setInterval' pattern previously flagged in this project's agent memory.",
+      "suggestion": "Add a concurrency guard: a private _ticking boolean flag that prevents re-entrant tick execution. Set it true at tick start, false at tick end (in a finally block). If tick becomes async in the future, this guard prevents overlapping execution.",
+      "claude_md_rule": "security.race_conditions"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "error-handling",
+      "title": "Error in onContext silently swallowed when no onError provided",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 93,
+      "line_end": 99,
+      "code_snippet": "try {\n  this.onContext?.(context)\n}\ncatch (cause) {\n  const error = new Error('ActivityMonitor tick failed', { cause })\n  this.onError?.(error)\n}",
+      "description": "When onContext throws and no onError callback is configured, the error is silently swallowed. The catch block creates an Error with context (good), but onError is optional -- if not provided, the error vanishes completely. Per CLAUDE.md error handling rules: 'catch (e) {} -- Silent swallow hides bugs' is forbidden. This is particularly risky during periodic setInterval ticks where failures would be completely invisible.",
+      "suggestion": "Add a fallback when onError is not provided. At minimum, re-throw the error or use console.error (which is permitted per CLAUDE.md -- only console.log is forbidden). Better: inject a logger via constructor options and always log errors.",
+      "claude_md_rule": "error_handling.forbidden.silent_swallow"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "integration",
+      "subcategory": "horizontal-only",
+      "title": "Change delivers a horizontal layer without end-to-end path",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 1,
+      "line_end": 145,
+      "code_snippet": "export class ActivityMonitor {\n  // ... 145 lines of domain logic\n  // No entry point wiring, no event source, no IPC handler\n}",
+      "description": "This change adds the ActivityMonitor class and its tests but does not deliver a vertical slice. There is no event source producing ActivityEvents (no keyboard/mouse listener, no Electron powerMonitor integration, no IPC handler). There is no consumer wired to the onContext output. The code exists as a self-contained horizontal layer. Per CLAUDE.md: 'Horizontal-only task structure' is a forbidden integration pattern. A vertical slice would include at least a minimal event source and a minimal context consumer.",
+      "suggestion": "Wire a minimal event source (even a simple periodic Electron activeWindow check) that feeds ActivityMonitor.recordEvent(), and connect the onContext output to at least one downstream consumer (e.g., log it, emit an IPC event, or store in DocumentStore). This completes the vertical slice from source -> aggregation -> output.",
+      "claude_md_rule": "integration.vertical_slice"
+    }
+  ],
+  "positive_observations": [
+    "Clean separation between ActivityContext (pure aggregation) and ActivityMonitor (orchestration with timers/callbacks) follows the Functional Core / Imperative Shell pattern well",
+    "Error handling in tick() wraps the original cause in a typed Error with descriptive message, providing good debuggability",
+    "Event retention window with configurable TTL prevents unbounded memory growth in the events array",
+    "Tests are thorough: covers empty state, app switching, deduplication, ordering, inactivity detection, periodic ticking, event trimming, and error propagation -- all using real instances with vi.useFakeTimers() rather than mocking",
+    "ActivityState and ProcessedContext types are well-documented with JSDoc and cleanly separate raw events from processed output",
+    "buildRecentApps() correctly iterates in reverse order for most-recent-first deduplication with bounded output size"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}
