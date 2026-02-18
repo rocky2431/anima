@@ -93,7 +93,7 @@
       "type": "architecture",
       "priority": "P0",
       "complexity": 6,
-      "status": "pending",
+      "status": "completed",
       "dependencies": ["1"],
       "estimated_days": 3,
       "context_file": "contexts/task-8.md",
@@ -294,7 +294,7 @@
   ],
   "stats": {
     "total": 24,
-    "completed": 7,
+    "completed": 8,
     "in_progress": 0,
     "pending": 17
   }

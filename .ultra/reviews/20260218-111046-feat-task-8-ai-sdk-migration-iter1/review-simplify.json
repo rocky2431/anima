@@ -1,0 +1,91 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260218-111046-feat-task-8-ai-sdk-migration-iter1",
+  "timestamp": "2026-02-18T11:12:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "packages/stage-ui/src/stores/llm.ts",
+      "packages/stage-ui/src/stores/modules/consciousness.ts"
+    ],
+    "total_lines_analyzed": 477,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "Duplicate settled/resolveOnce/rejectOnce pattern across stream functions",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 134,
+      "line_end": 137,
+      "code_snippet": "let settled = false\nconst resolveOnce = () => { if (!settled) { settled = true; resolve() } }\nconst rejectOnce = (err: unknown) => { if (!settled) { settled = true; reject(err) } }",
+      "description": "The settled/resolveOnce/rejectOnce pattern appears identically in both streamFrom (lines 54-66) and streamFromAiSdk (lines 135-137). This is ~10 lines of identical promise-settling logic duplicated across two functions. Both create a Promise, track a boolean 'settled' flag, and define resolveOnce/rejectOnce closures with the exact same semantics.",
+      "suggestion": "BEFORE:\n// In streamFrom (lines 54-66):\nlet settled = false\nconst resolveOnce = () => {\n  if (settled) return\n  settled = true\n  resolve()\n}\nconst rejectOnce = (err: unknown) => {\n  if (settled) return\n  settled = true\n  reject(err)\n}\n// ...identical block in streamFromAiSdk (lines 135-137)\n\nAFTER:\nfunction createSettledPromise(): {\n  promise: Promise<void>\n  resolveOnce: () => void\n  rejectOnce: (err: unknown) => void\n} {\n  let settled = false\n  let resolve: () => void\n  let reject: (err: unknown) => void\n  const promise = new Promise<void>((res, rej) => {\n    resolve = res\n    reject = rej\n  })\n  return {\n    promise,\n    resolveOnce: () => { if (!settled) { settled = true; resolve() } },\n    rejectOnce: (err: unknown) => { if (!settled) { settled = true; reject(err) } },\n  }\n}\n// Usage in both functions:\nconst { promise, resolveOnce, rejectOnce } = createSettledPromise()\n\nWHY: Eliminates exact duplication of promise-settling logic. The helper is a pure utility with clear semantics, making both stream functions shorter and the settle-once guarantee centrally testable."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "simplification",
+      "subcategory": "function-length",
+      "title": "streamFromAiSdk exceeds 50-line threshold at 73 lines",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 121,
+      "line_end": 194,
+      "code_snippet": "async function streamFromAiSdk(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {\n  const chatConfig = chatProvider.chat(model) as unknown as Record<string, unknown>\n  ...\n  return new Promise<void>((resolve, reject) => {\n    ...\n  })\n}",
+      "description": "streamFromAiSdk is 73 lines long with a maximum nesting depth of 4 levels (function body > Promise constructor > try block > onChunk callback > if/else if chain > inner try block). The function handles three concerns: (1) model/tool setup (lines 122-132), (2) promise settling infrastructure (lines 134-137), and (3) the streaming call with event mapping (lines 139-193). Separating the event-mapping callbacks would reduce both length and nesting.",
+      "suggestion": "BEFORE:\nasync function streamFromAiSdk(...) {\n  // 12 lines: setup model, sanitize, resolve tools\n  return new Promise<void>((resolve, reject) => {\n    // 6 lines: settled pattern\n    try {\n      const result = aiSdkStreamText({\n        // 30+ lines: onChunk with nested if/else if + try/catch\n        // 10 lines: onFinish with try/catch\n        // 3 lines: onError\n      })\n      Promise.resolve(result.text).then(() => resolveOnce()).catch(rejectOnce)\n    } catch (err) { rejectOnce(err) }\n  })\n}\n\nAFTER:\nfunction createAiSdkChunkHandler(options: StreamOptions | undefined, rejectOnce: (err: unknown) => void) {\n  return async ({ chunk }: { chunk: any }) => {\n    try {\n      if (chunk.type === 'text-delta')\n        return options?.onStreamEvent?.({ type: 'text-delta', text: chunk.text })\n      if (chunk.type === 'tool-call')\n        return options?.onStreamEvent?.({ type: 'tool-call', toolName: chunk.toolName, toolCallId: chunk.toolCallId, args: JSON.stringify(chunk.input), toolCallType: 'function' } as StreamEvent)\n      if (chunk.type === 'tool-result')\n        return options?.onStreamEvent?.({ type: 'tool-result', toolCallId: chunk.toolCallId, result: chunk.output as string })\n    } catch (err) { rejectOnce(err) }\n  }\n}\n// streamFromAiSdk becomes ~40 lines with extracted handler\n\nWHY: Reduces nesting from 4 to 3 levels and shrinks the function below 50 lines. The chunk handler is independently testable and its mapping logic is easier to review in isolation.",
+      "claude_md_rule": "code_quality.avoid_deep_nesting"
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "simplification",
+      "subcategory": "deep-nesting",
+      "title": "onChunk callback has 4-level nesting with if/else if chain",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 145,
+      "line_end": 170,
+      "code_snippet": "onChunk: async ({ chunk }) => {\n  try {\n    if (chunk.type === 'text-delta') {\n      await options?.onStreamEvent?.({ type: 'text-delta', text: chunk.text })\n    }\n    else if (chunk.type === 'tool-call') {",
+      "description": "The onChunk handler at nesting level 4 (Promise > try > aiSdkStreamText options > onChunk > try > if/else if) uses a chain of if/else if to dispatch on chunk.type. Each branch is structurally identical: await options?.onStreamEvent?.(mapped event). Using early returns with guard-clause style (if + return) instead of else-if would flatten the logic and make it obvious that each branch is mutually exclusive and self-contained.",
+      "suggestion": "BEFORE:\nonChunk: async ({ chunk }) => {\n  try {\n    if (chunk.type === 'text-delta') {\n      await options?.onStreamEvent?.({ type: 'text-delta', text: chunk.text })\n    }\n    else if (chunk.type === 'tool-call') {\n      await options?.onStreamEvent?.({ ... })\n    }\n    else if (chunk.type === 'tool-result') {\n      await options?.onStreamEvent?.({ ... })\n    }\n  }\n  catch (err) { rejectOnce(err) }\n}\n\nAFTER:\nonChunk: async ({ chunk }) => {\n  try {\n    if (chunk.type === 'text-delta')\n      return options?.onStreamEvent?.({ type: 'text-delta', text: chunk.text })\n    if (chunk.type === 'tool-call')\n      return options?.onStreamEvent?.({ type: 'tool-call', toolName: chunk.toolName, toolCallId: chunk.toolCallId, args: JSON.stringify(chunk.input), toolCallType: 'function' } as StreamEvent)\n    if (chunk.type === 'tool-result')\n      return options?.onStreamEvent?.({ type: 'tool-result', toolCallId: chunk.toolCallId, result: chunk.output as string })\n  }\n  catch (err) { rejectOnce(err) }\n}\n\nWHY: Guard clauses with early returns make each branch independent, eliminate the else-if chain, and slightly reduce nesting. Each type check is self-contained with no need to scan for matching else blocks."
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "function-length",
+      "title": "streamFrom marginally exceeds 50-line threshold at 52 lines",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 48,
+      "line_end": 100,
+      "code_snippet": "async function streamFrom(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {\n  const headers = options?.headers\n  const sanitized = sanitizeMessages(messages as unknown[])\n  const tools = await resolveXsaiTools(model, chatProvider, messages, options)\n  ...\n}",
+      "description": "streamFrom is 52 lines, just over the 50-line guideline. It is structurally similar to streamFromAiSdk with the same settled/resolveOnce/rejectOnce pattern. If the duplicate settled-promise utility from finding review-simplify-001 is extracted, this function would drop to ~40 lines, resolving this finding automatically. Flagging as P3 since it is only marginally over threshold and would be resolved by addressing the duplication finding.",
+      "suggestion": "Extract the settled promise pattern as described in review-simplify-001, which would reduce this function to approximately 40 lines without any other changes needed.\n\nWHY: Marginal over-length would be automatically resolved by the deduplication refactor."
+    }
+  ],
+  "positive_observations": [
+    "Tool resolution logic was cleanly extracted into resolveXsaiTools, shared by both stream functions",
+    "use-ai-sdk.ts composable is well-structured at 64 lines with clear JSDoc, pure adapter pattern, and single responsibility",
+    "Guard clause pattern used effectively in createAiSdkModel (early return for anthropic provider)",
+    "consciousness.ts change is minimal and clean -- a single reactive ref addition with no complexity increase",
+    "The sanitizeMessages function is short, pure, and well-commented"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

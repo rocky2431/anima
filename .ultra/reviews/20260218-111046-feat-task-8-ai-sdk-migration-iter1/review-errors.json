@@ -1,0 +1,107 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260218-111046-feat-task-8-ai-sdk-migration-iter1",
+  "timestamp": "2026-02-18T11:15:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "packages/stage-ui/src/stores/llm.ts"
+    ],
+    "total_lines_analyzed": 375,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 2, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "inconsistent-error-wrapping",
+      "title": "onError handler missing try/catch around onStreamEvent callback",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 181,
+      "line_end": 184,
+      "code_snippet": "onError: async ({ error }) => {\n  await options?.onStreamEvent?.({ type: 'error', error })\n  rejectOnce(error)\n},",
+      "description": "The onError handler in streamFromAiSdk calls `options?.onStreamEvent?.(...)` without a try/catch, unlike the onChunk (line 146) and onFinish (line 171) handlers which both wrap their onStreamEvent calls in try/catch. If the onStreamEvent callback throws, the error propagates as an unhandled rejection from the AI SDK callback context, and `rejectOnce(error)` is never reached -- meaning the wrapping Promise never settles (hangs forever).",
+      "suggestion": "Wrap the onError handler body in try/catch consistent with onChunk and onFinish:\n\nonError: async ({ error }) => {\n  try {\n    await options?.onStreamEvent?.({ type: 'error', error })\n  } catch { /* ignore callback error during error reporting */ }\n  rejectOnce(error)\n},",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "error-as-valid-state",
+      "title": "models() silently converts URL error to empty array",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 297,
+      "line_end": 303,
+      "code_snippet": "catch (err) {\n  if (String(err).includes(`Failed to construct 'URL': Invalid URL`)) {\n    return []\n  }\n  throw err\n}",
+      "description": "When listModels fails due to an invalid URL, the error is caught and an empty array is returned. This makes it impossible for callers to distinguish between 'no models available' (legitimate empty response) and 'configuration error' (invalid API URL). No warning is logged. This is pre-existing code but is part of the diff scope and follows the 'error-as-valid-state' anti-pattern seen elsewhere in this codebase.",
+      "suggestion": "At minimum, log a warning with the invalid URL so operators can diagnose configuration issues:\n\ncatch (err) {\n  if (String(err).includes(`Failed to construct 'URL': Invalid URL`)) {\n    console.warn('[LLM] Invalid API URL, returning empty model list', { apiUrl })\n    return []\n  }\n  throw err\n}",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "missing-error-context",
+      "title": "resolveXsaiTools I/O calls (mcp/debug) lack error wrapping",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 114,
+      "line_end": 118,
+      "code_snippet": "return [\n  ...await mcp(),\n  ...await debug(),\n  ...await resolveTools(),\n]",
+      "description": "The resolveXsaiTools function calls three async I/O operations (mcp(), debug(), resolveTools()) without any try/catch or error wrapping. If mcp() or debug() fails (e.g., MCP server unreachable), the raw error propagates without context about which tool source failed or what model/provider was being configured. Both streamFrom (line 51) and streamFromAiSdk (line 131) call this function before their promise constructors, so the error surfaces as a rejection but with no operational context (model name, provider, which tool source failed).",
+      "suggestion": "Wrap each tool source call to add context on failure:\n\ntry {\n  const mcpTools = await mcp()\n  const debugTools = await debug()\n  const customTools = await resolveTools()\n  return [...mcpTools, ...debugTools, ...customTools]\n} catch (err) {\n  throw new Error(`Failed to resolve tools for model ${model}`, { cause: err })\n}",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "silent-invalid-config",
+      "title": "createAiSdkModel accepts empty baseURL/apiKey without validation",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 123,
+      "line_end": 128,
+      "code_snippet": "const aiModel = createAiSdkModel({\n  baseURL: String(chatConfig.baseURL ?? ''),\n  apiKey: String(chatConfig.apiKey ?? ''),\n  modelId: model,\n  headers: { ...(chatConfig.headers as Record<string, string> | undefined), ...options?.headers },\n})",
+      "description": "When chatConfig.baseURL or chatConfig.apiKey is null/undefined, they are silently converted to empty strings via `String(... ?? '')`. The createAiSdkModel function (use-ai-sdk.ts line 53) then creates an OpenAI/Anthropic client with empty credentials. This defers the failure to the network call, where the error message will be a confusing 'invalid URL' or '401 Unauthorized' rather than a clear 'missing API configuration'. This is a fail-late anti-pattern for configuration errors.",
+      "suggestion": "Add early validation in createAiSdkModel or at the call site:\n\nif (!config.baseURL || !config.apiKey) {\n  throw new Error(`AI SDK model creation requires baseURL and apiKey (model: ${config.modelId})`)\n}",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "missing-error-context",
+      "title": "streamFromAiSdk fallback resolution lacks error context",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 188,
+      "line_end": 188,
+      "code_snippet": "Promise.resolve(result.text).then(() => resolveOnce()).catch(rejectOnce)",
+      "description": "The fallback resolution path catches errors from `result.text` and passes them directly to `rejectOnce` without any wrapping or context. If the AI SDK's text promise rejects (e.g., due to a malformed response or provider error), the caller receives a raw, potentially opaque error with no indication that it came from the stream text resolution fallback path. Combined with the fact that both onFinish and this fallback can settle the promise, debugging becomes harder when the error source is ambiguous.",
+      "suggestion": "Wrap the error with context about the fallback path:\n\nPromise.resolve(result.text)\n  .then(() => resolveOnce())\n  .catch(err => rejectOnce(new Error('AI SDK stream text resolution failed', { cause: err })))"
+    }
+  ],
+  "positive_observations": [
+    "Consistent resolveOnce/rejectOnce pattern prevents double-settlement of promises in both streamFrom and streamFromAiSdk",
+    "onChunk and onFinish handlers correctly wrap onStreamEvent callbacks in try/catch, forwarding errors to rejectOnce",
+    "Tool resolution logic cleanly extracted into reusable resolveXsaiTools function shared by both stream paths",
+    "The settled flag pattern (let settled = false) is a well-implemented guard against race conditions in promise resolution",
+    "Error from streamText synchronous call is caught and forwarded to rejectOnce in both implementations"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260218-111046-feat-task-8-ai-sdk-migration-iter1",
+  "timestamp": "2026-02-18T11:12:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "packages/stage-ui/src/composables/use-ai-sdk.test.ts",
+      "packages/stage-ui/src/stores/llm.ts"
+    ],
+    "total_lines_analyzed": 538,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 1, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "comments",
+      "subcategory": "incomplete-documentation",
+      "title": "waitForTools comment only describes xsAI finish reason string",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 26,
+      "code_snippet": "waitForTools?: boolean // when true, won't resolve on finishReason=='tool_calls'",
+      "description": "The inline comment states the finish reason string is 'tool_calls' (underscore), which matches the xsAI streaming path (line 73). However, the new AI SDK streaming path (line 174) uses 'tool-calls' (hyphen) as the finish reason. Since both code paths read this same waitForTools option, the comment is incomplete and will mislead someone debugging the AI SDK path into expecting the wrong finish reason string.",
+      "suggestion": "Update comment to reflect both variants: `// when true, won't resolve on tool-related finishReason ('tool_calls' for xsAI, 'tool-calls' for AI SDK)`"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "version-pinning-rot",
+      "title": "JSDoc references 'AI SDK 6' version that will rot",
+      "file": "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "line": 18,
+      "line_end": 22,
+      "code_snippet": "/**\n * Converts an array of xsAI Tool definitions into a keyed record\n * of AI SDK 6 CoreTool definitions.\n *\n * This is a pure adapter...",
+      "description": "Both JSDoc comments (lines 18 and 48) reference 'AI SDK 6' by major version number. When the SDK updates to v7 or the import changes, these comments will become stale and misleading. Version-pinned comments have negative long-term ROI since the version appears nowhere else as a constant to grep for updates.",
+      "suggestion": "Replace 'AI SDK 6' with 'AI SDK' (unversioned). The package.json dependency already captures the actual version. Alternatively, reference the npm package name '@ai-sdk/*' so developers can check the current version."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "Exported interface AiSdkModelConfig lacks JSDoc",
+      "file": "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "line": 8,
+      "line_end": 13,
+      "code_snippet": "export interface AiSdkModelConfig {\n  baseURL: string\n  apiKey: string\n  modelId: string\n  headers?: Record<string, string>\n  provider?: string\n}",
+      "description": "The exported AiSdkModelConfig interface has no JSDoc comment. This project uses JSDoc consistently on exported interfaces and functions. The 'provider' field especially deserves documentation since only 'anthropic' is a recognized value (all other values fall through to the OpenAI-compatible path).",
+      "suggestion": "Add JSDoc describing the config shape. Document 'provider' to clarify that only 'anthropic' triggers the Anthropic SDK path and all other values (or undefined) use the OpenAI-compatible path."
+    }
+  ],
+  "positive_observations": [
+    "Three TODO/FIXME comments were removed and replaced with proper descriptive comments (sanitizeMessages, tool incompatibility errors, tools parameter). This directly improves code quality per CLAUDE.md forbidden patterns.",
+    "The defensive comment on line 187 ('Ensure promise resolves when stream completes even if onFinish doesn't fire') explains a non-obvious fallback mechanism - a good 'why' comment that will help future maintainers.",
+    "Test fixture comment (line 14 of test file) clearly states no real HTTP calls are made, setting proper expectations for test readers."
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

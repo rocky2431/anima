@@ -47,6 +47,30 @@
       "p1": 7,
       "total": 29,
       "parent": null
+    },
+    {
+      "id": "20260218-174800-feat-task-7-integration-checkpoint-iter1",
+      "branch": "feat/task-7-integration-checkpoint",
+      "iteration": 1,
+      "mode": "all",
+      "timestamp": "2026-02-18T17:48:00Z",
+      "verdict": "COMMENT",
+      "p0": 0,
+      "p1": 2,
+      "total": 43,
+      "parent": null
+    },
+    {
+      "id": "20260218-111046-feat-task-8-ai-sdk-migration-iter1",
+      "branch": "feat/task-8-ai-sdk-migration",
+      "iteration": 1,
+      "mode": "all",
+      "timestamp": "2026-02-18T11:10:46Z",
+      "verdict": "REQUEST_CHANGES",
+      "p0": 1,
+      "p1": 9,
+      "total": 26,
+      "parent": null
     }
   ]
 }

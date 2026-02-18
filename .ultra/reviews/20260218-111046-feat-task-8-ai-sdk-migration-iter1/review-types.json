@@ -1,0 +1,92 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260218-111046-feat-task-8-ai-sdk-migration-iter1",
+  "timestamp": "2026-02-18T19:12:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "packages/stage-ui/src/stores/llm.ts",
+      "packages/stage-ui/src/stores/modules/consciousness.ts"
+    ],
+    "total_lines_analyzed": 477,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 2, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "type-design",
+      "subcategory": "invariant-expression",
+      "title": "StreamEvent 'finish' variant uses `& any`, destroying type safety",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 15,
+      "line_end": 15,
+      "code_snippet": "| ({ type: 'finish' } & any)",
+      "description": "Encapsulation: N/A, Expression: 3/10, Usefulness: 5/10, Enforcement: 2/10 (Aggregate: 3.3). The StreamEvent discriminated union has `{ type: 'finish' } & any` for its finish variant. Intersecting with `any` erases all type information -- the compiler will accept any property access on finish events without error. This defeats the purpose of a discriminated union, which is to make illegal states unrepresentable. The finish event should have explicit fields (e.g., `finishReason: string`) rather than falling back to `any`. This is pre-existing code, but the new `streamFromAiSdk` function relies on this type for its `onFinish` callback, so the unsafety propagates into the new code.",
+      "suggestion": "Replace `({ type: 'finish' } & any)` with a properly typed variant: `{ type: 'finish', finishReason: string }` (or whatever fields the finish event actually carries). This will restore compile-time checking for finish event consumers in both the xsAI and AI SDK streaming paths.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "AiSdkModelConfig.provider is bare `string` instead of literal union",
+      "file": "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "line": 13,
+      "line_end": 13,
+      "code_snippet": "provider?: string",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.25). The `provider` field in AiSdkModelConfig is typed as `string | undefined`, but the implementation in `createAiSdkModel` only branches on `'anthropic'` vs everything-else (treated as OpenAI-compatible). This is classic primitive obsession: a domain concept (SDK provider) is represented as an unconstrained string when only a small set of values are meaningful. Passing `provider: 'gooogle'` (typo) compiles silently and falls through to the OpenAI path, which would produce confusing runtime errors.",
+      "suggestion": "Type the field as a literal union: `provider?: 'anthropic' | 'openai'`. This makes the valid values self-documenting and gives compile-time feedback on typos. If more providers are added later, they can be added to the union.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "type-cast-safety",
+      "title": "Multiple `as unknown as` casts bypass type system at SDK boundary",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 122,
+      "line_end": 142,
+      "code_snippet": "const chatConfig = chatProvider.chat(model) as unknown as Record<string, unknown>\n...\nmessages: sanitized as unknown as import('ai').ModelMessage[]\n...\nresult: chunk.output as string",
+      "description": "Encapsulation: 4/10, Expression: 3/10, Usefulness: 4/10, Enforcement: 2/10 (Aggregate: 3.25). The `streamFromAiSdk` function contains three unsafe double-casts (`as unknown as X`) to bridge between xsAI and AI SDK types. While SDK boundary adaptation inherently involves type bridging, double-casting through `unknown` silences all compiler warnings and defeats structural type checking. If either SDK changes its types, these casts will silently produce runtime errors. The `chatProvider.chat(model) as unknown as Record<string, unknown>` cast is particularly risky because it accesses `baseURL` and `apiKey` as dynamic string keys with no compile-time verification.",
+      "suggestion": "Create a typed adapter function that extracts the needed fields from the ChatProvider result and validates them at runtime: `function extractChatConfig(provider: ReturnType<ChatProvider['chat']>): AiSdkModelConfig`. Use Valibot to validate the extracted config shape. For the messages cast, create a `convertMessages(messages: Message[]): ModelMessage[]` function that does explicit field mapping rather than casting.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "boolean-flag-dispatch",
+      "title": "StreamOptions.useAiSdk boolean flag controls code path dispatch",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 28,
+      "line_end": 28,
+      "code_snippet": "useAiSdk?: boolean",
+      "description": "Encapsulation: 6/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 6/10 (Aggregate: 5.75). Adding `useAiSdk?: boolean` to StreamOptions creates a boolean flag that dispatches between two entirely different streaming implementations (xsAI vs AI SDK). Boolean-flag dispatch is a mild type design smell: the caller must know which implementation to request, and the two paths have subtly different behaviors (e.g., different finishReason values: 'tool_calls' vs 'tool-calls'). A strategy pattern or separate function entry points would be more explicit. However, for a feature-flag-style migration between SDKs this is pragmatically reasonable.",
+      "suggestion": "Consider creating separate entry points: `streamViaXsai()` and `streamViaAiSdk()` instead of routing via boolean flag. Alternatively, if the flag is temporary during migration, document its intended removal timeline."
+    }
+  ],
+  "positive_observations": [
+    "Good refactoring: tool resolution logic extracted into shared `resolveXsaiTools` function, reused by both xsAI and AI SDK paths -- avoids duplication",
+    "AiSdkModelConfig interface cleanly separates the configuration concerns from the model creation logic in createAiSdkModel",
+    "The convertXsaiToolsToAiSdk function is a pure adapter with clear input/output types (XsaiTool[] -> ToolSet), following the Functional Core pattern",
+    "TODO comments removed and replaced with descriptive comments (sanitizeMessages, tool compatibility errors)"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

@@ -4,14 +4,17 @@ import type { CommonContentPart, CompletionToolCall, Message, Tool } from '@xsai
 import { listModels } from '@xsai/model'
 import { XSAIError } from '@xsai/shared'
 import { streamText } from '@xsai/stream-text'
+import { streamText as aiSdkStreamText, stepCountIs } from 'ai'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+import { convertXsaiToolsToAiSdk, createAiSdkModel } from '../composables/use-ai-sdk'
 import { debug, mcp } from '../tools'
+import { useConsciousnessStore } from './modules/consciousness'
 
 export type StreamEvent
   = | { type: 'text-delta', text: string }
-    | ({ type: 'finish' } & any)
+    | { type: 'finish', finishReason: string }
     | ({ type: 'tool-call' } & CompletionToolCall)
     | { type: 'tool-result', toolCallId: string, result?: string | CommonContentPart[] }
     | { type: 'error', error: any }
@@ -21,11 +24,12 @@ export interface StreamOptions {
   onStreamEvent?: (event: StreamEvent) => void | Promise<void>
   toolsCompatibility?: Map<string, boolean>
   supportsTools?: boolean
-  waitForTools?: boolean // when true,won't resolve on finishReason=='tool_calls';
+  waitForTools?: boolean // when true, won't resolve on tool-related finishReason ('tool_calls' for xsAI, 'tool-calls' for AI SDK)
   tools?: Tool[] | (() => Promise<Tool[] | undefined>)
+  useAiSdk?: boolean
 }
 
-// TODO: proper format for other error messages.
+// Converts non-standard message roles (e.g. 'error') into valid user messages
 function sanitizeMessages(messages: unknown[]): Message[] {
   return messages.map((m: any) => {
     if (m && m.role === 'error') {
@@ -44,23 +48,8 @@ function streamOptionsToolsCompatibilityOk(model: string, chatProvider: ChatProv
 
 async function streamFrom(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {
   const headers = options?.headers
-
   const sanitized = sanitizeMessages(messages as unknown[])
-  const resolveTools = async () => {
-    const tools = typeof options?.tools === 'function'
-      ? await options.tools()
-      : options?.tools
-    return tools ?? []
-  }
-
-  const supportedTools = streamOptionsToolsCompatibilityOk(model, chatProvider, messages, options)
-  const tools = supportedTools
-    ? [
-        ...await mcp(),
-        ...await debug(),
-        ...await resolveTools(),
-      ]
-    : undefined
+  const tools = await resolveXsaiTools(model, chatProvider, messages, options)
 
   return new Promise<void>((resolve, reject) => {
     let settled = false
@@ -101,10 +90,121 @@ async function streamFrom(model: string, chatProvider: ChatProvider, messages: M
         maxSteps: 10,
         messages: sanitized,
         headers,
-        // TODO: we need Automatic tools discovery
         tools,
         onEvent,
       })
+    }
+    catch (err) {
+      rejectOnce(err)
+    }
+  })
+}
+
+async function resolveXsaiTools(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions): Promise<Tool[] | undefined> {
+  const resolveTools = async () => {
+    const tools = typeof options?.tools === 'function'
+      ? await options.tools()
+      : options?.tools
+    return tools ?? []
+  }
+
+  const supportedTools = streamOptionsToolsCompatibilityOk(model, chatProvider, messages, options)
+  if (!supportedTools)
+    return undefined
+
+  try {
+    return [
+      ...await mcp(),
+      ...await debug(),
+      ...await resolveTools(),
+    ]
+  }
+  catch (err) {
+    throw new Error(`Failed to resolve tools for model ${model}`, { cause: err })
+  }
+}
+
+export async function streamFromAiSdk(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {
+  const chatConfig = chatProvider.chat(model) as unknown as Record<string, unknown>
+  const baseURL = String(chatConfig.baseURL ?? '')
+  const apiKey = String(chatConfig.apiKey ?? '')
+
+  if (!baseURL) {
+    throw new Error(`AI SDK stream requires a baseURL in the chat provider config (model: ${model})`)
+  }
+  if (!apiKey) {
+    throw new Error(`AI SDK stream requires an apiKey in the chat provider config (model: ${model})`)
+  }
+
+  const aiModel = createAiSdkModel({
+    baseURL,
+    apiKey,
+    modelId: model,
+    headers: { ...(chatConfig.headers as Record<string, string> | undefined), ...options?.headers },
+  })
+
+  const sanitized = sanitizeMessages(messages as unknown[])
+  const xsaiTools = await resolveXsaiTools(model, chatProvider, messages, options)
+  const aiSdkTools = xsaiTools ? convertXsaiToolsToAiSdk(xsaiTools) : undefined
+
+  return new Promise<void>((resolve, reject) => {
+    let settled = false
+    const resolveOnce = () => { if (!settled) { settled = true; resolve() } }
+    const rejectOnce = (err: unknown) => { if (!settled) { settled = true; reject(err) } }
+
+    try {
+      const result = aiSdkStreamText({
+        model: aiModel,
+        messages: sanitized as unknown as import('ai').ModelMessage[],
+        tools: aiSdkTools,
+        stopWhen: stepCountIs(10),
+        onChunk: async ({ chunk }) => {
+          try {
+            if (chunk.type === 'text-delta') {
+              await options?.onStreamEvent?.({ type: 'text-delta', text: chunk.text })
+            }
+            else if (chunk.type === 'tool-call') {
+              await options?.onStreamEvent?.({
+                type: 'tool-call',
+                toolName: chunk.toolName,
+                toolCallId: chunk.toolCallId,
+                args: JSON.stringify(chunk.input),
+                toolCallType: 'function',
+              } as StreamEvent)
+            }
+            else if (chunk.type === 'tool-result') {
+              await options?.onStreamEvent?.({
+                type: 'tool-result',
+                toolCallId: chunk.toolCallId,
+                result: chunk.output as string,
+              })
+            }
+          }
+          catch (err) {
+            rejectOnce(err)
+          }
+        },
+        onFinish: async ({ finishReason }) => {
+          try {
+            await options?.onStreamEvent?.({ type: 'finish', finishReason })
+            if (finishReason !== 'tool-calls' || !options?.waitForTools)
+              resolveOnce()
+          }
+          catch (err) {
+            rejectOnce(err)
+          }
+        },
+        onError: async ({ error }) => {
+          try {
+            await options?.onStreamEvent?.({ type: 'error', error })
+          }
+          catch { /* ignore callback error during error reporting */ }
+          rejectOnce(error)
+        },
+      })
+
+      // Ensure promise resolves when stream completes even if onFinish doesn't fire
+      Promise.resolve(result.text).then(() => resolveOnce()).catch(rejectOnce)
     }
     catch (err) {
       rejectOnce(err)
@@ -120,8 +220,7 @@ export async function attemptForToolsCompatibilityDiscovery(model: string, chatP
     }
     catch (err) {
       if (err instanceof Error && err.name === new XSAIError('').name) {
-        // TODO: if you encountered many more errors like these, please, add them here.
-
+        // Known provider-specific tool incompatibility errors
         // Ollama
         /**
          * {"error":{"message":"registry.ollama.ai/<scope>/<model> does not support tools","type":"api_error","param":null,"code":null}}
@@ -196,7 +295,14 @@ export const useLLM = defineStore('llm', () => {
   }
 
   function stream(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {
-    return streamFrom(model, chatProvider, messages, { ...options, toolsCompatibility: toolsCompatibility.value })
+    const mergedOptions = { ...options, toolsCompatibility: toolsCompatibility.value }
+    if (mergedOptions.useAiSdk === undefined) {
+      mergedOptions.useAiSdk = useConsciousnessStore().useAiSdk
+    }
+    if (mergedOptions.useAiSdk) {
+      return streamFromAiSdk(model, chatProvider, messages, mergedOptions)
+    }
+    return streamFrom(model, chatProvider, messages, mergedOptions)
   }
 
   async function models(apiUrl: string, apiKey: string) {
@@ -212,6 +318,7 @@ export const useLLM = defineStore('llm', () => {
     }
     catch (err) {
       if (String(err).includes(`Failed to construct 'URL': Invalid URL`)) {
+        console.warn('[LLM] Invalid API URL, returning empty model list', { apiUrl })
         return []
       }
 
