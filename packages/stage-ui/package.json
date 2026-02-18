@@ -51,6 +51,8 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/openai": "catalog:",
     "@date-fns/utc": "^2.1.1",
     "@formkit/auto-animate": "^0.9.0",
     "@huggingface/transformers": "^3.8.1",
@@ -90,6 +92,7 @@
     "@xsai/stream-transcription": "0.4.0-beta.8",
     "@xsai/tool": "catalog:",
     "@xsai/utils-chat": "catalog:",
+    "ai": "catalog:",
     "animejs": "^4.3.0",
     "better-auth": "catalog:",
     "culori": "^4.0.2",

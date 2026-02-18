@@ -25,6 +25,8 @@ overrides:
 patchedDependencies:
   srvx@0.9.8: patches/srvx@0.9.8.patch
 catalog:
+  '@ai-sdk/anthropic': ^3.0.45
+  '@ai-sdk/openai': ^3.0.29
   '@capacitor/cli': ^8.0.1
   '@capacitor/core': ^8.0.1
   '@capacitor/ios': ^8.0.1
@@ -60,6 +62,7 @@ catalog:
   '@xsai/stream-text': ^0.4.2
   '@xsai/tool': ^0.4.2
   '@xsai/utils-chat': 0.4.0-beta.13
+  ai: ^6.0.90
   async-mutex: 0.5.0
   better-auth: ^1.4.16
   better-sqlite3: ^12.6.2

@@ -1,0 +1,109 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260218-111046-feat-task-8-ai-sdk-migration-iter1",
+  "timestamp": "2026-02-18T11:12:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "packages/stage-ui/src/composables/use-ai-sdk.test.ts",
+      "packages/stage-ui/src/stores/llm.ts",
+      "packages/stage-ui/src/stores/llm.test.ts",
+      "packages/stage-ui/src/stores/modules/consciousness.ts"
+    ],
+    "total_lines_analyzed": 640,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 1, "P1": 3, "P2": 1, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P0",
+      "confidence": 97,
+      "category": "test-quality",
+      "subcategory": "missing-test-critical-path",
+      "title": "streamFromAiSdk: 94 lines of new streaming logic with zero tests",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 121,
+      "line_end": 194,
+      "code_snippet": "async function streamFromAiSdk(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {\n  const chatConfig = chatProvider.chat(model) as unknown as Record<string, unknown>\n  const aiModel = createAiSdkModel({ ... })\n  ...\n}",
+      "description": "The new streamFromAiSdk function is the entire point of this feature (AI SDK migration) and contains complex logic: chunk type dispatching (text-delta, tool-call, tool-result), promise settlement with resolveOnce/rejectOnce, finish reason mapping (note: AI SDK uses 'tool-calls' with a hyphen vs xsAI's 'tool_calls' with underscore), error propagation via onError callback, and a fallback resolution via result.text promise. None of this is tested. This is the critical path for the feature -- if it doesn't work, the entire AI SDK migration is broken. The chunk.type mapping and finishReason string difference ('tool-calls' vs 'tool_calls') are especially bug-prone without tests.",
+      "suggestion": "Add integration tests for streamFromAiSdk that verify: (1) text-delta chunks are forwarded correctly via onStreamEvent, (2) tool-call chunks are converted with JSON.stringify(chunk.input) for args, (3) tool-result chunks forward toolCallId and output, (4) finishReason 'tool-calls' with waitForTools=true does NOT resolve the promise, (5) error propagation via onError rejects the promise, (6) the result.text fallback resolution works when onFinish does not fire. Use a real AI SDK endpoint via environment-gated test (similar to existing llm.test.ts pattern) or a Test Double with documented rationale.",
+      "claude_md_rule": "testing.coverage.critical_paths"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-test-routing-logic",
+      "title": "stream() useAiSdk branch routing is untested",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 278,
+      "line_end": 284,
+      "code_snippet": "function stream(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {\n    const mergedOptions = { ...options, toolsCompatibility: toolsCompatibility.value }\n    if (mergedOptions.useAiSdk) {\n      return streamFromAiSdk(model, chatProvider, messages, mergedOptions)\n    }\n    return streamFrom(model, chatProvider, messages, mergedOptions)\n  }",
+      "description": "The stream() method now branches between streamFrom and streamFromAiSdk based on the useAiSdk flag. This routing logic determines which SDK handles all LLM communication. The existing llm.test.ts only tests attemptForToolsCompatibilityDiscovery (which always uses the xsAI path). No test verifies that useAiSdk:true routes to the AI SDK path or that useAiSdk:false/undefined continues using xsAI.",
+      "suggestion": "Add tests for the stream() function that verify: (1) with useAiSdk: false, the xsAI streamText path is used, (2) with useAiSdk: true, the AI SDK streamText path is used. These should be integration tests with a real or environment-gated endpoint, not mocked routing.",
+      "claude_md_rule": "testing.integration.boundary_crossing"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-test-new-code",
+      "title": "resolveXsaiTools extracted function lacks dedicated tests",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 102,
+      "line_end": 119,
+      "code_snippet": "async function resolveXsaiTools(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions): Promise<Tool[] | undefined> {\n  ...\n  const supportedTools = streamOptionsToolsCompatibilityOk(model, chatProvider, messages, options)\n  if (!supportedTools)\n    return undefined\n  ...\n}",
+      "description": "resolveXsaiTools was extracted from the inline streamFrom logic and is now shared by both streamFrom and streamFromAiSdk. It has branching logic: tools can be a function or array, compatibility check gates whether tools are returned at all, and it merges mcp() + debug() + user tools. As shared infrastructure for both streaming paths, bugs here affect both old and new code. No test exercises this function directly or indirectly (the existing llm.test.ts tests attemptForToolsCompatibilityDiscovery which calls streamFrom which calls resolveXsaiTools, but only in the env-gated path that requires an API key).",
+      "suggestion": "Test resolveXsaiTools behavior: (1) returns undefined when supportsTools is false, (2) returns merged tools array when supportsTools is true, (3) handles tools as async function, (4) handles tools as direct array, (5) handles undefined tools option. Since this is a pure-ish function (depends on mcp()/debug() side effects), consider extracting the tool merging logic into a testable pure function.",
+      "claude_md_rule": "testing.coverage.functional_core"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P1",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-test-new-state",
+      "title": "consciousness store useAiSdk state has no test coverage",
+      "file": "packages/stage-ui/src/stores/modules/consciousness.ts",
+      "line": 15,
+      "line_end": 15,
+      "code_snippet": "const useAiSdk = useLocalStorageManualReset<boolean>('settings/consciousness/use-ai-sdk', false)",
+      "description": "A new useAiSdk boolean state was added to the consciousness store, exposed in the return object (line 85). This is the user-facing toggle that controls whether the entire LLM streaming path uses xsAI or AI SDK. No test file exists for the consciousness store at all (confirmed by glob search). The state's default value (false), its localStorage persistence key, and its exposure through the store API are all untested.",
+      "suggestion": "Create packages/stage-ui/src/stores/modules/consciousness.test.ts that tests: (1) useAiSdk defaults to false, (2) useAiSdk persists to localStorage under the correct key 'settings/consciousness/use-ai-sdk', (3) useAiSdk is included in the store's returned state. Since this is a Pinia store with localStorage, test with a real Pinia instance and mock localStorage (localStorage is a browser API, not a Repository/Service -- this is an acceptable test double).",
+      "claude_md_rule": "testing.coverage.new_code_without_test"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "boundary-condition-missing",
+      "title": "use-ai-sdk.test.ts missing error/edge case tests for createAiSdkModel",
+      "file": "packages/stage-ui/src/composables/use-ai-sdk.test.ts",
+      "line": 116,
+      "line_end": 163,
+      "code_snippet": "describe('createAiSdkModel', () => {\n  it('should create a model instance from OpenAI-compatible config', () => { ... })\n  it('should normalize base URL without trailing slash', () => { ... })\n  it('should create model with custom headers', () => { ... })\n  it('should create Anthropic model when provider is anthropic', () => { ... })\n})",
+      "description": "createAiSdkModel tests cover happy paths well but miss boundary conditions: (1) empty string baseURL (currently produces '/' after normalization -- is that valid?), (2) empty string apiKey, (3) provider value that is neither undefined nor 'anthropic' (e.g., 'google'), (4) baseURL that already has a trailing slash (the normalization adds another slash? No -- the code checks endsWith('/')). The baseURL normalization logic at line 55 of use-ai-sdk.ts appends '/' if not present, but both OpenAI and Anthropic SDKs may handle trailing slashes differently.",
+      "suggestion": "Add edge case tests: (1) baseURL with trailing slash is not double-slashed, (2) empty baseURL behavior, (3) empty apiKey behavior, (4) unknown provider string defaults to OpenAI path. These are pure function tests requiring no mocks -- direct instantiation is sufficient."
+    }
+  ],
+  "positive_observations": [
+    "use-ai-sdk.test.ts uses direct instantiation with real xsaiTool() objects -- no mocks, no fakes, proper Functional Core testing",
+    "convertXsaiToolsToAiSdk tests cover multiple tools, empty array, missing description, and execute function preservation -- good behavioral coverage",
+    "Test file uses real xsAI tool() builder with zod schemas, proving the actual conversion pipeline works end-to-end",
+    "No mock violations detected in the test file (no jest.fn, vi.fn, vi.mock, InMemory*, Mock*, Fake* patterns)"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

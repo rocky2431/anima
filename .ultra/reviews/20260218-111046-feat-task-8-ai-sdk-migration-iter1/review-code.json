@@ -1,0 +1,127 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260218-111046-feat-task-8-ai-sdk-migration-iter1",
+  "timestamp": "2026-02-18T11:12:30.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "packages/stage-ui/src/composables/use-ai-sdk.test.ts",
+      "packages/stage-ui/src/stores/llm.ts",
+      "packages/stage-ui/src/stores/modules/consciousness.ts",
+      "packages/stage-ui/src/composables/index.ts",
+      "packages/stage-ui/package.json",
+      "pnpm-workspace.yaml"
+    ],
+    "total_lines_analyzed": 976,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 2, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-wiring",
+      "title": "useAiSdk flag stored but never passed to llmStore.stream()",
+      "file": "packages/stage-ui/src/stores/modules/consciousness.ts",
+      "line": 15,
+      "line_end": 15,
+      "code_snippet": "const useAiSdk = useLocalStorageManualReset<boolean>('settings/consciousness/use-ai-sdk', false)",
+      "description": "The consciousness store exposes a `useAiSdk` boolean setting (line 15, exported line 85), and the LLM store accepts `useAiSdk?: boolean` in StreamOptions (llm.ts line 28) to branch between xsAI and AI SDK streaming. However, the primary caller in chat.ts (line 296) does NOT pass `useAiSdk` in the options object. Similarly, the event-handler-spark-notify caller omits it. This means the user can toggle the setting in the UI, but it has zero effect -- the AI SDK path is unreachable. This is a classic orphan-wiring issue: the setting exists, the consumer exists, but nothing connects them.",
+      "suggestion": "In packages/stage-ui/src/stores/chat.ts where llmStore.stream() is called, read the consciousness store's useAiSdk value and pass it as `useAiSdk: consciousnessStore.useAiSdk` in the StreamOptions. Do the same for any other callers (event-handler-spark-notify). This must be wired before this feature is considered functional.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "swallowed-error-context",
+      "title": "onError in streamFromAiSdk calls onStreamEvent but loses error context",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 181,
+      "line_end": 184,
+      "code_snippet": "onError: async ({ error }) => {\n  await options?.onStreamEvent?.({ type: 'error', error })\n  rejectOnce(error)\n},",
+      "description": "The onError handler in streamFromAiSdk (line 181-184) calls `options?.onStreamEvent?.()` with `await` but does NOT wrap it in a try/catch. If the onStreamEvent callback throws, the exception propagates to the AI SDK internals rather than being caught by `rejectOnce`. In the xsAI `streamFrom` equivalent (line 68-83), the onEvent handler is wrapped in try/catch. This inconsistency means an error in the stream event handler during an AI SDK error scenario could cause an unhandled rejection or mask the original error.",
+      "suggestion": "Wrap the onError body in try/catch mirroring the pattern in onChunk/onFinish: `try { await options?.onStreamEvent?.({ type: 'error', error }); rejectOnce(error); } catch (err) { rejectOnce(err); }`",
+      "claude_md_rule": "error_handling.forbidden.catch_swallow"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 80,
+      "category": "architecture",
+      "subcategory": "message-contract-mismatch",
+      "title": "Message type cast between xsAI and AI SDK may lose/corrupt data",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 142,
+      "line_end": 142,
+      "code_snippet": "messages: sanitized as unknown as import('ai').ModelMessage[],",
+      "description": "The xsAI Message type is cast to AI SDK's ModelMessage[] via `as unknown as` double-cast. xsAI messages use `role: 'user' | 'assistant' | 'system'` with `content: string | ContentPart[]`, while AI SDK ModelMessage has a different structure (e.g., `role` enum differences, content parts schema differences, tool result encoding). The sanitizeMessages function converts 'error' role to 'user', but does not handle the structural differences between the two SDK message formats. This can cause silent data corruption or runtime errors when multi-modal content parts, tool call results, or assistant messages with tool invocations are passed to the AI SDK path.",
+      "suggestion": "Create an explicit `convertXsaiMessagesToAiSdk(messages: Message[]): import('ai').ModelMessage[]` adapter function in use-ai-sdk.ts that maps each message role and content format correctly, rather than using an unsafe double cast. Include unit tests for edge cases (tool call messages, multi-modal content, system messages).",
+      "claude_md_rule": "architecture.contract_first"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "security-sensitive-fallback",
+      "title": "API key and baseURL fall back to empty string silently",
+      "file": "packages/stage-ui/src/stores/llm.ts",
+      "line": 124,
+      "line_end": 125,
+      "code_snippet": "baseURL: String(chatConfig.baseURL ?? ''),\napiKey: String(chatConfig.apiKey ?? ''),",
+      "description": "In streamFromAiSdk (line 122-128), if chatConfig.baseURL or chatConfig.apiKey are undefined/null, they silently default to empty strings. An empty baseURL will cause the AI SDK provider constructor to build a malformed URL. An empty apiKey will cause a 401 that manifests as a generic stream error. The original xsAI streamFrom path does not apply this fallback -- it passes the chat config directly from the provider, so if the provider is misconfigured, the error message is clearer. The empty-string fallback makes debugging harder.",
+      "suggestion": "Add fail-fast validation before creating the model: `if (!chatConfig.baseURL) throw new Error('AI SDK stream requires a baseURL in the chat provider config'); if (!chatConfig.apiKey) throw new Error('AI SDK stream requires an apiKey in the chat provider config');`",
+      "claude_md_rule": "error_handling.classification"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "integration",
+      "subcategory": "boundary-without-integration-test",
+      "title": "No integration test proving AI SDK stream path works end-to-end",
+      "file": "packages/stage-ui/src/composables/use-ai-sdk.test.ts",
+      "line": 1,
+      "line_end": 163,
+      "code_snippet": "describe('convertXsaiToolsToAiSdk', () => { ... })\ndescribe('createAiSdkModel', () => { ... })",
+      "description": "The test file covers tool conversion and model creation (pure adapter functions), which is appropriate for Functional Core unit tests. However, there is no integration test proving that `streamFromAiSdk` actually works with a real or test-double AI SDK provider. The streamFromAiSdk function is the critical boundary: it bridges xsAI message format to AI SDK streaming, maps chunk events back to StreamEvent format, and handles tool calls/results. The conversion functions are necessary but not sufficient -- the orchestration in streamFromAiSdk is where bugs will hide (message format mismatches, event mapping errors, promise settlement races).",
+      "suggestion": "Add at least one integration test for streamFromAiSdk using a Test Double AI SDK provider (with `// Test Double rationale: AI SDK provider is an external LLM API` comment). Verify that: (1) text-delta events are emitted, (2) tool-call events contain correct args, (3) the promise resolves on finish, (4) errors reject the promise.",
+      "claude_md_rule": "integration.integration_proof"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "code-quality",
+      "subcategory": "provider-detection-heuristic",
+      "title": "Provider detection in createAiSdkModel uses only string match",
+      "file": "packages/stage-ui/src/composables/use-ai-sdk.ts",
+      "line": 57,
+      "line_end": 60,
+      "code_snippet": "if (provider === 'anthropic') {\n  const anthropic = createAnthropic({ apiKey, baseURL, headers })\n  return anthropic(modelId)\n}",
+      "description": "The createAiSdkModel function uses a simple string equality check `provider === 'anthropic'` to decide which SDK provider factory to use, defaulting to OpenAI-compatible for everything else. This works for the current two-provider setup but will need extension as more providers are added (Google, Mistral, etc.). The provider string is passed from chatConfig which comes from the chat provider's metadata, but there is no validation or exhaustive handling.",
+      "suggestion": "This is adequate for now since the feature is behind a flag and only two provider SDKs are in play. Consider adding a provider registry pattern when a third provider is needed, and validate that unknown provider values produce a clear error rather than silently using the OpenAI fallback."
+    }
+  ],
+  "positive_observations": [
+    "Clean adapter pattern: convertXsaiToolsToAiSdk is a pure function with no side effects, well-documented, and thoroughly unit tested with 6 test cases covering edge cases.",
+    "Feature flag approach: useAiSdk is gated behind a localStorage setting defaulting to false, making the migration opt-in and safe to ship incrementally.",
+    "Consistent promise settlement pattern: Both streamFrom and streamFromAiSdk use the settled/resolveOnce/rejectOnce guard pattern to prevent double resolution.",
+    "Good refactoring: resolveXsaiTools was extracted as a shared helper, eliminating duplication between the two streaming paths.",
+    "Catalog-based dependency management: AI SDK packages added via pnpm catalog with pinned versions ensures consistency across the monorepo."
+  ],
+  "metadata": {
+    "duration_ms": 28000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}
