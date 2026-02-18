@@ -30,10 +30,10 @@
       "iteration": 1,
       "mode": "all",
       "timestamp": "2026-02-18T03:13:32Z",
-      "verdict": "pending",
+      "verdict": "COMMENT",
       "p0": 0,
-      "p1": 0,
-      "total": 0,
+      "p1": 3,
+      "total": 19,
       "parent": null
     }
   ]
