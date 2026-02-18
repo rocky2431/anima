@@ -941,6 +941,9 @@ importers:
       '@proj-airi/i18n':
         specifier: workspace:^
         version: link:../../packages/i18n
+      '@proj-airi/mcp-hub':
+        specifier: workspace:^
+        version: link:../../packages/mcp-hub
       '@proj-airi/persona-engine':
         specifier: workspace:^
         version: link:../../packages/persona-engine
@@ -953,6 +956,9 @@ importers:
       '@proj-airi/server-sdk':
         specifier: workspace:*
         version: link:../../packages/server-sdk
+      '@proj-airi/skills-engine':
+        specifier: workspace:^
+        version: link:../../packages/skills-engine
       '@proj-airi/stage-layouts':
         specifier: workspace:^
         version: link:../../packages/stage-layouts
@@ -1016,6 +1022,9 @@ importers:
       '@xsai/utils-chat':
         specifier: 'catalog:'
         version: 0.4.0-beta.13
+      ai:
+        specifier: 'catalog:'
+        version: 6.0.90(zod@4.3.5)
       animejs:
         specifier: ^4.3.0
         version: 4.3.0

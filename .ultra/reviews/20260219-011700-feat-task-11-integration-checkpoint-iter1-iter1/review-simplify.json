@@ -1,0 +1,91 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260219-011700-feat-task-11-integration-checkpoint-iter1-iter1",
+  "timestamp": "2026-02-19T01:25:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 761,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "simplification",
+      "subcategory": "long-test-function",
+      "title": "Test function exceeds 50 lines with inline model duplication",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "line": 343,
+      "line_end": 413,
+      "code_snippet": "it('orchestrator generate uses system prompt with skills and MCP tools together', async () => {\n  // ... 71 lines ...\n}, 30_000)",
+      "description": "This test function spans 71 lines. A significant chunk (lines 367-392) defines an inline LanguageModelV2 model that duplicates the doStream implementation from createTestModel (lines 54-63). The inline model adds capture logic for receivedPrompt and receivedToolDefs, but the doStream boilerplate (~10 lines) is copy-pasted verbatim.",
+      "suggestion": "BEFORE:\nconst model: LanguageModelV2 = {\n  specificationVersion: 'v2',\n  provider: 'test-provider',\n  modelId: 'test-model',\n  supportedUrls: {},\n  doGenerate: async (opts) => { /* capture logic */ },\n  doStream: async () => ({\n    stream: new ReadableStream({\n      start(controller) {\n        controller.enqueue({ type: 'text-start' as const, ... })\n        controller.enqueue({ type: 'text-delta' as const, ... })\n        controller.enqueue({ type: 'finish' as const, ... })\n        controller.close()\n      },\n    }),\n  }),\n}\n\nAFTER:\nExtend createTestModel to accept a doGenerate override:\n\nfunction createTestModel(options: {\n  generateResult?: ...,\n  doGenerate?: (opts: LanguageModelV2CallOptions) => Promise<...>,\n} = {}): LanguageModelV2\n\nThen:\nconst model = createTestModel({\n  doGenerate: async (opts) => {\n    receivedPrompt = opts.prompt\n    receivedToolDefs = (opts.tools ?? []) as ...\n    return { content: [...], finishReason: 'stop', usage: {...}, warnings: [] }\n  },\n})\n\nWHY: Eliminates ~10 lines of duplicated doStream boilerplate and shortens the test to under 50 lines. The createTestModel helper already exists -- extending it is simpler than maintaining two copies."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "doStream implementation duplicated in test file",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "line": 382,
+      "line_end": 391,
+      "code_snippet": "doStream: async () => ({\n  stream: new ReadableStream({\n    start(controller) {\n      controller.enqueue({ type: 'text-start' as const, id: 'text-0', providerMetadata: undefined })\n      controller.enqueue({ type: 'text-delta' as const, id: 'text-0', textDelta: 'Combined response' })\n      controller.enqueue({ type: 'finish' as const, finishReason: 'stop' as const, usage: { inputTokens: 20, outputTokens: 10, totalTokens: 30 } })\n      controller.close()\n    },\n  }),\n}),",
+      "description": "The doStream block at lines 382-391 is a near-verbatim copy of lines 54-63 in createTestModel. The only differences are the textDelta string ('Combined response' vs 'Hello from test model') and the usage numbers. This is exactly the type of duplication that the createTestModel factory was built to eliminate.",
+      "suggestion": "BEFORE:\n// Lines 54-63 (createTestModel)\ndoStream: async () => ({ stream: new ReadableStream({ start(controller) { ... 'Hello from test model' ... } }) })\n\n// Lines 382-391 (inline)\ndoStream: async () => ({ stream: new ReadableStream({ start(controller) { ... 'Combined response' ... } }) })\n\nAFTER:\nConsolidate by reusing createTestModel with a doGenerate override (see review-simplify-001). The doStream is never actually called in these tests, so a single implementation suffices.\n\nWHY: Near-identical 10-line blocks are a maintenance burden -- if the LanguageModelV2 doStream contract changes, both must be updated independently."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "magic-number",
+      "title": "Magic number 5 as default maxSteps should be a named constant",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 130,
+      "line_end": 130,
+      "code_snippet": "stopWhen: stepCountIs(options.maxSteps ?? 5),",
+      "description": "The default value 5 for maxSteps is a magic number. Its meaning ('default maximum number of agent loop steps') is not self-documenting. The project convention (confirmed in context-engine and persona-engine) prefers named constants over magic numbers.",
+      "suggestion": "BEFORE:\nstopWhen: stepCountIs(options.maxSteps ?? 5),\n\nAFTER:\nconst DEFAULT_MAX_STEPS = 5\n// ... at top of file or inside createAiOrchestrator\nstopWhen: stepCountIs(options.maxSteps ?? DEFAULT_MAX_STEPS),\n\nWHY: Named constant makes the intent clear and centralizes the default for easy adjustment. Follows project convention of named constants over magic numbers.",
+      "claude_md_rule": "code_quality.named_constants"
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "type-assertion-simplification",
+      "title": "Double type assertion on messages and tools in generate()",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 128,
+      "line_end": 129,
+      "code_snippet": "messages: messages as Array<{ role: 'user' | 'assistant', content: string }>,\ntools: tools as Parameters<typeof generateText>[0]['tools'],",
+      "description": "The messages parameter is cast to its own declared type (redundant since it already matches the signature). The tools cast uses a complex Parameters<typeof generateText>[0]['tools'] extraction. If getTools() returned the correct type directly (or a type alias were defined), both casts could be eliminated.",
+      "suggestion": "BEFORE:\nmessages: messages as Array<{ role: 'user' | 'assistant', content: string }>,\ntools: tools as Parameters<typeof generateText>[0]['tools'],\n\nAFTER:\nDefine a type alias and update getTools() return type:\n\ntype AiSdkTools = Parameters<typeof generateText>[0]['tools']\n\nasync getTools(): Promise<AiSdkTools> {\n  return mcpHub.aggregateTools() as AiSdkTools\n}\n\nThen in generate():\nmessages,\ntools: await this.getTools(),\n\nWHY: Moves the single necessary cast to getTools() and removes the redundant messages cast entirely. The generate() method reads more clearly without inline type assertions."
+    }
+  ],
+  "positive_observations": [
+    "Factory function pattern (createAiOrchestrator) follows established codebase convention of closure-based modules over classes, consistent with setupPersonaEngine",
+    "Individual methods inside the orchestrator are short and focused (initialize: 15 lines, buildSystemPrompt: 21 lines, shutdown: 3 lines)",
+    "Good use of Promise.all for parallel initialization of MCP and skills loading",
+    "Test file has proper Test Double rationale comments for the LanguageModelV2 mock, following project guidelines",
+    "Guard clause pattern used in buildSystemPrompt (if activeSkillIds / if basePrompt / if skillsContext) keeps nesting shallow at depth 2"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

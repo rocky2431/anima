@@ -1,0 +1,93 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260219-011700-feat-task-11-integration-checkpoint-iter1-iter1",
+  "timestamp": "2026-02-19T01:20:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 570,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 1, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "generate() has no error handling around generateText LLM call",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 125,
+      "line_end": 131,
+      "code_snippet": "const result = await generateText({\n  model,\n  system: systemPrompt,\n  messages: messages as Array<...>,\n  tools: tools as Parameters<typeof generateText>[0]['tools'],\n  stopWhen: stepCountIs(options.maxSteps ?? 5),\n})",
+      "description": "The generateText() call performs an external LLM API request (network I/O) with zero error handling. This is the most critical I/O operation in the orchestrator. Network timeouts, rate limits, invalid API keys, model unavailability, and malformed responses will all produce raw, untyped exceptions that propagate to the caller with no context about what operation failed or what inputs were used. The caller receives a raw AI SDK error with no indication it came from the orchestrator's generate() method.",
+      "suggestion": "Wrap in try/catch. Catch operational errors (network, rate-limit, auth) and re-throw as a typed OrchestratorError with context: `try { ... } catch (err) { throw new Error('AI orchestrator generate failed', { cause: err }) }`. Include model ID, message count, and whether tools were provided in the error context. Consider distinguishing retryable (network timeout, rate limit) from non-retryable (auth, invalid model) errors.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "initialize() uses Promise.all for independent I/O -- partial failure unhandled",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 80,
+      "line_end": 83,
+      "code_snippet": "const [mcpResult] = await Promise.all([\n  mcpHub.connectEnabled(),\n  skillRegistry.loadAll(),\n])",
+      "description": "initialize() runs mcpHub.connectEnabled() and skillRegistry.loadAll() via Promise.all(). These are independent I/O operations (network + filesystem). If skillRegistry.loadAll() throws (e.g., builtinSkillsDir does not exist or has unreadable files), Promise.all rejects immediately while the mcpHub.connectEnabled() promise may still be running. The MCP connection result is lost, and worse, the MCP connections may complete in the background without the caller knowing they succeeded -- creating zombie connections with no reference for cleanup. Additionally, there is no try/catch around the Promise.all, so raw filesystem errors from skills loading propagate with no orchestrator context.",
+      "suggestion": "Replace Promise.all with Promise.allSettled to handle each result independently. This ensures both operations complete regardless of individual failures. Then inspect each result: if skills failed, include the error in InitResult (add a skillsError field) rather than throwing. If MCP failed entirely (not per-server, which connectEnabled already handles), also surface it. Wrap in try/catch for unexpected errors. Example: `const [mcpSettled, skillsSettled] = await Promise.allSettled([...])` then check each `.status`.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "shutdown() does not protect against errors -- resources may leak",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 151,
+      "line_end": 153,
+      "code_snippet": "async shutdown(): Promise<void> {\n  await mcpHub.shutdown()\n}",
+      "description": "shutdown() calls mcpHub.shutdown() without try/catch. While mcpHub.shutdown() internally uses try/finally (disconnectAll + store.close), if mcpHub.shutdown() itself throws (e.g., the underlying store.close() throws a synchronous error after disconnectAll), the error propagates raw. More importantly, the orchestrator only cleans up MCP resources. The SkillRegistry is not cleaned up (though it currently has no shutdown method, this is a design gap). If future cleanup steps are added after mcpHub.shutdown(), an error from MCP shutdown would prevent them from running. The pattern should use try/finally to ensure all cleanup runs.",
+      "suggestion": "Add try/catch with contextual error wrapping. Even though mcpHub.shutdown() has its own try/finally, the orchestrator should catch and wrap: `try { await mcpHub.shutdown() } catch (err) { throw new Error('AI orchestrator shutdown failed', { cause: err }) }`. If additional cleanup is added later, use try/finally to ensure all resources are released.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "optional-chaining-hiding-errors",
+      "title": "toolCalls/toolResults default to empty array -- hides missing data",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 136,
+      "line_end": 141,
+      "code_snippet": "toolCalls: (result.toolCalls ?? []).map(...),\ntoolResults: (result.toolResults ?? []).map(...),",
+      "description": "When result.toolCalls or result.toolResults are undefined/null (which happens if the AI SDK version changes its response shape or if the model returns an unexpected structure), the code silently defaults to empty arrays. The caller cannot distinguish between 'the model made no tool calls' and 'the response was malformed and tool call data was missing'. This is a minor concern since AI SDK v6 likely always provides these fields, but the defensive coding hides potential SDK breaking changes.",
+      "suggestion": "This is acceptable defensive coding for AI SDK compatibility, but consider logging a warning when these fields are unexpectedly nullish (i.e., when the finishReason is 'tool-calls' but toolCalls is nullish). Example: `if (result.finishReason === 'tool-calls' && !result.toolCalls) { console.warn('AI SDK returned tool-calls finish reason but no toolCalls array', { model: model.modelId }) }`."
+    }
+  ],
+  "positive_observations": [
+    "Clean interface-first design: AiOrchestrator interface is well-defined with readonly fields and clear method signatures before the implementation",
+    "Good use of InitResult to surface per-server MCP connection failures (mcpFailed array) rather than throwing on first failure",
+    "Test file properly uses try/finally for orchestrator cleanup in end-to-end tests (lines 302-340, 352-412)",
+    "Test Double rationale comments are present for LLM model mocks, explaining why real LLM calls are not used",
+    "Error conversion in initialize(): `String(f.error)` safely converts unknown error types to strings for the result"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

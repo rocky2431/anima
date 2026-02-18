@@ -1,0 +1,73 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260219-011700-feat-task-11-integration-checkpoint-iter1-iter1",
+  "timestamp": "2026-02-19T01:20:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 571,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 1, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "comments",
+      "subcategory": "misleading-comment",
+      "title": "Comment claims structure not verified by assertions",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "line": 166,
+      "line_end": 167,
+      "code_snippet": "// Tool should be a callable object with type and execute\nexpect(typeof tool).toBe('object')",
+      "description": "The comment states 'Tool should be a callable object with type and execute' implying the tool has 'type' and 'execute' properties. However, the only assertion is `typeof tool === 'object'`, which does not verify any specific properties. A future maintainer reading this comment would believe these properties are tested when they are not, and may skip adding proper assertions thinking they already exist.",
+      "suggestion": "Either add assertions that verify the 'type' and 'execute' properties (e.g., `expect(tool).toHaveProperty('execute')`) or change the comment to accurately describe what is being tested: `// Tool should be a defined object`."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "Comment references transient SDK internals (v2 compat mode)",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "line": 282,
+      "code_snippet": "// Verify tool calls across steps (v2 compat mode stores in steps)",
+      "description": "The phrase 'v2 compat mode stores in steps' references a specific AI SDK implementation detail about how LanguageModelV2 compatibility mode structures results. As the AI SDK evolves (it already uses specificationVersion 'v2'), this comment will become stale and confusing. The 'compat mode' framing suggests this is a temporary workaround, functioning as an implicit TODO.",
+      "suggestion": "Simplify to describe what is being tested without referencing internal SDK versioning: `// Verify tool calls are recorded in steps`."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "comments",
+      "subcategory": "leaky-abstraction",
+      "title": "Comment references internal dependency @ai-sdk/mcp",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "line": 162,
+      "code_snippet": "// AI SDK tools from @ai-sdk/mcp have specific structure",
+      "description": "The comment references '@ai-sdk/mcp' which is an internal dependency of '@proj-airi/mcp-hub', not directly imported in this test. A future maintainer may search for '@ai-sdk/mcp' in the test's direct dependencies and be confused when they don't find it. The tools come from `McpHub.aggregateTools()` which abstracts the underlying AI SDK MCP adapter.",
+      "suggestion": "Reference the direct API instead: `// McpHub aggregated tools have a specific AI SDK-compatible structure`."
+    }
+  ],
+  "positive_observations": [
+    "Test Double rationale comments on both createTestModel and the inline model follow CLAUDE.md conventions perfectly, citing the exact reason (external, rate-limited, unavailable in CI).",
+    "JSDoc on AiOrchestratorConfig and AiOrchestrator interface is comprehensive and accurate: all parameter descriptions match their actual types and usage.",
+    "Step-by-step inline comments in the end-to-end test (lines 303-328) provide clear phase documentation that aids readability without being redundant.",
+    "No forbidden patterns (TODO, FIXME, HACK, XXX, PLACEHOLDER, TEMP) found in any changed file."
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}
