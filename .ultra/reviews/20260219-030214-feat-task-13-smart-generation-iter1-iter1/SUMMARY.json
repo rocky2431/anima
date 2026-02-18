@@ -1,0 +1,704 @@
+{
+  "session": "20260219-030214-feat-task-13-smart-generation-iter1-iter1",
+  "timestamp": "2026-02-19T03:15:00Z",
+  "verdict": "COMMENT",
+  "summary": {
+    "total_findings": 34,
+    "deduplicated_from": 36,
+    "by_severity": {
+      "P0": 1,
+      "P1": 9,
+      "P2": 16,
+      "P3": 8
+    },
+    "agents_run": [
+      "review-code",
+      "review-tests",
+      "review-errors",
+      "review-types",
+      "review-comments",
+      "review-simplify"
+    ],
+    "agents_failed": []
+  },
+  "findings": [
+    {
+      "id": "finding-001",
+      "original_ids": [
+        "review-code-001"
+      ],
+      "severity": "P0",
+      "confidence": 95,
+      "category": "code-quality",
+      "subcategory": "missing-output-validation",
+      "title": "ReportGenerator trusts LLM output without validation",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 42,
+      "line_end": 49,
+      "reported_by": [
+        "review-code"
+      ],
+      "description": "generateStructured<T> returns Promise<T> via an unsafe `as T` cast in every implementation. The LLM can return malformed JSON missing required fields (date, highlights, activityBreakdown, totalWorkDurationMs, personalNote). SmartTip correctly validates its output with isValidSmartTipResult(), but ReportGenerator blindly trusts the cast and forwards whatever the LLM returns. If highlights is missing or activityBreakdown is null, downstream consumers (UI rendering, persistence) will crash with cannot-read-property errors. This is a correctness bug: data reaching onReport or the caller may be structurally invalid.",
+      "suggestion": "Add a validation function (similar to SmartTip's isValidSmartTipResult) that checks: typeof date === 'string', Array.isArray(highlights), Array.isArray(activityBreakdown) with each entry having app/durationMs/description, typeof totalWorkDurationMs === 'number', typeof personalNote === 'string'. Return a fallback or throw a typed validation error on failure."
+    },
+    {
+      "id": "finding-002",
+      "original_ids": [
+        "review-code-002"
+      ],
+      "severity": "P1",
+      "confidence": 92,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "ReportGenerator, SmartTip, SmartTodo have zero callers outside tests",
+      "file": "packages/context-engine/src/index.ts",
+      "line": 12,
+      "line_end": 17,
+      "reported_by": [
+        "review-code"
+      ],
+      "description": "All three new classes are exported from the package index but have zero imports anywhere in the monorepo outside their own test files. No app (stage-tamagotchi, stage-web, server) instantiates them. No service wires them to a cron job, IPC handler, or event listener. The cron-service from task-12 exists but is not connected to these consumers either. This is classic orphan code: exported but unreachable from any live entry point (HTTP handler, Electron IPC, cron job, event listener).",
+      "suggestion": "Wire at least one consumer (e.g., SmartTip) end-to-end: create a cron job in stage-tamagotchi that instantiates SmartTip with a real LlmProvider adapter, calls generate() on an interval, and dispatches the result via IPC/event. This proves the vertical slice from context collection through smart generation to user-visible output."
+    },
+    {
+      "id": "finding-003",
+      "original_ids": [
+        "review-code-003"
+      ],
+      "severity": "P1",
+      "confidence": 88,
+      "category": "code-quality",
+      "subcategory": "unbounded-memory-growth",
+      "title": "SmartTodo.recentEmbeddings grows without bound",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 52,
+      "line_end": 52,
+      "reported_by": [
+        "review-code"
+      ],
+      "description": "Every unique suggestion appends its embedding vector to recentEmbeddings, but there is no size limit or eviction policy. Over days/weeks of running (designed for 30-minute cron cycles), this array grows linearly with all unique suggestions ever seen. Each embedding is a number[] (e.g., 1536 floats for text-embedding-3-small = ~12KB per vector). After 1000 unique suggestions, this is ~12MB of in-memory data, with O(n) linear scan on every dedup check. The only reset mechanism is clearHistory(), which is never called automatically. This is also in-memory-only state that is lost on restart, violating the persistence principle.",
+      "suggestion": "Add a maxHistorySize option (default 200) and evict oldest embeddings when the limit is reached (ring buffer or shift). Consider persisting dedup state to the DocumentStore/VectorStore so it survives restarts. Add a TTL-based eviction (e.g., embeddings older than 7 days are removed)."
+    },
+    {
+      "id": "finding-004",
+      "original_ids": [
+        "review-code-004"
+      ],
+      "severity": "P1",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "missing-output-validation",
+      "title": "SmartTodo trusts LLM output for suggestions array structure",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 83,
+      "line_end": 89,
+      "reported_by": [
+        "review-code"
+      ],
+      "description": "While SmartTip validates its LLM output with isValidSmartTipResult(), SmartTodo only does a shallow null-coalesce on raw?.suggestions. If the LLM returns {suggestions: [{title: 123}]} or {suggestions: 'not an array'}, the ?? [] fallback won't catch it (a non-null non-array value passes through). Each suggestion is then passed to embedding.embed(suggestion.title) where title could be undefined or non-string, causing the embedding provider to fail or produce garbage vectors.",
+      "suggestion": "Add an isValidSmartTodoResult validator that checks Array.isArray(suggestions) and each entry has typeof title === 'string' && typeof reason === 'string'. Filter out invalid entries before passing to dedup."
+    },
+    {
+      "id": "finding-005",
+      "original_ids": [
+        "review-errors-001"
+      ],
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "silent-swallow",
+      "title": "Invalid LLM result silently returns null without logging",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 66,
+      "line_end": 68,
+      "reported_by": [
+        "review-errors"
+      ],
+      "description": "When the LLM returns a structurally invalid result (wrong types, missing fields, invalid enum values for kind/urgency), the code silently returns null with no logging or error callback invocation. The caller cannot distinguish 'LLM decided no tip is needed' (legitimate null via schema) from 'LLM returned garbage' (validation failure). This hides LLM contract violations and makes debugging production issues extremely difficult -- you would never know the LLM is misbehaving.",
+      "suggestion": "Log a warning or invoke onError with context about what validation failed: `const error = new Error('SmartTip: LLM returned invalid result', { cause: { result } }); this.onError?.(error); return null;` At minimum, include what fields failed validation so operators can detect LLM regression."
+    },
+    {
+      "id": "finding-006",
+      "original_ids": [
+        "review-errors-002",
+        "review-errors-003"
+      ],
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "error-as-valid-state",
+      "title": "ReportGenerator catch returns indistinguishable fallback and onError callback is unwrapped",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 53,
+      "line_end": 61,
+      "reported_by": [
+        "review-errors"
+      ],
+      "description": "Two overlapping issues at the same catch block: (1) When the LLM call fails and onError is provided, the catch block returns a DailySummary with empty arrays and zero duration, identical to a legitimate summary for a day with no activity. Downstream consumers cannot distinguish 'LLM failed' from 'user did nothing today'. (2) The onError callback is invoked without its own try/catch. If the user-supplied onError throws, the fallback return is never reached and an unrelated exception propagates. This dual issue (error-as-valid-state + unwrapped callback) also exists in SmartTip and SmartTodo.",
+      "suggestion": "For error-as-valid-state: return a discriminated type {ok: false, error} vs {ok: true, data: DailySummary}, or return null on error so callers know generation failed. For unwrapped callback: wrap onError invocation in try/catch: `try { this.onError(error) } catch { /* callback itself failed */ }` then proceed with fallback return. Apply both fixes consistently across all three classes."
+    },
+    {
+      "id": "finding-007",
+      "original_ids": [
+        "review-errors-005"
+      ],
+      "severity": "P1",
+      "confidence": 86,
+      "category": "error-handling",
+      "subcategory": "missing-per-item-handling",
+      "title": "Embedding failure in dedup loop loses all suggestions",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 118,
+      "line_end": 118,
+      "reported_by": [
+        "review-errors"
+      ],
+      "description": "The dedup() method calls this.embedding.embed() inside a for loop (line 118). This I/O call is within the outer generate() try/catch, so if ANY single embedding call fails, the entire catch block fires and returns {suggestions: []}. This means 5 valid suggestions are all discarded because the 3rd one failed to embed. The embedding service is a network I/O boundary that can fail transiently (rate limit, timeout). Each suggestion should be handled independently.",
+      "suggestion": "Add per-suggestion error handling in the dedup loop: `try { const vector = await this.embedding.embed(suggestion.title); ... } catch { result.push(suggestion); /* skip dedup for this one, include it */ }`. This way embedding failures degrade gracefully (worst case: a duplicate slips through) rather than catastrophically (all suggestions lost)."
+    },
+    {
+      "id": "finding-008",
+      "original_ids": [
+        "review-errors-004",
+        "review-errors-002a"
+      ],
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-context",
+      "title": "SmartTodo error messages lack context and catch returns indistinguishable empty result",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 101,
+      "line_end": 105,
+      "reported_by": [
+        "review-errors"
+      ],
+      "description": "Two overlapping issues at the SmartTodo catch block: (1) Error messages lack operational context -- 'SmartTodo failed to generate suggestions' includes no activity count, timestamp, or app name, making log correlation impossible. Same issue exists in ReportGenerator and SmartTip. (2) When onError is provided, returns {suggestions: []} which is identical to the legitimate 'no suggestions found' result. Downstream consumers cannot distinguish LLM failure from no-op.",
+      "suggestion": "Include operational context: `new Error(`SmartTodo failed (activities=${context.activity.currentApp}, timestamp=${context.timestamp})`, { cause })`. Same pattern for ReportGenerator (include activities.length) and SmartTip (include context.activity.currentApp). For error-as-valid-state: return a discriminated result type consistently across all three classes."
+    },
+    {
+      "id": "finding-009",
+      "original_ids": [
+        "review-tests-001"
+      ],
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "cosineSimilarity pure function lacks direct unit tests",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 21,
+      "line_end": 36,
+      "reported_by": [
+        "review-tests"
+      ],
+      "description": "cosineSimilarity is a Functional Core pure function with non-trivial math (dot product, magnitude, division-by-zero guard). It is only tested indirectly through the SmartTodo dedup integration. Per project rules, Functional Core must have 100% coverage with direct unit tests. Boundary conditions are untested: empty arrays (returns 0), mismatched lengths (returns 0), zero vectors (denominator = 0, returns 0), identical vectors (returns 1.0), orthogonal vectors (returns 0). A bug here silently breaks dedup for the entire SmartTodo pipeline.",
+      "suggestion": "Export cosineSimilarity (or move to a shared math utility) and add direct unit tests: cosineSimilarity([], []) === 0, cosineSimilarity([1,0], [0,1]) === 0, cosineSimilarity([1,2,3], [1,2,3]) === 1.0, cosineSimilarity([1], [1,2]) === 0, cosineSimilarity([0,0], [0,0]) === 0. These are pure input-to-output tests requiring no mocks."
+    },
+    {
+      "id": "finding-010",
+      "original_ids": [
+        "review-types-001"
+      ],
+      "severity": "P1",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "invariant-enforcement",
+      "title": "LLM generateStructured<T> return is unvalidated in ReportGenerator",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 42,
+      "line_end": 46,
+      "reported_by": [
+        "review-types"
+      ],
+      "description": "Encapsulation: 7/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 2/10 (Aggregate: 4.5). LlmProvider.generateStructured<T> uses an unconstrained generic -- the return type T is asserted at compile-time only. The LLM can return malformed JSON, missing fields, or wrong types. ReportGenerator trusts the result with zero runtime validation and passes it directly to onReport callback and returns it. SmartTip correctly validates with isValidSmartTipResult (good), but ReportGenerator skips validation entirely. Since this is external input from an LLM (not a controlled function), missing validation on the Imperative Shell boundary is a P1.",
+      "suggestion": "Add a runtime type guard (similar to SmartTip's isValidSmartTipResult) that validates the DailySummary shape before returning. Example: function isValidDailySummary(v: unknown): v is DailySummary { return !!v && typeof v === 'object' && typeof (v as any).date === 'string' && Array.isArray((v as any).highlights) && ... }. Apply the same pattern to SmartTodo's raw result validation."
+    },
+    {
+      "id": "finding-011",
+      "original_ids": [
+        "review-code-005"
+      ],
+      "severity": "P2",
+      "confidence": 90,
+      "category": "architecture",
+      "subcategory": "duplicated-interface",
+      "title": "PersonaConfig duplicates PersonaTemplate from persona-engine",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 191,
+      "line_end": 195,
+      "reported_by": [
+        "review-code"
+      ],
+      "description": "PersonaConfig is a subset of persona-engine's PersonaTemplate (which has id, name, personality, speakingStyle, defaultEmotion). The JSDoc comment acknowledges this: 'Mirrors PersonaTemplate from persona-engine to avoid cross-package dependency.' However, this creates a contract divergence risk: if PersonaTemplate adds a required field (e.g., language), PersonaConfig won't pick it up. Since both packages are in the same monorepo and context-engine already depends on domain types, a shared contract (or Pick<PersonaTemplate, ...>) would be safer.",
+      "suggestion": "Either: (1) Create a shared-types package with the overlapping interface, or (2) Accept the persona-engine dependency and use Pick<PersonaTemplate, 'name' | 'personality' | 'speakingStyle'>, or (3) At minimum add a contract test that verifies PersonaConfig is assignable from PersonaTemplate. The current approach is acceptable for a walking skeleton but should not drift."
+    },
+    {
+      "id": "finding-012",
+      "original_ids": [
+        "review-code-006"
+      ],
+      "severity": "P2",
+      "confidence": 82,
+      "category": "architecture",
+      "subcategory": "missing-logging",
+      "title": "No logging in any of the three new consumption modules",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 16,
+      "line_end": 65,
+      "reported_by": [
+        "review-code"
+      ],
+      "description": "ReportGenerator, SmartTip, and SmartTodo handle LLM calls (network IO, latency, failures) but have zero logging. When an LLM call takes 30 seconds or returns malformed data, there is no trace in the system logs. The onError callback is the only signal, but it depends on the caller setting it up. The project convention is @guiiai/logg with useLogg(). Without logging, production debugging of LLM interaction failures will be extremely difficult.",
+      "suggestion": "Inject a logger (or use useLogg('ReportGenerator')) and add: (1) INFO log on generate() entry with context size, (2) WARN log when LLM returns invalid/null data, (3) ERROR log with context on catch, (4) DEBUG log with prompt length and response time. Same for SmartTip and SmartTodo."
+    },
+    {
+      "id": "finding-013",
+      "original_ids": [
+        "review-code-007"
+      ],
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "inconsistent-error-strategy",
+      "title": "Error fallback returns silently with empty data when onError is set",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 51,
+      "line_end": 64,
+      "reported_by": [
+        "review-code"
+      ],
+      "description": "When onError is provided, generate() swallows the error and returns a synthetic empty DailySummary. The caller receives what looks like a valid result (it passes type checks) but contains no real data. This creates a silent-failure path: the onReport callback is NOT called (good), but the return value is indistinguishable from a valid empty-day summary. SmartTip returns null on error (distinguishable), SmartTodo returns {suggestions: []} (also ambiguous). The three modules have inconsistent error strategies.",
+      "suggestion": "Consider using a Result/Either pattern or at minimum make the error case distinguishable. Options: (1) Return null on error (like SmartTip), (2) Add an 'error' field to the result type, (3) Use a discriminated union {ok: true, data: DailySummary} | {ok: false, error: Error}. At minimum, ensure all three modules use the same error strategy."
+    },
+    {
+      "id": "finding-014",
+      "original_ids": [
+        "review-errors-007"
+      ],
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "silent-conversion",
+      "title": "Nullish coalescing silently converts malformed LLM output to empty array",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 89,
+      "line_end": 89,
+      "reported_by": [
+        "review-errors"
+      ],
+      "description": "If the LLM returns an object where `suggestions` is undefined, null, or the entire result is null, this line silently converts it to an empty array. Unlike SmartTip which has explicit validation (isValidSmartTipResult), SmartTodo has no validation of the LLM response structure. A malformed LLM response (e.g., { todos: [...] } instead of { suggestions: [...] }) would silently produce zero suggestions with no error or warning.",
+      "suggestion": "Add validation similar to SmartTip's isValidSmartTipResult: verify that raw is an object with an Array-typed `suggestions` field. Log or invoke onError when validation fails so LLM contract violations are observable."
+    },
+    {
+      "id": "finding-015",
+      "original_ids": [
+        "review-comments-001"
+      ],
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on public generate() method in ReportGenerator",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 29,
+      "line_end": 29,
+      "reported_by": [
+        "review-comments"
+      ],
+      "description": "The project convention uses JSDoc on all exported interfaces and public methods. ReportGenerator.generate() is the primary public API but lacks JSDoc. The class-level JSDoc describes the flow at a high level, but the method itself does not document its parameter (activities: what time range? can it be empty?), return value semantics, or error behavior (throws vs returns fallback when onError is absent vs present).",
+      "suggestion": "Add JSDoc to generate() documenting: (1) what 'activities' represents (e.g., all ProcessedContext entries for a given day), (2) error behavior - throws if no onError callback is provided, returns empty fallback if onError is provided, (3) that onReport callback is invoked on success."
+    },
+    {
+      "id": "finding-016",
+      "original_ids": [
+        "review-comments-002"
+      ],
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on public generate() method in SmartTip",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 46,
+      "line_end": 46,
+      "reported_by": [
+        "review-comments"
+      ],
+      "description": "SmartTip.generate() is the primary public API but has no JSDoc. The null return has two distinct meanings: (1) LLM determined no tip was needed, (2) LLM returned structurally invalid data. The error-handling branching (throws vs returns null depending on onError) is also undocumented. A future maintainer cannot distinguish these cases without reading the full implementation.",
+      "suggestion": "Add JSDoc documenting: (1) returns null when no meaningful tip can be generated OR when LLM output fails validation, (2) throws if generation fails and no onError callback was provided, (3) invokes onTip callback on successful non-null generation."
+    },
+    {
+      "id": "finding-017",
+      "original_ids": [
+        "review-comments-003"
+      ],
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on 3 public methods in SmartTodo",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 63,
+      "line_end": 68,
+      "reported_by": [
+        "review-comments"
+      ],
+      "description": "SmartTodo exposes three public methods (generate, setLlmProvider, clearHistory) with no JSDoc. setLlmProvider() enables hot-swapping the LLM provider at runtime, and clearHistory() resets the deduplication embedding cache. Without documentation, a maintainer may not understand when or why to call these methods, or what side effects they have (e.g., clearHistory makes previously-deduped suggestions eligible again).",
+      "suggestion": "Add JSDoc to all three public methods. For generate(): document existingTodos parameter purpose and error behavior. For setLlmProvider(): document that it enables runtime provider replacement. For clearHistory(): document that it clears the dedup embedding cache, making previously-filtered suggestions eligible again."
+    },
+    {
+      "id": "finding-018",
+      "original_ids": [
+        "review-simplify-001"
+      ],
+      "severity": "P2",
+      "confidence": 95,
+      "category": "simplification",
+      "subcategory": "test-duplication",
+      "title": "StubLlmProvider duplicated identically across 3 test files",
+      "file": "packages/context-engine/src/__tests__/report-generator.test.ts",
+      "line": 12,
+      "line_end": 33,
+      "reported_by": [
+        "review-simplify"
+      ],
+      "description": "The exact same 22-line StubLlmProvider class appears in all three test files (report-generator.test.ts:12-33, smart-tip.test.ts:12-33, smart-todo.test.ts:19-40). This is well beyond the 'three similar lines' threshold where extraction is justified. If the LlmProvider interface changes, all three copies must be updated in lockstep.",
+      "suggestion": "Extract to __tests__/helpers/stub-llm-provider.ts and import from there. 22 identical lines x 3 files = 66 lines of pure duplication."
+    },
+    {
+      "id": "finding-019",
+      "original_ids": [
+        "review-simplify-002"
+      ],
+      "severity": "P2",
+      "confidence": 92,
+      "category": "simplification",
+      "subcategory": "test-duplication",
+      "title": "makeProcessedContext and TEST_PERSONA duplicated across 3 test files",
+      "file": "packages/context-engine/src/__tests__/smart-tip.test.ts",
+      "line": 35,
+      "line_end": 58,
+      "reported_by": [
+        "review-simplify"
+      ],
+      "description": "The TEST_PERSONA constant (5 lines) and makeProcessedContext helper function (16 lines) are identically duplicated across all three test files. Combined with StubLlmProvider, each test file carries ~43 lines of shared boilerplate. The makeProcessedContext factory is a prime extraction candidate since it constructs the same default ProcessedContext shape each time.",
+      "suggestion": "Extract to __tests__/helpers/test-fixtures.ts. Eliminates ~21 lines of duplication per file (63 total)."
+    },
+    {
+      "id": "finding-020",
+      "original_ids": [
+        "review-tests-002"
+      ],
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "SmartTodo embedding provider error path untested",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 110,
+      "line_end": 131,
+      "reported_by": [
+        "review-tests"
+      ],
+      "description": "The SmartTodo.dedup() method calls this.embedding.embed() which can throw (network error, API limit, malformed response). If embed() throws during dedup, the error propagates through generate() and hits the catch block. However, there is no test verifying this path. The LLM error tests only cover the generateStructured call, not embedding failures. This is a distinct failure mode -- the LLM call succeeds but the post-processing dedup step fails.",
+      "suggestion": "Add a test with an EmbeddingProvider that throws: 'forwards embedding errors to onError callback'. Create a ThrowingEmbeddingProvider stub (with rationale comment) that throws on embed(). Verify that when LLM succeeds but embedding fails, the error is caught, wrapped with 'SmartTodo' context, and forwarded to onError."
+    },
+    {
+      "id": "finding-021",
+      "original_ids": [
+        "review-tests-003"
+      ],
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-validation-edge-case",
+      "title": "isValidSmartTipResult boundary cases not explicitly tested",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 13,
+      "line_end": 25,
+      "reported_by": [
+        "review-tests"
+      ],
+      "description": "isValidSmartTipResult is a Functional Core validation guard with 6 conditions. The test suite has one test for invalid input ({ headline: 'missing fields' }) but does not test: (1) invalid kind value (e.g., kind='unknown'), (2) invalid urgency value (e.g., urgency='never'), (3) extra fields present but valid, (4) headline/note as empty strings.",
+      "suggestion": "Add parameterized tests for isValidSmartTipResult edge cases through SmartTip.generate() with StubLlmProvider returning various invalid shapes. Consider exporting isValidSmartTipResult for direct unit testing."
+    },
+    {
+      "id": "finding-022",
+      "original_ids": [
+        "review-tests-004"
+      ],
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-error-path-assertion",
+      "title": "ReportGenerator onError path does not verify fallback return value",
+      "file": "packages/context-engine/src/__tests__/report-generator.test.ts",
+      "line": 204,
+      "line_end": 220,
+      "reported_by": [
+        "review-tests"
+      ],
+      "description": "When ReportGenerator.generate() fails and onError is set, it returns a fallback DailySummary with empty highlights, empty activityBreakdown, totalWorkDurationMs=0, and today's date. The test verifies the error callback is invoked but does not assert the return value. This means the fallback structure could silently break without failing a test.",
+      "suggestion": "Capture the return value: const result = await generator.generate(...). Then assert: expect(result.highlights).toEqual([]), expect(result.activityBreakdown).toEqual([]), expect(result.totalWorkDurationMs).toBe(0), expect(result.date).toMatch(/^\\d{4}-\\d{2}-\\d{2}$/)."
+    },
+    {
+      "id": "finding-023",
+      "original_ids": [
+        "review-tests-005"
+      ],
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "SmartTodo dedup recentEmbeddings unbounded growth untested",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 52,
+      "line_end": 52,
+      "reported_by": [
+        "review-tests"
+      ],
+      "description": "The SmartTodo.recentEmbeddings array grows unboundedly. Over time this array will grow without limit, causing increasing memory usage, increasing dedup comparison time (O(n) per suggestion), and eventually all new suggestions being classified as duplicates. There is no test verifying behavior after many generations (e.g., 100+ cycles) or testing that clearHistory is called appropriately.",
+      "suggestion": "Add a test that calls generate() in a loop (e.g., 50 times with distinct suggestions) and verifies behavior. Consider adding maxHistory option with sliding window eviction in the implementation, and test that oldest embeddings are evicted when the limit is reached."
+    },
+    {
+      "id": "finding-024",
+      "original_ids": [
+        "review-types-002"
+      ],
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "invariant-expression",
+      "title": "DailySummary.date typed as plain string instead of date format",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 154,
+      "line_end": 160,
+      "reported_by": [
+        "review-types"
+      ],
+      "description": "DailySummary.date is documented as 'YYYY-MM-DD format' in the schema description prompt but typed as plain string. This is primitive obsession -- the type cannot distinguish a valid ISO date string from arbitrary text. The fallback in the catch block uses new Date().toISOString().slice(0, 10) to construct it, further suggesting a specific format is expected.",
+      "suggestion": "Consider a branded type: type DateString = string & { readonly __brand: 'DateString' }. Add a factory function: function toDateString(iso: string): DateString. At minimum, add readonly to all DailySummary fields."
+    },
+    {
+      "id": "finding-025",
+      "original_ids": [
+        "review-types-003"
+      ],
+      "severity": "P2",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "encapsulation",
+      "title": "SmartTodo.llm is non-readonly with public setter breaking encapsulation",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 46,
+      "line_end": 65,
+      "reported_by": [
+        "review-types"
+      ],
+      "description": "SmartTodo.llm is the only non-readonly private field among the three consumption classes (ReportGenerator and SmartTip both use private readonly). The public setLlmProvider() method allows replacing the LLM provider at runtime without validation or lifecycle management. This creates a race condition risk if generate() is in flight when the provider is swapped.",
+      "suggestion": "If hot-swapping the LLM provider is truly needed, make it explicit in the constructor via an observable or callback pattern. Otherwise, make llm readonly and remove setLlmProvider(). If the use case is testing, the constructor already accepts LlmProvider so test doubles can be injected there."
+    },
+    {
+      "id": "finding-026",
+      "original_ids": [
+        "review-types-004"
+      ],
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "invariant-enforcement",
+      "title": "SmartTodo does not validate LLM structured output shape",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 83,
+      "line_end": 89,
+      "reported_by": [
+        "review-types"
+      ],
+      "description": "SmartTodo applies only a minimal null guard (raw?.suggestions ?? []) on the LLM output. It does not validate that each suggestion has string title and reason fields. The LLM could return suggestions with missing fields, numeric values, or nested objects. The partial guard gives false safety since individual TodoSuggestion items pass through unvalidated to the embedding pipeline and onTodo callback.",
+      "suggestion": "Add a validation function: function isValidTodoSuggestion(v: unknown): v is TodoSuggestion { return !!v && typeof v === 'object' && typeof (v as any).title === 'string' && typeof (v as any).reason === 'string'; }. Filter suggestions through it."
+    },
+    {
+      "id": "finding-027",
+      "original_ids": [
+        "review-code-008"
+      ],
+      "severity": "P3",
+      "confidence": 78,
+      "category": "code-quality",
+      "subcategory": "test-utility-duplication",
+      "title": "StubLlmProvider and makeProcessedContext duplicated across 3 test files",
+      "file": "packages/context-engine/src/__tests__/report-generator.test.ts",
+      "line": 12,
+      "line_end": 33,
+      "reported_by": [
+        "review-code"
+      ],
+      "description": "StubLlmProvider (identical implementation), TEST_PERSONA, and makeProcessedContext are copy-pasted identically across all three test files (report-generator.test.ts, smart-tip.test.ts, smart-todo.test.ts). This is 60+ lines of exact duplication. While test utilities are less critical than production code, this duplication means any change to ProcessedContext structure requires updating three files.",
+      "suggestion": "Extract shared test utilities into a __tests__/helpers/ module (e.g., __tests__/helpers/stubs.ts) and import from there."
+    },
+    {
+      "id": "finding-028",
+      "original_ids": [
+        "review-comments-004"
+      ],
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "Hardcoded 'AI SDK 6' version in LlmProvider JSDoc will rot",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 114,
+      "line_end": 115,
+      "reported_by": [
+        "review-comments"
+      ],
+      "description": "The LlmProvider interface JSDoc references 'AI SDK 6' by version number. When the project upgrades to a newer version (or switches SDKs), this comment will become misleading. The interface itself is SDK-agnostic, so the version reference adds little value.",
+      "suggestion": "Remove the version number: 'Implementations wrap specific LLM SDKs (e.g., Vercel AI SDK generateObject/generateText).' or simply 'Implementations wrap specific LLM SDKs for text and structured generation.'"
+    },
+    {
+      "id": "finding-029",
+      "original_ids": [
+        "review-comments-005"
+      ],
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "SmartTip JSDoc hardcodes '1-hour cycle' scheduling detail",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 29,
+      "line_end": 29,
+      "reported_by": [
+        "review-comments"
+      ],
+      "description": "The class JSDoc states a specific scheduling frequency ('1-hour cycle') that is configured externally in cron-service. If the schedule changes, this comment will silently become incorrect.",
+      "suggestion": "Replace with scheduling-agnostic wording: 'Designed to run periodically via cron-service.'"
+    },
+    {
+      "id": "finding-030",
+      "original_ids": [
+        "review-comments-006"
+      ],
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "SmartTodo JSDoc hardcodes '30-minute cycle' scheduling detail",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 40,
+      "line_end": 40,
+      "reported_by": [
+        "review-comments"
+      ],
+      "description": "Same issue as SmartTip: the class JSDoc hardcodes a specific scheduling frequency ('30-minute cycle') that is configured externally.",
+      "suggestion": "Replace with: 'Designed to run periodically via cron-service.'"
+    },
+    {
+      "id": "finding-031",
+      "original_ids": [
+        "review-simplify-003"
+      ],
+      "severity": "P3",
+      "confidence": 82,
+      "category": "simplification",
+      "subcategory": "structural-duplication",
+      "title": "buildSystemPrompt first 3 lines identical across all 3 source classes",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 83,
+      "line_end": 92,
+      "reported_by": [
+        "review-simplify"
+      ],
+      "description": "The buildSystemPrompt() methods in ReportGenerator (line 67), SmartTip (line 83), and SmartTodo (line 133) all share the same persona preamble (first 3 template literal lines). The task-specific instructions differ. This is at the 'three similar lines' threshold and the methods are short (9 lines each), so extraction may be premature.",
+      "suggestion": "No change recommended yet. If a 4th consumer appears, extract a shared buildPersonaPreamble(persona: PersonaConfig): string[] helper."
+    },
+    {
+      "id": "finding-032",
+      "original_ids": [
+        "review-simplify-004"
+      ],
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "structural-duplication",
+      "title": "Error handling pattern (catch/onError/fallback) structurally identical in 3 classes",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 51,
+      "line_end": 64,
+      "reported_by": [
+        "review-simplify"
+      ],
+      "description": "All three classes use the same error handling pattern: wrap cause in a new Error with class-specific message, call onError if present and return a fallback value, otherwise rethrow. The pattern is structurally identical but differs in error message string and fallback return value. Each catch block is only 7-8 lines.",
+      "suggestion": "No change recommended. The pattern is clear and each instance is short. Consider extraction only if this pattern spreads to more classes."
+    },
+    {
+      "id": "finding-033",
+      "original_ids": [
+        "review-tests-006"
+      ],
+      "severity": "P3",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "test-duplication",
+      "title": "StubLlmProvider and makeProcessedContext duplicated across 3 test files (test-quality perspective)",
+      "file": "packages/context-engine/src/__tests__/report-generator.test.ts",
+      "line": 12,
+      "line_end": 33,
+      "reported_by": [
+        "review-tests"
+      ],
+      "description": "StubLlmProvider (22 lines) is copy-pasted identically in report-generator.test.ts, smart-tip.test.ts, and smart-todo.test.ts. Similarly, makeProcessedContext (14 lines) and TEST_PERSONA (4 lines) are duplicated across all three files. This is ~120 lines of duplicated test infrastructure.",
+      "suggestion": "Extract shared test doubles and helpers to packages/context-engine/src/__tests__/fixtures/test-helpers.ts."
+    },
+    {
+      "id": "finding-034",
+      "original_ids": [
+        "review-types-005"
+      ],
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "readonly-consistency",
+      "title": "Output interfaces lack readonly modifiers unlike PersonaConfig",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 145,
+      "line_end": 185,
+      "reported_by": [
+        "review-types"
+      ],
+      "description": "All new output types (ActivityBreakdownEntry, DailySummary, SmartTipResult, TodoSuggestion, SmartTodoResult) are mutable interfaces. PersonaConfig in the same file correctly uses readonly on all fields. Since these are output/result types produced by LLM generation and consumed by callbacks, they should be immutable after creation.",
+      "suggestion": "Add readonly to all fields in DailySummary, ActivityBreakdownEntry, SmartTipResult, TodoSuggestion, and SmartTodoResult."
+    }
+  ],
+  "positive_observations": [
+    "SmartTip includes a proper runtime validation function (isValidSmartTipResult) that guards against malformed LLM output -- this pattern should be replicated in ReportGenerator and SmartTodo.",
+    "All three modules use typed Error with { cause } for error wrapping, providing good error chain traceability.",
+    "Clean separation of prompt construction (buildSystemPrompt/buildUserPrompt) from LLM invocation logic. Pure string methods are easy to test in isolation.",
+    "SmartTodo embedding-based dedup is a thoughtful design for avoiding repetitive suggestions across cycles.",
+    "Test doubles for LLM and Embedding providers are well-justified with rationale comments, correctly following the project convention for external API test doubles.",
+    "Consistent options-object constructor pattern across all three modules with optional callback hooks (onReport/onTip/onTodo, onError).",
+    "All new exported interfaces in types.ts have thorough JSDoc with field-level documentation.",
+    "The LlmProvider.generateStructured JSDoc clearly explains the schemaDescription contract and why it uses plain-language rather than a rigid schema type.",
+    "PersonaConfig JSDoc explains the design decision to mirror PersonaTemplate to avoid cross-package dependency.",
+    "Class-level JSDoc on all three consumption modules includes a 'Flow' line showing the data pipeline.",
+    "No forbidden comment patterns (TODO, FIXME, HACK, PLACEHOLDER, etc.) found in any of the changed files.",
+    "SmartTodoOptions.similarityThreshold JSDoc accurately documents the range (0-1) and default (0.95), matching the implementation.",
+    "All three classes use new Error(msg, { cause }) for error wrapping -- consistent and preserves the error chain.",
+    "The dual-path error handling (re-throw when no onError, fallback when onError provided) gives callers flexibility.",
+    "cosineSimilarity has proper guard against division by zero and mismatched array lengths.",
+    "All functions are short and focused: maximum function length is 23 lines, well within the 50-line threshold.",
+    "Cyclomatic complexity is low across all functions: maximum CC=7, all others CC<=3.",
+    "Maximum nesting depth is 2 levels throughout all source files.",
+    "Early returns and guard clauses are used consistently.",
+    "Named constants VALID_KINDS and VALID_URGENCIES used instead of inline string literals in smart-tip.ts validation.",
+    "cosineSimilarity is a clean pure function extracted at module scope, not a class method -- follows functional core principle.",
+    "No vi.fn(), vi.mock(), vi.spyOn() or jest equivalents used -- all test doubles implement the full interface contract.",
+    "Error paths tested for both callback (onError) and throw (no onError) scenarios in all 3 modules.",
+    "Behavioral assertions verify prompt construction (persona in system prompt, activity data in user prompt) rather than implementation details.",
+    "SmartTipResult uses proper literal unions for kind and urgency -- good type-level constraint.",
+    "LlmProvider and EmbeddingProvider are clean, minimal interfaces following the Dependency Inversion Principle.",
+    "All three consumption classes use private readonly fields with options-object constructors -- consistent, clean pattern.",
+    "SmartTodo includes vector-based dedup with configurable cosine similarity threshold -- well-designed domain behavior."
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260219-030214-feat-task-13-smart-generation-iter1-iter1",
+  "timestamp": "2026-02-19T03:05:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/consumption/report-generator.ts",
+      "packages/context-engine/src/consumption/smart-tip.ts",
+      "packages/context-engine/src/consumption/smart-todo.ts"
+    ],
+    "total_lines_analyzed": 395,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 5, "P2": 2, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "silent-swallow",
+      "title": "Invalid LLM result silently returns null without logging",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 66,
+      "line_end": 68,
+      "code_snippet": "if (!isValidSmartTipResult(result)) {\n  return null\n}",
+      "description": "When the LLM returns a structurally invalid result (wrong types, missing fields, invalid enum values for kind/urgency), the code silently returns null with no logging or error callback invocation. The caller cannot distinguish 'LLM decided no tip is needed' (legitimate null via schema) from 'LLM returned garbage' (validation failure). This hides LLM contract violations and makes debugging production issues extremely difficult -- you would never know the LLM is misbehaving.",
+      "suggestion": "Log a warning or invoke onError with context about what validation failed: `const error = new Error('SmartTip: LLM returned invalid result', { cause: { result } }); this.onError?.(error); return null;` At minimum, include what fields failed validation so operators can detect LLM regression.",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "error-as-valid-state",
+      "title": "ReportGenerator catch returns indistinguishable fallback DailySummary",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 53,
+      "line_end": 61,
+      "code_snippet": "if (this.onError) {\n  this.onError(error)\n  return {\n    date: new Date().toISOString().slice(0, 10),\n    highlights: [],\n    activityBreakdown: [],\n    totalWorkDurationMs: 0,\n    personalNote: '',\n  }\n}",
+      "description": "When the LLM call fails and onError is provided, the catch block returns a DailySummary with empty arrays and zero duration. This is identical to a legitimate summary for a day with no activity. Downstream consumers (UI, storage, cron triggers) cannot distinguish 'LLM failed' from 'user did nothing today'. This error-as-valid-state pattern was already flagged in ScreenshotPipeline.tick() -- it is recurring in this codebase.",
+      "suggestion": "Either: (1) Return a discriminated type that includes a success/failure flag, e.g., `{ ok: false, error }` vs `{ ok: true, data: DailySummary }`. (2) Or return null on error so callers know generation failed. (3) At minimum, add a field like `generationFailed: true` to the fallback object. The onError callback alone is insufficient because the return value propagates independently.",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "callback-not-wrapped",
+      "title": "onError callback not wrapped in try/catch across all three classes",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 54,
+      "line_end": 54,
+      "code_snippet": "this.onError(error)",
+      "description": "In all three files (report-generator.ts:54, smart-tip.ts:76, smart-todo.ts:103), the onError callback is invoked inside the catch block without its own try/catch. If the user-supplied onError callback throws (e.g., a logging library fails, a notification service is down), the original error's fallback return is never reached. Instead, the onError exception propagates as an unhandled error with no relation to the original LLM failure. This exact pattern was previously flagged in ScreenshotPipeline and ActivityMonitor.",
+      "suggestion": "Wrap onError invocation: `try { this.onError(error) } catch { /* onError itself failed, original error already wrapped */ }` then proceed with the fallback return. This is especially important because onError is user-supplied and its behavior is unpredictable.",
+      "claude_md_rule": "error_handling.rules.catch_log_rethrow"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-context",
+      "title": "Error messages lack operational context across all three classes",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 101,
+      "line_end": 101,
+      "code_snippet": "const error = new Error('SmartTodo failed to generate suggestions', { cause })",
+      "description": "All three classes produce error messages with zero operational context: 'ReportGenerator failed to generate daily summary' (report-generator.ts:52), 'SmartTip failed to generate tip' (smart-tip.ts:74), 'SmartTodo failed to generate suggestions' (smart-todo.ts:101). None include: activity count, timestamp, current app name, or any input details. When these errors surface in logs, operators have no way to correlate the failure with specific user state. This is the same 'error messages lack input context' issue already documented across the storage and capture layers.",
+      "suggestion": "Include operational context: `new Error(`SmartTodo failed to generate suggestions (activities=${context.activity.currentApp}, timestamp=${context.timestamp})`, { cause })`. Same for ReportGenerator (include activities.length) and SmartTip (include context.activity.currentApp).",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P1",
+      "confidence": 86,
+      "category": "error-handling",
+      "subcategory": "missing-per-item-handling",
+      "title": "Embedding failure in dedup loop loses all suggestions",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 118,
+      "line_end": 118,
+      "code_snippet": "const vector = await this.embedding.embed(suggestion.title)",
+      "description": "The dedup() method calls this.embedding.embed() inside a for loop (line 118). This I/O call is within the outer generate() try/catch, so if ANY single embedding call fails, the entire catch block fires and returns `{ suggestions: [] }`. This means 5 valid suggestions are all discarded because the 3rd one failed to embed. The embedding service is a network I/O boundary that can fail transiently (rate limit, timeout). Each suggestion should be handled independently.",
+      "suggestion": "Add per-suggestion error handling in the dedup loop: `try { const vector = await this.embedding.embed(suggestion.title); ... } catch { result.push(suggestion); /* skip dedup for this one, include it */ }`. This way embedding failures degrade gracefully (worst case: a duplicate slips through) rather than catastrophically (all suggestions lost).",
+      "claude_md_rule": "error_handling.classification.operational_errors"
+    },
+    {
+      "id": "review-errors-002a",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "error-as-valid-state",
+      "title": "SmartTodo catch returns empty suggestions indistinguishable from no-op",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 103,
+      "line_end": 105,
+      "code_snippet": "this.onError(error)\nreturn { suggestions: [] }",
+      "description": "Same error-as-valid-state pattern as ReportGenerator: when onError is provided, the catch block returns `{ suggestions: [] }` which is identical to the legitimate 'no suggestions found' result. Rated P2 instead of P1 because SmartTodo's empty suggestions have less downstream impact than a fake DailySummary (tips are ephemeral, summaries are persisted). The same pattern exists in SmartTip (returns null, which IS the legitimate 'no tip needed' signal -- also conflated).",
+      "suggestion": "Return a discriminated result type: `{ ok: false, error }` vs `{ ok: true, data: SmartTodoResult }`, or include a `failed: boolean` field. Apply consistently across all three consumption classes.",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-errors-007",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "silent-conversion",
+      "title": "Nullish coalescing silently converts malformed LLM output to empty array",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 89,
+      "line_end": 89,
+      "code_snippet": "const suggestions = raw?.suggestions ?? []",
+      "description": "If the LLM returns an object where `suggestions` is undefined, null, or the entire result is null, this line silently converts it to an empty array. Unlike SmartTip which has explicit validation (isValidSmartTipResult), SmartTodo has no validation of the LLM response structure. A malformed LLM response (e.g., `{ todos: [...] }` instead of `{ suggestions: [...] }`) would silently produce zero suggestions with no error or warning.",
+      "suggestion": "Add validation similar to SmartTip's isValidSmartTipResult: verify that raw is an object with an Array-typed `suggestions` field. Log or invoke onError when validation fails so LLM contract violations are observable.",
+      "claude_md_rule": "error_handling.rules.include_context"
+    }
+  ],
+  "positive_observations": [
+    "All three classes use `new Error(msg, { cause })` for error wrapping -- consistent and preserves the error chain for debugging.",
+    "The dual-path error handling (re-throw when no onError, fallback when onError provided) gives callers flexibility to choose between fail-fast and resilient modes.",
+    "SmartTip includes explicit validation of LLM output via isValidSmartTipResult with enum checks for kind and urgency -- good defensive pattern against LLM hallucination.",
+    "cosineSimilarity has proper guard against division by zero (denominator === 0 check) and mismatched array lengths."
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}
