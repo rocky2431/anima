@@ -1,0 +1,116 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260219-003505-feat-task-10-skills-engine-iter1",
+  "timestamp": "2026-02-19T00:42:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/skills-engine/src/skill-loader.ts",
+      "packages/skills-engine/src/skill-registry.ts",
+      "packages/skills-engine/src/context-integration.ts",
+      "packages/skills-engine/src/types.ts"
+    ],
+    "total_lines_analyzed": 345,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 2, "P3": 3 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "comments",
+      "subcategory": "misleading-constraint",
+      "title": "JSDoc claims id \"must match directory name\" but this is never enforced",
+      "file": "packages/skills-engine/src/types.ts",
+      "line": 6,
+      "code_snippet": "/** Unique identifier, must match directory name */\nid: string",
+      "description": "The JSDoc on SkillMetadata.id states the id 'must match directory name', but neither validateMetadata(), loadSkillFromDir(), nor discoverSkills() verify this constraint. A skill with id 'foo' in directory 'bar/' would be silently accepted. A future maintainer reading this comment would incorrectly believe the invariant is enforced, potentially relying on it in downstream code without adding their own validation.",
+      "suggestion": "Either enforce the constraint in discoverSkills() by comparing skill.metadata.id against entry.name, or soften the JSDoc to '/** Unique identifier, conventionally matches directory name */' to reflect reality."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "unenforced-budget",
+      "title": "Token budget claims (<200 / <5000 tokens) are not enforced",
+      "file": "packages/skills-engine/src/types.ts",
+      "line": 25,
+      "line_end": 27,
+      "code_snippet": "/**\n * Layer 1: Lightweight metadata summary (<200 tokens).\n * Used for initial system prompt injection to let LLM know available skills.\n */",
+      "description": "SkillLayer1 JSDoc claims '<200 tokens' and SkillLayer2 claims '<5000 tokens' (line 36). These budget constraints also appear in context-integration.ts line 18. However, no code enforces token counting or truncation. If a skill has a very long description or body, the budget will be exceeded silently. These comments will mislead maintainers into thinking the system handles token budgets automatically.",
+      "suggestion": "Either add token-counting validation (e.g., a rough word-count check in parseSkillMd or formatLayer1Summary), or reword the comments to 'Target: ~200 tokens (not enforced at runtime)' to set correct expectations."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "unverifiable-reference",
+      "title": "Reference to 'agentskills.io standard' is unverifiable",
+      "file": "packages/skills-engine/src/types.ts",
+      "line": 1,
+      "line_end": 4,
+      "code_snippet": "/**\n * SKILL.md frontmatter metadata (YAML section).\n * Follows agentskills.io standard.\n */",
+      "description": "The JSDoc claims the interface 'Follows agentskills.io standard'. This external standard reference is not linked, documented, or verifiable within the codebase. If the standard does not exist (or this project's implementation diverges from it), this comment would be misleading. Future maintainers may waste time trying to find and conform to a standard that may not apply.",
+      "suggestion": "Either add a URL link to the standard (e.g., 'Follows agentskills.io standard (https://agentskills.io/spec)') so maintainers can verify conformance, or remove the reference if it is aspirational rather than factual."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 90,
+      "category": "comments",
+      "subcategory": "redundant-duplication",
+      "title": "loadAll() JSDoc duplicates class-level JSDoc verbatim",
+      "file": "packages/skills-engine/src/skill-registry.ts",
+      "line": 17,
+      "line_end": 20,
+      "code_snippet": "/**\n * Load and register all skills from built-in and user directories.\n * User skills override built-in skills with the same ID.\n */",
+      "description": "The loadAll() JSDoc repeats the exact same information as the class-level JSDoc (lines 5-8): 'User skills override built-in skills with the same ID.' Duplicated documentation increases maintenance cost -- if the override behavior changes, both comments must be updated. The class-level comment is the natural home for this behavioral description.",
+      "suggestion": "Remove the override detail from the loadAll() JSDoc, keeping it only at the class level. For loadAll(), a simpler comment like '/** Discover and register all skills from configured directories. */' is sufficient."
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P3",
+      "confidence": 88,
+      "category": "comments",
+      "subcategory": "redundant-restating-code",
+      "title": "Five trivial JSDoc comments restate method names on self-documenting code",
+      "file": "packages/skills-engine/src/skill-registry.ts",
+      "line": 35,
+      "line_end": 75,
+      "code_snippet": "/** Get all registered skills. */\ngetAll(): SkillRegistryEntry[] {\n...\n/** Get a skill by its ID. */\ngetById(id: string): SkillRegistryEntry | undefined {",
+      "description": "Five methods (getAll, getById, activate, deactivate, getActive) have JSDoc that simply restates the method name and signature in natural language. For example, 'Get a skill by its ID' on getById(id: string). These comments have negative ROI: they add maintenance burden without providing information beyond what the method signature already communicates. The method names and type signatures are self-documenting.",
+      "suggestion": "Remove the trivial JSDoc from these five methods, or replace them with comments that add value -- e.g., document the return semantics ('Returns undefined if no skill with the given ID is registered') or edge cases."
+    },
+    {
+      "id": "review-comments-006",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-why",
+      "title": "Inline comment explains 'what' but not 'why' for silently skipping errors",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 122,
+      "code_snippet": "catch {\n  // Skip invalid skills during discovery\n}",
+      "description": "The comment '// Skip invalid skills during discovery' describes what the code does (skips), which is already apparent from the empty catch block. It does not explain WHY silently skipping is the desired behavior -- e.g., is this for resilience so one bad skill file does not block all skill loading? A 'why' comment would be more valuable and less likely to rot.",
+      "suggestion": "Rewrite to explain intent: '// Resilience: one malformed SKILL.md should not prevent loading other skills' or similar. Also consider logging a warning (using the project's structured logger) so discovery failures are observable."
+    }
+  ],
+  "positive_observations": [
+    "JSDoc is used consistently on all exported interfaces, types, and public functions, following the project convention.",
+    "Interface field-level JSDoc in types.ts provides useful context for each SkillMetadata property (e.g., 'Semver version string', 'Optional list of tool names this skill enables').",
+    "The Layer 1 / Layer 2 conceptual model is well-documented across types.ts and context-integration.ts, giving maintainers a clear mental model of the two-tier system prompt injection strategy.",
+    "No TODO, FIXME, HACK, PLACEHOLDER, or other forbidden comment patterns were found."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 7
+  }
+}

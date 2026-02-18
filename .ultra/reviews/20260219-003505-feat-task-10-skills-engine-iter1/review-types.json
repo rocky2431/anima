@@ -1,0 +1,110 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260219-003505-feat-task-10-skills-engine-iter1",
+  "timestamp": "2026-02-19T00:40:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/skills-engine/src/types.ts",
+      "packages/skills-engine/src/skill-loader.ts",
+      "packages/skills-engine/src/skill-registry.ts",
+      "packages/skills-engine/src/context-integration.ts",
+      "packages/skills-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 370,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 3, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "encapsulation-leak",
+      "title": "SkillRegistry.getById() leaks mutable internal entry",
+      "file": "packages/skills-engine/src/skill-registry.ts",
+      "line": 45,
+      "line_end": 47,
+      "code_snippet": "getById(id: string): SkillRegistryEntry | undefined {\n    return this.entries.get(id)\n  }",
+      "description": "Encapsulation: 6/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 6/10 (Aggregate: 5.25). SkillRegistry.getById() returns a direct reference to the internal Map entry. Because SkillRegistryEntry.active is mutable (no readonly modifier), any caller can bypass activate()/deactivate() by writing entry.active = true directly. Similarly, getAll() spreads the values array but each element is still the same mutable reference. This breaks the registry's encapsulation -- the activate/deactivate methods become optional suggestions rather than enforced state transitions.",
+      "suggestion": "Return a defensive copy: return entry ? { ...entry, skill: { ...entry.skill } } : undefined. Alternatively, mark SkillRegistryEntry fields as readonly and expose only an immutable view type (ReadonlySkillRegistryEntry) from the getter, keeping the mutable version internal to the class.",
+      "claude_md_rule": "architecture.functional_core_imperative_shell"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "SkillMetadata.category typed as plain string, not a union",
+      "file": "packages/skills-engine/src/types.ts",
+      "line": 11,
+      "line_end": 12,
+      "code_snippet": "/** Skill category for grouping */\n  category: string",
+      "description": "Encapsulation: 6/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 6/10 (Aggregate: 5.25). SkillMetadata.category is typed as plain string but semantically represents a finite set of skill categories. This is primitive obsession -- the type system cannot prevent typos or invalid categories. The same pattern applies to SkillMetadata.id (should be at minimum a non-empty string brand) and SkillMetadata.version (should be a semver-shaped type or branded type).",
+      "suggestion": "Define a SkillCategory literal union type (e.g., type SkillCategory = 'coding' | 'research' | 'analysis' | 'creative' | string & {}) to provide autocomplete while allowing extension. For version, consider a branded type: type SemverString = string & { readonly __brand: 'semver' } with a parse function that validates the format.",
+      "claude_md_rule": "architecture.functional_core_imperative_shell"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "missing-readonly",
+      "title": "All interfaces in types.ts lack readonly modifiers",
+      "file": "packages/skills-engine/src/types.ts",
+      "line": 5,
+      "line_end": 75,
+      "code_snippet": "export interface SkillMetadata {\n  id: string\n  name: string\n  category: string\n  version: string",
+      "description": "Encapsulation: 6/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 6/10 (Aggregate: 5.25). All seven interfaces (SkillMetadata, SkillLayer1, SkillLayer2, Skill, SkillRegistryEntry, SkillsEngineConfig) are defined with mutable fields. In a Functional Core architecture, data flowing through pure functions should be immutable. Without readonly modifiers, any function receiving a Skill object can silently mutate metadata.id or body, leading to subtle bugs where shared references are unexpectedly modified.",
+      "suggestion": "Add readonly to all interface fields: export interface SkillMetadata { readonly id: string; readonly name: string; ... }. For SkillRegistryEntry, keep the internal mutable version for the registry class and export a Readonly<SkillRegistryEntry> view type for consumers.",
+      "claude_md_rule": "architecture.functional_core_imperative_shell"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "incomplete-validation",
+      "title": "Optional array fields not validated for element types",
+      "file": "packages/skills-engine/src/skill-loader.ts",
+      "line": 55,
+      "line_end": 65,
+      "code_snippet": "if (Array.isArray(parsed.data.allowedTools)) {\n    metadata.allowedTools = parsed.data.allowedTools\n  }\n\n  if (Array.isArray(parsed.data.dependencies)) {\n    metadata.dependencies = parsed.data.dependencies\n  }",
+      "description": "Encapsulation: 6/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 6/10 (Aggregate: 5.25). parseSkillMd validates that required fields are strings, but optional array fields (allowedTools, dependencies, tags) are only checked with Array.isArray(). The array elements could be numbers, objects, or null -- gray-matter parses YAML which can produce any type. Since these arrays are typed as string[], silently accepting non-string elements violates the type contract. This is an Imperative Shell boundary accepting external input (file I/O) without full validation.",
+      "suggestion": "Validate array element types: if (Array.isArray(parsed.data.allowedTools) && parsed.data.allowedTools.every((t: unknown) => typeof t === 'string')) { metadata.allowedTools = parsed.data.allowedTools }. Better yet, define Valibot schemas for SkillMetadata and use v.parse() at this boundary -- Valibot is the project standard for validation.",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "informational",
+      "title": "SkillLayer2 is unused -- SkillLayer1 is used but Layer2 never constructed",
+      "file": "packages/skills-engine/src/types.ts",
+      "line": 39,
+      "line_end": 42,
+      "code_snippet": "export interface SkillLayer2 {\n  metadata: SkillMetadata\n  body: string\n}",
+      "description": "Encapsulation: 6/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 6/10 (Aggregate: 5.25). SkillLayer2 is defined and exported but never instantiated or used anywhere in the codebase. The formatLayer2Body() function works directly with Skill objects, not SkillLayer2. While the Skill interface has the same fields (metadata + body + source + filePath), SkillLayer2 is a strict subset that could serve as a useful projection type. However, currently it is dead code that may confuse consumers about when to use Skill vs SkillLayer2.",
+      "suggestion": "Either use SkillLayer2 as the return type of a toLayer2() extraction function (parallel to extractLayer1), or remove it to avoid confusion. If kept, add a comment explaining its intended use in the two-layer loading architecture."
+    }
+  ],
+  "positive_observations": [
+    "SkillSource is a proper 2-value literal union type ('builtin' | 'user') rather than a plain string -- good discriminator",
+    "parseSkillMd validates required fields and throws descriptive errors with the list of missing fields -- good enforcement at the parsing boundary",
+    "SkillRegistry uses private Map with encapsulated state -- good class-level encapsulation pattern consistent with VectorStore/DocumentStore patterns in this codebase",
+    "The two-layer architecture (Layer1 lightweight summary, Layer2 full body) is a well-designed domain model for token-budget-aware skill injection",
+    "Pure functions in context-integration.ts (extractLayer1, formatLayer1Summary, formatLayer2Body, buildSkillsContext) are stateless and composable -- good Functional Core pattern"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}
