@@ -1,0 +1,94 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260218-031332-feat-task-4-activity-monitor-iter1",
+  "timestamp": "2026-02-18T03:15:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/consumption/activity-monitor.ts",
+      "packages/context-engine/src/__tests__/activity-monitor.test.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 620,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 2, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "discriminated-union",
+      "title": "ActivityState uses boolean flag + empty string sentinels",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 35,
+      "line_end": 50,
+      "code_snippet": "export interface ActivityState {\n  currentApp: string\n  isActive: boolean\n  recentApps: string[]\n  lastActivityTimestamp: number\n}",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.5). ActivityState allows illegal combinations: isActive=false with currentApp='VS Code', or isActive=true with currentApp=''. The empty-state branch in getState() returns currentApp:'', lastActivityTimestamp:0 -- sentinel values that callers must know to check for. A discriminated union (ActiveState | InactiveState) would make illegal states unrepresentable. This is the same boolean-flag anti-pattern previously identified in TriggerResult.",
+      "suggestion": "Replace with a discriminated union:\n\ntype ActivityState = ActiveState | InactiveState\n\ninterface ActiveState {\n  status: 'active'\n  currentApp: string  // non-empty\n  currentWindowTitle: string\n  continuousWorkDurationMs: number\n  recentApps: string[]\n  lastActivityTimestamp: number\n  isFullscreen: boolean\n}\n\ninterface InactiveState {\n  status: 'inactive'\n  recentApps: string[]\n  lastActivityTimestamp: number | undefined\n}",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "constructor-validation",
+      "title": "ActivityMonitor accepts invalid configuration without validation",
+      "file": "packages/context-engine/src/consumption/activity-monitor.ts",
+      "line": 35,
+      "line_end": 42,
+      "code_snippet": "constructor(options: ActivityMonitorOptions) {\n  this.aggregationIntervalMs = options.aggregationIntervalMs ?? DEFAULT_AGGREGATION_INTERVAL_MS\n  this.inactivityThresholdMs = options.inactivityThresholdMs ?? DEFAULT_INACTIVITY_THRESHOLD_MS\n  this.maxRecentApps = options.maxRecentApps ?? DEFAULT_MAX_RECENT_APPS\n  this.eventRetentionMs = options.eventRetentionMs ?? DEFAULT_EVENT_RETENTION_MS\n}",
+      "description": "Encapsulation: 8/10, Expression: 5/10, Usefulness: 7/10, Enforcement: 4/10 (Aggregate: 6.0). Constructor accepts any number for interval/threshold options including negative, zero, or NaN values. A negative aggregationIntervalMs or zero eventRetentionMs would cause incorrect behavior (setInterval with negative value, all events immediately trimmed). As an Imperative Shell boundary, this should validate inputs.",
+      "suggestion": "Add validation in the constructor:\n\nconst interval = options.aggregationIntervalMs ?? DEFAULT_AGGREGATION_INTERVAL_MS\nif (interval <= 0 || !Number.isFinite(interval)) {\n  throw new Error(`aggregationIntervalMs must be a positive finite number, got ${interval}`)\n}\n\nAlternatively, use a Valibot schema for ActivityMonitorOptions to validate at the boundary (project standard).",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "Bare number type for timestamps and durations across new types",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 43,
+      "line_end": 47,
+      "code_snippet": "continuousWorkDurationMs: number\nrecentApps: string[]\nlastActivityTimestamp: number",
+      "description": "Encapsulation: 5/10, Expression: 6/10, Usefulness: 7/10, Enforcement: 3/10 (Aggregate: 5.25). ActivityState.continuousWorkDurationMs, ActivityState.lastActivityTimestamp, ProcessedContext.timestamp, and ActivityMonitorOptions interval fields all use bare `number`. There is no type-level distinction between a timestamp-in-ms and a duration-in-ms -- callers can pass a duration where a timestamp is expected, or mix seconds with milliseconds. Branded types (e.g., `type TimestampMs = number & { __brand: 'TimestampMs' }`) would catch these at compile time.",
+      "suggestion": "Introduce branded types:\n\ntype TimestampMs = number & { readonly __brand: unique symbol }\ntype DurationMs = number & { readonly __brand: unique symbol }\n\nWith factory functions: const toTimestampMs = (n: number): TimestampMs => n as TimestampMs\n\nThis is a recurring pattern across the codebase (flagged in prior reviews). Consider creating a shared types/branded.ts module.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "string-literal-union",
+      "title": "VlmResult.activity uses plain string instead of literal union",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 99,
+      "line_end": 101,
+      "code_snippet": "activity: string",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.5). VlmResult.activity is documented via JSDoc as having known categories ('coding', 'browsing', 'writing') but typed as plain string. A string literal union would enable exhaustive pattern matching by consumers. However, since VLM output is inherently open-ended (model may return unexpected categories), plain string may be acceptable -- the concern is lower severity. ProcessedScreenshotContext.activity inherits this same looseness.",
+      "suggestion": "Consider a known-values-plus-escape-hatch pattern:\n\ntype ActivityCategory = 'coding' | 'browsing' | 'writing' | 'gaming' | 'communication' | (string & {})\n\nThis preserves autocomplete for known values while allowing unknown VLM outputs."
+    }
+  ],
+  "positive_observations": [
+    "ActivityMonitor has excellent encapsulation: all fields private, configuration readonly, state mutation only through well-defined methods (recordEvent, setScreenshotContext, tick)",
+    "Clean Functional Core / Imperative Shell separation: ActivityMonitor (Shell) delegates to pure buildActivityContext function (Core) for event aggregation",
+    "ProcessedContext cleanly composes ActivityState with optional ProcessedScreenshotContext, good use of optional property for screenshot availability",
+    "Error handling in tick() properly wraps callback errors with Error cause chain and reports via onError callback rather than swallowing or crashing",
+    "Event window management (trimEvents) prevents unbounded memory growth with configurable retention"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

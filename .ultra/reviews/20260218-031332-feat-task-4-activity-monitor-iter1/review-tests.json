@@ -1,0 +1,93 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260218-031332-feat-task-4-activity-monitor-iter1",
+  "timestamp": "2026-02-18T03:13:32.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/consumption/activity-monitor.ts",
+      "packages/context-engine/src/__tests__/activity-monitor.test.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 620,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 2, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "error-path-missing",
+      "title": "Missing test: onContext throws with no onError handler",
+      "file": "packages/context-engine/src/__tests__/activity-monitor.test.ts",
+      "line": 288,
+      "line_end": 307,
+      "code_snippet": "try {\n  this.onContext?.(context)\n}\ncatch (cause) {\n  const error = new Error('ActivityMonitor tick failed', { cause })\n  this.onError?.(error)\n}",
+      "description": "The test suite only covers the case where both onContext and onError are provided. When onContext throws and onError is NOT set, the error is silently swallowed (line 98 of activity-monitor.ts uses optional chaining this.onError?.(error)). This is a silent catch-and-discard pattern that violates the error handling rules (catch without handling). There is no test proving this behavior is intentional, and no test for when onError itself throws (which would propagate uncaught from tick()).",
+      "suggestion": "Add two test cases: (1) tick() when onContext throws and onError is not provided -- verify tick() does not throw and returns a ProcessedContext (documenting the silent swallow as intentional or fixing it to log). (2) tick() when onError itself throws -- verify behavior (currently it would propagate uncaught). Consider whether silently swallowing errors is truly desired or whether a console.error fallback should be added.",
+      "claude_md_rule": "error_handling.forbidden.catch_silent_swallow"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "boundary-condition-missing",
+      "title": "Missing test: start() idempotency (double-start prevention)",
+      "file": "packages/context-engine/src/__tests__/activity-monitor.test.ts",
+      "line": 219,
+      "line_end": 264,
+      "code_snippet": "monitor.start()\nexpect(monitor.isRunning).toBe(true)\n// No test for calling start() a second time",
+      "description": "The ActivityMonitor.start() method has an idempotency guard (line 105: if this.timer !== null, return). However, no test verifies this behavior. Calling start() twice could leak interval handles if the guard were removed during refactoring. This is a boundary condition that protects against resource leaks.",
+      "suggestion": "Add a test: call start() twice, verify isRunning is true, advance timers, verify only one tick fires per interval (not double-ticking). Then call stop() and verify isRunning is false. Example:\n\nit('ignores redundant start() calls', () => {\n  const contexts: ProcessedContext[] = []\n  const monitor = new ActivityMonitor({\n    aggregationIntervalMs: 1000,\n    onContext: ctx => contexts.push(ctx),\n  })\n  monitor.recordEvent(makeEvent(Date.now()))\n  monitor.start()\n  monitor.start() // should be no-op\n  vi.advanceTimersByTime(1000)\n  expect(contexts).toHaveLength(1) // not 2\n  monitor.stop()\n})"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "boundary-condition-missing",
+      "title": "Missing test: tick() return value is not asserted",
+      "file": "packages/context-engine/src/__tests__/activity-monitor.test.ts",
+      "line": 151,
+      "line_end": 217,
+      "code_snippet": "monitor.tick()\n// contexts verified via callback, but tick() return value never asserted",
+      "description": "The tick() method returns a ProcessedContext object (line 82-102 of activity-monitor.ts), but all tests verify behavior through the onContext callback only. The return value is part of the public API (exported via index.ts) and should be tested directly to ensure consumers who call tick() manually get the correct result without needing a callback.",
+      "suggestion": "Add a test that calls tick() directly and asserts on the returned ProcessedContext:\n\nit('returns ProcessedContext from tick()', () => {\n  const monitor = new ActivityMonitor({})\n  const now = Date.now()\n  vi.setSystemTime(now)\n  monitor.recordEvent(makeEvent(now, { appName: 'VS Code' }))\n  const result = monitor.tick()\n  expect(result.activity.currentApp).toBe('VS Code')\n  expect(result.timestamp).toBe(now)\n  expect(result.screenshot).toBeUndefined()\n})"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "test-organization",
+      "title": "Duplicate empty-state test across describe blocks",
+      "file": "packages/context-engine/src/__tests__/activity-monitor.test.ts",
+      "line": 142,
+      "line_end": 322,
+      "code_snippet": "// Line 142-148: 'reports inactive when no events recorded' in active/inactive\n// Line 309-322: 'returns empty state when no events recorded' in getState",
+      "description": "The 'reports inactive when no events recorded' test (line 142) and the 'returns empty state when no events recorded' test (line 309) overlap significantly. The latter is a superset that checks all fields including isActive:false. The former only checks isActive. While not harmful, this redundancy could be consolidated.",
+      "suggestion": "Remove the narrower test at line 142-148 since the comprehensive empty-state test at line 309-322 already covers isActive:false along with all other fields. Alternatively, keep both but add a comment linking them to clarify the overlap is intentional."
+    }
+  ],
+  "positive_observations": [
+    "No mock violations detected: tests use direct instantiation of ActivityMonitor with real dependencies (buildActivityContext called internally with no mocking)",
+    "vi.useFakeTimers() and vi.setSystemTime() are appropriate for testing time-dependent behavior -- this is not a mock violation since it controls the test environment, not a domain/service dependency",
+    "Good behavioral coverage of happy paths: event recording, app switching, deduplication, ordering, recent apps limit, active/inactive detection, periodic ticking, screenshot context lifecycle",
+    "Error handling path is tested (onContext throwing triggers onError callback with wrapped error and cause chain)",
+    "Event retention/trimming is tested with concrete boundary (old events outside window are pruned)",
+    "Test helper makeEvent() provides clean event factory with sensible defaults and override support"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}
