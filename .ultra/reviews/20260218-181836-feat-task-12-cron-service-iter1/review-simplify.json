@@ -1,0 +1,80 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260218-181836-feat-task-12-cron-service-iter1",
+  "timestamp": "2026-02-19T00:20:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/cron-service/src/cron-service.ts",
+      "packages/cron-service/src/job-store.ts"
+    ],
+    "total_lines_analyzed": 283,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 1, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "at(), every(), cron() methods share near-identical structure",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 21,
+      "line_end": 47,
+      "code_snippet": "at(date: Date | string, options: ScheduleOptions): string {\n  const id = nanoid()\n  const isoDate = date instanceof Date ? date.toISOString() : date\n  const record = this.buildRecord(id, 'at', isoDate, options)\n  this.store.save(record)\n  this.scheduleJob(record)\n  return id\n}",
+      "description": "The three scheduling methods at(), every(), and cron() follow the exact same pattern: generate id with nanoid(), build record via buildRecord(), save to store, schedule the job, return id. The only variation is a one-line transformation of the first argument into a schedule string. This is a near-duplicate block repeated 3 times (7 lines each, 21 lines total).",
+      "suggestion": "BEFORE:\nat(date: Date | string, options: ScheduleOptions): string {\n  const id = nanoid()\n  const isoDate = date instanceof Date ? date.toISOString() : date\n  const record = this.buildRecord(id, 'at', isoDate, options)\n  this.store.save(record)\n  this.scheduleJob(record)\n  return id\n}\n\nevery(intervalSeconds: number, options: ScheduleOptions): string {\n  const id = nanoid()\n  const record = this.buildRecord(id, 'every', String(intervalSeconds), options)\n  this.store.save(record)\n  this.scheduleJob(record)\n  return id\n}\n\ncron(expression: string, options: ScheduleOptions): string {\n  const id = nanoid()\n  const record = this.buildRecord(id, 'cron', expression, options)\n  this.store.save(record)\n  this.scheduleJob(record)\n  return id\n}\n\nAFTER:\nprivate createJob(mode: CronJobRecord['mode'], schedule: string, options: ScheduleOptions): string {\n  const id = nanoid()\n  const record = this.buildRecord(id, mode, schedule, options)\n  this.store.save(record)\n  this.scheduleJob(record)\n  return id\n}\n\nat(date: Date | string, options: ScheduleOptions): string {\n  const schedule = date instanceof Date ? date.toISOString() : date\n  return this.createJob('at', schedule, options)\n}\n\nevery(intervalSeconds: number, options: ScheduleOptions): string {\n  return this.createJob('every', String(intervalSeconds), options)\n}\n\ncron(expression: string, options: ScheduleOptions): string {\n  return this.createJob('cron', expression, options)\n}\n\nWHY: Extracts the shared 4-line sequence (nanoid + buildRecord + save + schedule + return) into a single private method. The public methods become thin type-safe adapters that normalize input and delegate. Reduces duplication from 21 lines to 12 while preserving the clear public API.",
+      "claude_md_rule": "code_quality.modular"
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "switch-to-lookup",
+      "title": "Switch in scheduleJob() could use a mode-to-config lookup",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 154,
+      "line_end": 168,
+      "code_snippet": "switch (record.mode) {\n  case 'at':\n    cronJob = new Cron(new Date(record.schedule), cronOptions, callback)\n    break\n  case 'every':\n    cronJob = new Cron('* * * * * *', { ...cronOptions, interval: Number(record.schedule) }, callback)\n    break\n  case 'cron':\n    cronJob = new Cron(record.schedule, cronOptions, callback)\n    break\n}",
+      "description": "The switch statement maps each mode to slightly different Cron constructor arguments. This is not severely complex (cyclomatic +3), but a small helper that produces {pattern, options} per mode would make the intent clearer and keep scheduleJob() focused on wiring rather than mode dispatch.",
+      "suggestion": "BEFORE:\nswitch (record.mode) {\n  case 'at':\n    cronJob = new Cron(new Date(record.schedule), cronOptions, callback)\n    break\n  case 'every':\n    cronJob = new Cron('* * * * * *', { ...cronOptions, interval: Number(record.schedule) }, callback)\n    break\n  case 'cron':\n    cronJob = new Cron(record.schedule, cronOptions, callback)\n    break\n}\n\nAFTER:\nconst { pattern, opts } = this.cronArgsForMode(record, cronOptions)\nconst cronJob = new Cron(pattern, opts, callback)\n\n// New private method:\nprivate cronArgsForMode(record: CronJobRecord, baseOptions: Record<string, unknown>) {\n  switch (record.mode) {\n    case 'at':    return { pattern: new Date(record.schedule), opts: baseOptions }\n    case 'every': return { pattern: '* * * * * *', opts: { ...baseOptions, interval: Number(record.schedule) } }\n    case 'cron':  return { pattern: record.schedule, opts: baseOptions }\n  }\n}\n\nWHY: Isolates the mode-specific logic into a pure mapping function, allowing scheduleJob() to remain a simple linear flow. The switch itself stays (it is the right tool for 3 exhaustive cases) but lives in its own method with a single responsibility. This is a minor clarity improvement -- optional.",
+      "claude_md_rule": null
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "simplification",
+      "subcategory": "positional-to-named-parameters",
+      "title": "save() uses 11 positional SQL parameters, hard to audit",
+      "file": "packages/cron-service/src/job-store.ts",
+      "line": 39,
+      "line_end": 56,
+      "code_snippet": "this.db.prepare(`\n  INSERT OR REPLACE INTO cron_jobs (id, name, mode, schedule, handler, payload, timezone, enabled, created_at, last_run_at, run_count)\n  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n`).run(\n  job.id, job.name, job.mode, job.schedule, job.handler,\n  job.payload, job.timezone, job.enabled ? 1 : 0,\n  job.createdAt, job.lastRunAt, job.runCount,\n)",
+      "description": "The INSERT statement uses 11 positional placeholders (?) and 11 positional arguments. Verifying that each ? maps to the correct column requires counting columns and arguments in parallel. better-sqlite3 supports named parameters ($name, @name, or :name) which make the mapping self-documenting.",
+      "suggestion": "BEFORE:\nthis.db.prepare(`\n  INSERT OR REPLACE INTO cron_jobs (id, name, mode, ...)\n  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n`).run(job.id, job.name, job.mode, ...)\n\nAFTER:\nthis.db.prepare(`\n  INSERT OR REPLACE INTO cron_jobs (id, name, mode, schedule, handler, payload, timezone, enabled, created_at, last_run_at, run_count)\n  VALUES ($id, $name, $mode, $schedule, $handler, $payload, $timezone, $enabled, $created_at, $last_run_at, $run_count)\n`).run({\n  id: job.id,\n  name: job.name,\n  mode: job.mode,\n  schedule: job.schedule,\n  handler: job.handler,\n  payload: job.payload,\n  timezone: job.timezone,\n  enabled: job.enabled ? 1 : 0,\n  created_at: job.createdAt,\n  last_run_at: job.lastRunAt,\n  run_count: job.runCount,\n})\n\nWHY: Named parameters make the column-to-value mapping self-documenting. Eliminates the risk of column/value ordering mismatch as the schema grows. No runtime cost -- better-sqlite3 handles named params natively.",
+      "claude_md_rule": null
+    }
+  ],
+  "positive_observations": [
+    "Both files are well under the 200-line guideline with clean, focused methods",
+    "JobStore correctly uses parameterized queries (?) throughout -- no SQL injection risk",
+    "Guard clauses and early returns used consistently (scheduleJob, start, pause, resume)",
+    "Pure mapRow function at module scope follows functional core pattern for data mapping",
+    "Constructor error handling in JobStore properly closes DB on init failure before re-throwing",
+    "CronService.close() composes stop() and store.close() cleanly -- no resource leak paths",
+    "Types are well-defined in a separate cron-types.ts with ScheduleMode union type"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

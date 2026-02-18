@@ -1,0 +1,138 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260218-181836-feat-task-12-cron-service-iter1",
+  "timestamp": "2026-02-19T00:20:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/cron-service/src/cron-types.ts",
+      "packages/cron-service/src/cron-service.ts",
+      "packages/cron-service/src/job-store.ts",
+      "packages/cron-service/src/index.ts"
+    ],
+    "total_lines_analyzed": 315,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 4, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "discriminated-union",
+      "title": "CronJobRecord schedule is polymorphic string -- illegal states representable",
+      "file": "packages/cron-service/src/cron-types.ts",
+      "line": 3,
+      "line_end": 15,
+      "code_snippet": "export interface CronJobRecord {\n  mode: ScheduleMode\n  schedule: string\n  ...\n}",
+      "description": "Encapsulation: 4/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.0). CronJobRecord uses a single `schedule: string` whose semantics change based on `mode`: ISO date for 'at', numeric seconds for 'every', cron expression for 'cron'. This means the type permits nonsensical combinations (e.g., mode='at' with schedule='*/5 * * * *'). A discriminated union would make these illegal states unrepresentable:\n\ntype CronJobRecord = AtJobRecord | EveryJobRecord | CronExprJobRecord\n\nwhere each variant carries a correctly-typed schedule field.",
+      "suggestion": "Refactor CronJobRecord into a discriminated union on `mode`:\n\ninterface BaseJob { id: string; name: string; handler: string; ... }\ninterface AtJob extends BaseJob { readonly mode: 'at'; readonly schedule: string /* ISO date */ }\ninterface EveryJob extends BaseJob { readonly mode: 'every'; readonly intervalSeconds: number }\ninterface CronExprJob extends BaseJob { readonly mode: 'cron'; readonly expression: string }\nexport type CronJobRecord = AtJob | EveryJob | CronExprJob\n\nThis also avoids the String(intervalSeconds) / Number(record.schedule) conversions in cron-service.ts.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "encapsulation",
+      "title": "CronService.get() and list() leak mutable CronJobRecord references",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 74,
+      "line_end": 80,
+      "code_snippet": "get(jobId: string): CronJobRecord | undefined {\n  return this.store.get(jobId)\n}\n\nlist(): CronJobRecord[] {\n  return this.store.list()\n}",
+      "description": "Encapsulation: 8/10 for class internals but 4/10 for returned data. get() and list() return mutable CronJobRecord objects. Consumers can mutate fields (e.g., record.enabled = false, record.runCount = 999) creating inconsistency between the in-memory object and the persisted DB state. This is the same pattern flagged as P1 in SkillRegistry.getById().",
+      "suggestion": "Add `readonly` modifier to all CronJobRecord fields, or return a frozen copy: `return Object.freeze({...record})`. Prefer readonly interface approach:\n\nexport interface CronJobRecord {\n  readonly id: string\n  readonly name: string\n  readonly mode: ScheduleMode\n  ...\n}",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "validation",
+      "title": "No Valibot validation at JobStore boundary -- unsafe `as` cast in mapRow",
+      "file": "packages/cron-service/src/job-store.ts",
+      "line": 97,
+      "line_end": 111,
+      "code_snippet": "function mapRow(row: JobRow): CronJobRecord {\n  return {\n    ...\n    mode: row.mode as CronJobRecord['mode'],\n    ...\n  }\n}",
+      "description": "Encapsulation: 8/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 5/10 (Aggregate: 6.0). mapRow() casts `row.mode` (a string from SQLite) to `ScheduleMode` using `as` without runtime validation. If the DB contains an invalid mode value (data corruption, manual edit), the cast silently succeeds and downstream code will fail unpredictably. The SQL CHECK constraint helps but is not defense-in-depth. Valibot is the project standard for validation but is not used here.",
+      "suggestion": "Add a runtime guard before the cast:\n\nfunction isScheduleMode(s: string): s is ScheduleMode {\n  return s === 'at' || s === 'every' || s === 'cron'\n}\n\nIn mapRow: if (!isScheduleMode(row.mode)) throw new Error(`Invalid mode in DB: ${row.mode}`)\n\nOr use a Valibot schema for the full row: const CronJobRecordSchema = v.object({ mode: v.picklist(['at', 'every', 'cron']), ... })",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "Timestamps as bare `string`, intervalSeconds lacks positive constraint",
+      "file": "packages/cron-service/src/cron-types.ts",
+      "line": 11,
+      "line_end": 14,
+      "code_snippet": "  createdAt: string\n  lastRunAt: string | null\n  runCount: number",
+      "description": "Encapsulation: 4/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (part of CronJobRecord aggregate: 4.0). `createdAt` and `lastRunAt` are ISO date strings with no type-level distinction from arbitrary strings. `intervalSeconds` parameter in CronService.every() is `number` with no validation that it is positive. This is a recurring pattern in the codebase (flagged in orchestrator, persona-engine).",
+      "suggestion": "For timestamps, consider a branded type: `type ISOTimestamp = string & { __brand: 'ISOTimestamp' }` with a factory function that validates format. For intervalSeconds, add a runtime check: `if (intervalSeconds <= 0) throw new Error('intervalSeconds must be positive')`. At minimum, add JSDoc noting the expected format.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "ScheduleOptions.handler is untyped string -- no link to registered handlers",
+      "file": "packages/cron-service/src/cron-types.ts",
+      "line": 19,
+      "code_snippet": "export interface ScheduleOptions {\n  name: string\n  handler: string\n  ...\n}",
+      "description": "The `handler` field is a plain `string` that must match a key registered via `CronService.registerHandler()`. There is no type-level connection between the registered handler names and the handler field in ScheduleOptions. This means typos in handler names are only caught at runtime (and silently -- see finding review-types-007).",
+      "suggestion": "Use a generic parameter on CronService to constrain handler names:\n\nclass CronService<H extends string = string> {\n  registerHandler(name: H, fn: JobHandler): void\n  at(date: Date | string, options: ScheduleOptions<H>): string\n}\n\nOr extract a HandlerName branded type: `type HandlerName = string & { __brand: 'HandlerName' }`",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-006",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "separation-of-concerns",
+      "title": "CronJobRecord mixes configuration and runtime state in single interface",
+      "file": "packages/cron-service/src/cron-types.ts",
+      "line": 3,
+      "line_end": 15,
+      "code_snippet": "export interface CronJobRecord {\n  id: string\n  name: string\n  ...\n  lastRunAt: string | null\n  runCount: number\n}",
+      "description": "CronJobRecord conflates immutable configuration (id, name, mode, schedule, handler, payload, timezone, createdAt) with mutable runtime state (enabled, lastRunAt, runCount). There is no separate \"create input\" type vs \"stored record\" type. Callers of `at()`/`every()`/`cron()` provide ScheduleOptions (partial), but the internal `buildRecord()` constructs the full record with runtime defaults. Separating these concerns would clarify the API contract and prevent accidental mutation of configuration fields.",
+      "suggestion": "Split into:\n1. CronJobConfig (immutable identity + schedule config) -- used as creation input\n2. CronJobState (lastRunAt, runCount, enabled) -- mutable runtime\n3. CronJobRecord = CronJobConfig & CronJobState -- stored record (readonly)\n\nThis mirrors the Functional Core pattern: config is pure data, state transitions through explicit functions."
+    },
+    {
+      "id": "review-types-007",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "architecture",
+      "subcategory": "silent-failure",
+      "title": "scheduleJob() silently ignores unregistered handler -- type gap",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 126,
+      "line_end": 129,
+      "code_snippet": "private scheduleJob(record: CronJobRecord): void {\n  const handler = this.handlers.get(record.handler)\n  if (!handler)\n    return",
+      "description": "When `scheduleJob()` cannot find a registered handler, it silently returns. The job has already been saved to the DB (line 27/35/43 call store.save() before scheduleJob()). This creates an inconsistent state: a persisted job that will never run. The type system does not prevent this because `handler` is an unvalidated string. This is an architecture finding tied to the type gap in finding review-types-005.",
+      "suggestion": "Either (a) validate handler existence before saving: `if (!this.handlers.has(options.handler)) throw new Error(...)`, or (b) return a Result type indicating the schedule failed. Option (a) is simpler and prevents the inconsistent state."
+    }
+  ],
+  "positive_observations": [
+    "ScheduleMode is a proper 3-value literal union type -- prevents invalid mode strings at compile time",
+    "CronService class has good encapsulation: private store, private handlers Map, private activeJobs Map -- internals are not leaked",
+    "JobStore constructor has proper error handling: catches init failures, closes DB, and re-throws",
+    "SQL schema uses CHECK constraint on mode column, providing defense-in-depth at the DB level",
+    "JobHandler type alias cleanly expresses async-compatible callback signature",
+    "JobRow is a private internal interface correctly modeling the SQLite row shape separately from the domain type"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

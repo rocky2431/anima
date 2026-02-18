@@ -1,0 +1,159 @@
+{
+  "session": "20260219-023300-feat-task-12-cron-service-iter1-iter2",
+  "timestamp": "2026-02-19T02:35:00.000Z",
+  "mode": "recheck",
+  "parent_session": "20260218-181836-feat-task-12-cron-service-iter1",
+  "verdict": "COMMENT",
+  "summary": {
+    "total_findings": 8,
+    "deduplicated_from": 8,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 4, "P3": 1 },
+    "agents_run": ["review-code"],
+    "agents_failed": []
+  },
+  "delta": {
+    "resolved": [
+      { "id": "merged-001", "severity": "P0", "title": "Silent no-op when handler is not registered for scheduled job", "resolution": "Added validateOptions() that throws before saving when handler not registered" },
+      { "id": "review-code-002", "severity": "P0", "title": "Handler errors propagate unhandled from async cron callback", "resolution": "Added catch block with onError callback, handler errors no longer propagate" },
+      { "id": "review-code-005", "severity": "P1", "title": "No validation on schedule parameters", "resolution": "Added input validation: date validity check, positive finite interval check, non-empty cron expression, handler/name validation" },
+      { "id": "review-code-006", "severity": "P1", "title": "Race condition in runCount increment", "resolution": "Changed to atomic SQL: UPDATE run_count = run_count + 1" },
+      { "id": "review-errors-001", "severity": "P1", "title": "Handler errors in cron callback propagate unhandled", "resolution": "Same as P0 fix - catch block with onError" },
+      { "id": "review-errors-003", "severity": "P1", "title": "updateLastRun in finally block can mask original error", "resolution": "Wrapped DB update in nested try/catch with onError" },
+      { "id": "review-errors-004", "severity": "P1", "title": "Cron constructor can throw, leaving orphaned DB records", "resolution": "createJob() wraps scheduleJob in try/catch, removes record on failure" },
+      { "id": "review-errors-005", "severity": "P1", "title": "start() loop aborts on first scheduleJob failure", "resolution": "Per-job try/catch isolation in start()" },
+      { "id": "review-types-002", "severity": "P1", "title": "CronService.get() and list() leak mutable CronJobRecord references", "resolution": "All CronJobRecord fields marked readonly" },
+      { "id": "review-code-008", "severity": "P2", "title": "Unsafe as cast on mode field from database row", "resolution": "Added VALID_MODES runtime validation in mapRow" },
+      { "id": "review-errors-006", "severity": "P2", "title": "close() does not use try/finally for resource cleanup", "resolution": "Added try/finally to close()" },
+      { "id": "review-tests-001", "severity": "P1", "title": "pause() and resume() have zero test coverage", "resolution": "Added pause/resume tests (returns false for nonexistent, pauses/resumes scheduled job)" },
+      { "id": "review-tests-002", "severity": "P1", "title": "Handler error propagation in callback untested", "resolution": "Added error handling tests with onError callback verification" },
+      { "id": "review-tests-003", "severity": "P1", "title": "start() filtering logic has no test", "resolution": "Added persistence tests: skips disabled jobs, skips expired at jobs on start()" },
+      { "id": "review-tests-004", "severity": "P2", "title": "stop() method behavior not directly tested", "resolution": "Added stop() test verifying jobs cease firing" },
+      { "id": "review-simplify-001", "severity": "P2", "title": "at(), every(), cron() share near-identical structure", "resolution": "Extracted private createJob() method" }
+    ],
+    "unchanged": [
+      { "id": "merged-002", "severity": "P1", "title": "Package has no consumer in the monorepo", "note": "Expected for new package - will be wired in future integration task" },
+      { "id": "review-code-004", "severity": "P1", "title": "No logging in cron-service package", "note": "Deferred to integration task when logging infrastructure is wired" },
+      { "id": "review-types-001", "severity": "P1", "title": "CronJobRecord schedule is polymorphic string", "note": "Acceptable trade-off: single string works cleanly with SQLite persistence layer" }
+    ],
+    "new": []
+  },
+  "findings": [
+    {
+      "id": "recheck-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "Package has no consumer in the monorepo",
+      "file": "packages/cron-service/src/index.ts",
+      "line": 1,
+      "description": "No other package imports @proj-airi/cron-service. Expected for a new package - will be wired in a future integration task.",
+      "suggestion": "Wire CronService into consumer in future integration checkpoint task.",
+      "reported_by": ["review-code"]
+    },
+    {
+      "id": "recheck-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "missing-logging",
+      "title": "No structured logging in cron-service package",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 1,
+      "description": "Package uses onError callback instead of structured logging. Acceptable for library package; logging can be added at integration layer.",
+      "suggestion": "Add structured logging when wiring into consuming service.",
+      "reported_by": ["review-code"]
+    },
+    {
+      "id": "recheck-003",
+      "severity": "P1",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "discriminated-union",
+      "title": "CronJobRecord schedule is polymorphic string",
+      "file": "packages/cron-service/src/cron-types.ts",
+      "line": 7,
+      "description": "Schedule field semantic depends on mode. Acceptable trade-off for SQLite persistence simplicity.",
+      "suggestion": "Consider discriminated union if type grows more complex in future.",
+      "reported_by": ["review-code"]
+    },
+    {
+      "id": "recheck-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "architecture",
+      "subcategory": "dip-violation",
+      "title": "CronService hardcodes JobStore dependency",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 14,
+      "description": "Direct instantiation of JobStore. Acceptable for current scope; DI can be added when injeca integration happens.",
+      "suggestion": "Accept JobStore via constructor injection when integrating with DI container.",
+      "reported_by": ["review-code"]
+    },
+    {
+      "id": "recheck-005",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "use-after-close",
+      "title": "No use-after-close guard on JobStore",
+      "file": "packages/cron-service/src/job-store.ts",
+      "line": 81,
+      "description": "Calling methods after close() throws raw better-sqlite3 error. Low risk since CronService.close() manages lifecycle.",
+      "suggestion": "Add closed flag and guard if needed for safety.",
+      "reported_by": ["review-code"]
+    },
+    {
+      "id": "recheck-006",
+      "severity": "P2",
+      "confidence": 76,
+      "category": "type-design",
+      "subcategory": "separation-of-concerns",
+      "title": "CronJobRecord mixes configuration and runtime state",
+      "file": "packages/cron-service/src/cron-types.ts",
+      "line": 5,
+      "description": "Single interface for both config and mutable state. Acceptable for current scope.",
+      "suggestion": "Split into Config + State if interface grows.",
+      "reported_by": ["review-code"]
+    },
+    {
+      "id": "recheck-007",
+      "severity": "P2",
+      "confidence": 75,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Exported classes lack JSDoc",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 8,
+      "description": "CronService, JobStore, and exported types lack JSDoc. Type signatures are reasonably self-documenting.",
+      "suggestion": "Add JSDoc to public API methods for better DX.",
+      "reported_by": ["review-code"]
+    },
+    {
+      "id": "recheck-008",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "simplification",
+      "subcategory": "positional-to-named-parameters",
+      "title": "save() uses 11 positional SQL parameters",
+      "file": "packages/cron-service/src/job-store.ts",
+      "line": 42,
+      "description": "Positional placeholders are harder to audit. Named parameters would be clearer.",
+      "suggestion": "Consider named parameters ($id, $name, ...) for readability.",
+      "reported_by": ["review-code"]
+    }
+  ],
+  "positive_observations": [
+    "All P0 issues resolved: handler validation now throws upfront, async errors caught with onError callback",
+    "Input validation added at API boundary for all three scheduling methods",
+    "Atomic SQL increment eliminates race condition in runCount",
+    "Per-job error isolation in start() prevents one bad job from blocking others",
+    "createJob() cleans up orphaned DB records on schedule failure",
+    "try/finally in close() ensures SQLite connection always released",
+    "All CronJobRecord fields marked readonly for immutability",
+    "VALID_MODES runtime validation in mapRow prevents invalid mode casts",
+    "Test coverage expanded: 34 tests covering pause/resume, stop, persistence filtering, error handling, input validation",
+    "Real SQLite with temp directories - zero mocks",
+    "ESM-compatible: require() replaced with dynamic import() in persistence tests"
+  ]
+}
