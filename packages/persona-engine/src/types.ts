@@ -65,6 +65,17 @@ export interface AnimaEmotionPayload {
 }
 
 /**
+ * Application category for detecting work/entertainment transitions.
+ */
+export type AppCategory = 'work' | 'entertainment' | 'other'
+
+/**
+ * Trigger priority levels determining behavior in DoNotDisturb scenarios.
+ * 'critical' can bypass quiet hours.
+ */
+export type TriggerPriority = 'low' | 'normal' | 'high' | 'critical'
+
+/**
  * Input data for evaluating trigger conditions.
  * Intentionally decoupled from context-engine's ActivityContext
  * to keep persona-engine independent.
@@ -76,6 +87,28 @@ export interface TriggerInput {
   readonly isFullscreen: boolean
   /** Name of the current foreground application */
   readonly currentApp: string
+  /** Current hour of day (0-23) */
+  readonly currentHour: number
+  /** Current minute (0-59) */
+  readonly currentMinute: number
+  /** Whether this is the first user activity detected today */
+  readonly isFirstActivityToday: boolean
+  /** Category of the previously active application */
+  readonly previousAppCategory: AppCategory
+  /** Whether there is activity data available for summary */
+  readonly hasActivityData: boolean
+  /** Whether today matches an important date from long-term memory */
+  readonly matchedImportantDate: boolean
+  /** Whether there are TODO items approaching their deadline */
+  readonly hasNearDeadlineTodos: boolean
+  /** Number of window switches in the last 5 minutes */
+  readonly windowSwitchesInLast5Min: number
+  /** Duration of previous focused session in milliseconds (for T10) */
+  readonly previousFocusDurationMs: number
+  /** Time since last user activity in milliseconds (for T11) */
+  readonly timeSinceLastActivityMs: number
+  /** Current intimacy stage with the user */
+  readonly intimacyStage: IntimacyStage
 }
 
 /**
@@ -90,6 +123,12 @@ export interface TriggerCondition {
   readonly check: (input: TriggerInput) => boolean
   /** Cooldown period in milliseconds before this trigger can fire again */
   readonly cooldownMs: number
+  /** Priority level: critical can bypass quiet hours */
+  readonly priority: TriggerPriority
+  /** Minimum intimacy stage required for this trigger to fire */
+  readonly minIntimacy: IntimacyStage
+  /** Suggested emotion state when this trigger fires */
+  readonly suggestedEmotion: PersonaEmotion
 }
 
 /**
@@ -97,7 +136,7 @@ export interface TriggerCondition {
  * Discriminated union: illegal states are unrepresentable.
  */
 export type TriggerResult
-  = | { triggered: true, triggerId: string, triggerName: string }
+  = | { triggered: true, triggerId: string, triggerName: string, suggestedEmotion: PersonaEmotion }
     | { triggered: false }
 
 /**
@@ -105,9 +144,39 @@ export type TriggerResult
  */
 export interface ProactiveResponse {
   /** The message text to display */
-  message: string
+  readonly message: string
   /** Current emotion state when generating this response */
-  emotion: EmotionState
+  readonly emotion: EmotionState
   /** ID of the trigger that caused this response */
-  triggerId: string
+  readonly triggerId: string
+}
+
+/**
+ * Configuration for the Do Not Disturb policy.
+ */
+export interface DoNotDisturbConfig {
+  /** Maximum triggers allowed per hour (default: 3) */
+  readonly maxPerHour: number
+  /** Maximum triggers allowed per day (default: 15) */
+  readonly maxPerDay: number
+  /** Start of quiet hours in 24h format (default: 23) */
+  readonly quietHoursStart: number
+  /** End of quiet hours in 24h format (default: 7) */
+  readonly quietHoursEnd: number
+  /** Number of consecutive ignores before applying backoff (default: 3) */
+  readonly consecutiveIgnoresForBackoff: number
+  /** Cooldown multiplier applied during progressive backoff (default: 1.5) */
+  readonly backoffMultiplier: number
+}
+
+/**
+ * Immutable state tracking for the Do Not Disturb system.
+ */
+export interface DoNotDisturbState {
+  /** Timestamps of recent trigger firings */
+  readonly triggerTimestamps: readonly number[]
+  /** Number of consecutive times the user ignored triggers */
+  readonly consecutiveIgnores: number
+  /** Current cooldown multiplier (1.0 = normal, increases with ignores) */
+  readonly cooldownMultiplier: number
 }

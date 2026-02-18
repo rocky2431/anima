@@ -2,10 +2,11 @@ import type { EmotionState, TriggerResult } from '../types'
 
 import { describe, expect, it } from 'vitest'
 
+import { ALL_TRIGGERS } from '../proactive-trigger'
 import { generateResponse } from '../response-generator'
 
 function makeTriggered(triggerId: string, triggerName: string): Extract<TriggerResult, { triggered: true }> {
-  return { triggered: true, triggerId, triggerName }
+  return { triggered: true, triggerId, triggerName, suggestedEmotion: 'caring' as const }
 }
 
 describe('generateResponse', () => {
@@ -66,6 +67,33 @@ describe('generateResponse', () => {
       const response = generateResponse(restReminder, 'caring')
       const validEmotions: EmotionState[] = ['idle', 'curious', 'caring', 'worried', 'sleepy', 'excited']
       expect(validEmotions).toContain(response.emotion)
+    })
+  })
+
+  describe('all 11 triggers have templates', () => {
+    const emotions: EmotionState[] = ['idle', 'curious', 'caring', 'worried', 'excited', 'sleepy']
+    const defaultMessage = '有什么需要帮忙的吗？'
+
+    it('every trigger produces a non-default message for its suggested emotion', () => {
+      for (const trigger of ALL_TRIGGERS) {
+        const result = generateResponse(
+          { triggered: true, triggerId: trigger.id, triggerName: trigger.name, suggestedEmotion: trigger.suggestedEmotion },
+          trigger.suggestedEmotion,
+        )
+        expect(result.message, `${trigger.name} should have a template for ${trigger.suggestedEmotion}`).not.toBe(defaultMessage)
+      }
+    })
+
+    it('every trigger has templates for all 6 emotions', () => {
+      for (const trigger of ALL_TRIGGERS) {
+        for (const emotion of emotions) {
+          const result = generateResponse(
+            { triggered: true, triggerId: trigger.id, triggerName: trigger.name, suggestedEmotion: trigger.suggestedEmotion },
+            emotion,
+          )
+          expect(result.message, `${trigger.name}/${emotion} should not fallback`).not.toBe(defaultMessage)
+        }
+      }
     })
   })
 })

@@ -11,7 +11,22 @@ describe('end-to-end: full persona engine integration', () => {
   it('trigger -> emotion machine -> anima emotion bridge', () => {
     // 1. Evaluate trigger: user worked 3 hours
     const triggerResult = evaluateTriggers(
-      { continuousWorkDurationMs: 3 * 60 * 60 * 1000, isFullscreen: false, currentApp: 'VS Code' },
+      {
+        continuousWorkDurationMs: 3 * 60 * 60 * 1000,
+        isFullscreen: false,
+        currentApp: 'VS Code',
+        currentHour: 10,
+        currentMinute: 0,
+        isFirstActivityToday: false,
+        previousAppCategory: 'work',
+        hasActivityData: false,
+        matchedImportantDate: false,
+        hasNearDeadlineTodos: false,
+        windowSwitchesInLast5Min: 0,
+        previousFocusDurationMs: 0,
+        timeSinceLastActivityMs: 0,
+        intimacyStage: 'acquaintance',
+      },
       [T03_REST_REMINDER],
       {},
       Date.now(),
@@ -70,7 +85,7 @@ describe('end-to-end: full persona engine integration', () => {
   })
 
   it('response generator works with new emotion states', () => {
-    const trigger = { triggered: true as const, triggerId: 'T03', triggerName: 'rest-reminder' }
+    const trigger = { triggered: true as const, triggerId: 'T03', triggerName: 'rest-reminder', suggestedEmotion: 'caring' as const }
     const response = generateResponse(trigger, 'caring')
     expect(response.message).toBeTruthy()
     expect(response.emotion).toBe('caring')
