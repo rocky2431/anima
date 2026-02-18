@@ -1,0 +1,74 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260218-181836-feat-task-12-cron-service-iter1",
+  "timestamp": "2026-02-19T00:00:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/cron-service/src/cron-service.ts",
+      "packages/cron-service/src/job-store.ts",
+      "packages/cron-service/src/cron-types.ts"
+    ],
+    "total_lines_analyzed": 307,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 0 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Exported CronService class has no JSDoc on any public method",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 8,
+      "line_end": 172,
+      "code_snippet": "export class CronService {\n  ...\n  at(date: Date | string, options: ScheduleOptions): string { ... }\n  every(intervalSeconds: number, options: ScheduleOptions): string { ... }\n  cron(expression: string, options: ScheduleOptions): string { ... }",
+      "description": "CronService is the primary public API of the @proj-airi/cron-service package, exported from index.ts. It has 12 public methods (constructor, registerHandler, at, every, cron, remove, pause, resume, get, list, start, stop, close) with zero JSDoc comments. Key behaviors are non-obvious: at() accepts Date|string, every() takes seconds not milliseconds, start() rehydrates persisted jobs, the handler registry pattern requires registerHandler before scheduling. Without documentation a consumer must read the implementation to understand usage. The project convention (per agent memory) is that JSDoc is used on all exported interfaces and functions.",
+      "suggestion": "Add JSDoc to CronService class and each public method. At minimum document: (1) class-level overview of the scheduling + persistence model, (2) at() parameter semantics (Date vs ISO string), (3) every() unit is seconds, (4) registerHandler must be called before scheduling jobs that reference that handler name, (5) start() rehydrates from DB and skips expired one-shot jobs, (6) close() stops all jobs and closes DB."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Exported interfaces CronJobRecord and ScheduleOptions lack JSDoc",
+      "file": "packages/cron-service/src/cron-types.ts",
+      "line": 1,
+      "line_end": 24,
+      "code_snippet": "export type ScheduleMode = 'at' | 'every' | 'cron'\n\nexport interface CronJobRecord {\n  id: string\n  name: string\n  ...\n}\n\nexport interface ScheduleOptions {\n  name: string\n  handler: string\n  payload?: Record<string, unknown>\n  timezone?: string\n}",
+      "description": "CronJobRecord, ScheduleOptions, ScheduleMode, and JobHandler are all re-exported from the package entry point. None have JSDoc documentation. Non-obvious details: CronJobRecord.payload is a JSON-serialized string (not the original object), CronJobRecord.schedule stores different value types depending on mode (ISO date string, interval seconds as string, or cron expression), and ScheduleOptions.handler is a registry key string, not a function reference. These nuances are invisible without reading the CronService implementation.",
+      "suggestion": "Add JSDoc to each exported type. Document: (1) ScheduleMode - what each mode means, (2) CronJobRecord.payload - that it is JSON-serialized, (3) CronJobRecord.schedule - value format depends on mode, (4) ScheduleOptions.handler - refers to a handler name registered via CronService.registerHandler(), (5) JobHandler - when it is called and what the job parameter contains."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Exported JobStore class has no JSDoc documentation",
+      "file": "packages/cron-service/src/job-store.ts",
+      "line": 5,
+      "line_end": 81,
+      "code_snippet": "export class JobStore {\n  private db: Database.Database\n\n  constructor(dbPath: string) { ... }\n  save(job: CronJobRecord): void { ... }\n  get(id: string): CronJobRecord | undefined { ... }",
+      "description": "JobStore is exported from the package entry point and is usable independently of CronService. It has 6 public methods (constructor, save, get, list, remove, updateLastRun, close) with no JSDoc. Non-obvious behavior: the constructor enables WAL mode and creates tables automatically, save() uses INSERT OR REPLACE (upsert semantics), and the class handles column name mapping (snake_case DB columns to camelCase TS properties). A consumer who imports JobStore directly has no documentation to guide usage.",
+      "suggestion": "Add JSDoc to JobStore class and its public methods. At minimum: (1) class-level doc explaining it is a SQLite-backed persistence layer for cron jobs, (2) constructor - that it auto-creates the schema with WAL mode, (3) save() - upsert semantics via INSERT OR REPLACE, (4) close() - must be called for clean shutdown."
+    }
+  ],
+  "positive_observations": [
+    "Zero forbidden comment patterns (no TODO, FIXME, HACK, PLACEHOLDER, or TEMP comments) across all three files",
+    "No misleading or inaccurate comments to rot -- the code is clean and self-consistent",
+    "Type names and method signatures are reasonably self-documenting for internal use (ScheduleMode, CronJobRecord, at/every/cron method names)"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

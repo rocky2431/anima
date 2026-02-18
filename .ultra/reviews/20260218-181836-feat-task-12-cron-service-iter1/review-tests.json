@@ -1,0 +1,126 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260218-181836-feat-task-12-cron-service-iter1",
+  "timestamp": "2026-02-19T00:00:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/cron-service/src/__tests__/cron-service.test.ts",
+      "packages/cron-service/src/__tests__/job-store.test.ts",
+      "packages/cron-service/src/cron-service.ts",
+      "packages/cron-service/src/job-store.ts",
+      "packages/cron-service/src/cron-types.ts"
+    ],
+    "total_lines_analyzed": 635,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 3, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "test-quality",
+      "subcategory": "missing-coverage",
+      "title": "pause() and resume() public methods have zero test coverage",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 58,
+      "line_end": 72,
+      "code_snippet": "pause(jobId: string): boolean {\n  const cronJob = this.activeJobs.get(jobId)\n  if (cronJob) {\n    return cronJob.pause()\n  }\n  return false\n}",
+      "description": "CronService exposes pause() and resume() as public API methods (exported via index.ts), but neither has any test coverage. These methods modify runtime scheduling state and their behavior for both valid and invalid job IDs is completely unverified. Since these are exported public API, consumers may rely on them without any tested contract.",
+      "suggestion": "Add tests verifying: (1) pause() stops a recurring job from firing, (2) resume() restarts a paused job, (3) pause()/resume() on non-existent jobId returns false, (4) pause then resume restores original behavior. Use real timer-based assertions like the existing at()/every()/cron() tests.",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "Handler error propagation in scheduleJob callback untested",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 131,
+      "line_end": 146,
+      "code_snippet": "try {\n  await handler(currentRecord)\n}\nfinally {\n  this.store.updateLastRun(\n    record.id,\n    new Date().toISOString(),\n    currentRecord.runCount + 1,\n  )\n}",
+      "description": "The scheduleJob callback wraps handler execution in try/finally to ensure updateLastRun is called even when the handler throws. This is a critical resilience behavior -- a failing handler should not prevent run tracking from updating. However, no test verifies this: (1) that updateLastRun is still called after a handler error, (2) that the error does not crash the scheduling loop, (3) that runCount is correctly incremented despite the error.",
+      "suggestion": "Add a test that registers a handler which throws an Error, triggers it via at() with a short delay, waits for execution, then verifies the job's runCount was incremented and lastRunAt was updated despite the error. Example: registerHandler('throwing', () => { throw new Error('boom') }); then schedule, wait, and assert get(id).runCount === 1.",
+      "claude_md_rule": "testing.forbidden_patterns.missing_error_coverage"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-coverage",
+      "title": "start() filtering logic (expired/disabled jobs) has no test",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 82,
+      "line_end": 91,
+      "code_snippet": "start(): void {\n  const jobs = this.store.list()\n  for (const job of jobs) {\n    if (!job.enabled)\n      continue\n    if (job.mode === 'at' && new Date(job.schedule) <= new Date())\n      continue\n    this.scheduleJob(job)\n  }\n}",
+      "description": "start() contains two important filtering conditions: (1) skip disabled jobs, and (2) skip expired 'at' jobs. The existing persistence test only verifies that a valid cron job is restored. Neither filter branch is tested. If these conditions regress, disabled jobs would fire on restart and expired one-time jobs would attempt to re-execute -- both are incorrect behaviors that could cause duplicate actions in production.",
+      "suggestion": "Add two tests: (1) 'start() does not schedule disabled jobs' -- save a job with enabled=false, call start(), verify it does not fire after waiting. (2) 'start() skips expired at jobs' -- save an at-mode job with a schedule date in the past, call start(), verify it is not re-scheduled (e.g., list activeJobs or verify handler is not called).",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-coverage",
+      "title": "stop() method behavior not directly tested",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 93,
+      "line_end": 98,
+      "code_snippet": "stop(): void {\n  for (const [, cronJob] of this.activeJobs) {\n    cronJob.stop()\n  }\n  this.activeJobs.clear()\n}",
+      "description": "stop() is called indirectly via close() in afterEach cleanup, but no test verifies its behavioral contract: that all actively running jobs cease to fire after stop() is called. If stop() were broken, tests would still pass because the tmp directory cleanup in afterEach masks the issue.",
+      "suggestion": "Add a test: schedule a recurring job (every 1 second), verify it fires at least once, call stop(), wait 2-3 seconds, and verify the count did not increase after stop(). This proves stop() actually halts job execution.",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "No test for scheduling without registered handler behavior",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 127,
+      "line_end": 129,
+      "code_snippet": "private scheduleJob(record: CronJobRecord): void {\n  const handler = this.handlers.get(record.handler)\n  if (!handler)\n    return",
+      "description": "The test 'stores job even without registered handler' (cron-service.test.ts line 179) verifies the job is persisted, but does not assert the behavioral consequence: that the job is NOT scheduled (i.e., not added to activeJobs). If the early return were removed, jobs without handlers would attempt to execute and fail at runtime. Additionally, when start() restores jobs, it calls scheduleJob which silently skips unregistered handlers -- this means jobs restored before their handler is registered are permanently lost from scheduling. This edge case around handler registration ordering is untested.",
+      "suggestion": "Add assertions: (1) After scheduling a job with an unregistered handler, verify it does not fire (wait and confirm no side effects). (2) Test the startup ordering scenario: save a job, create new CronService, call start() BEFORE registerHandler(), then registerHandler() -- verify the job never fires because start() already skipped it. Document or fix this design limitation.",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "No boundary tests for invalid inputs (bad cron, negative interval)",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 40,
+      "line_end": 47,
+      "code_snippet": "cron(expression: string, options: ScheduleOptions): string {\n  const id = nanoid()\n  const record = this.buildRecord(id, 'cron', expression, options)\n  this.store.save(record)\n  this.scheduleJob(record)\n  return id\n}",
+      "description": "No tests verify behavior with invalid inputs: (1) invalid cron expression (e.g., 'not-a-cron'), (2) negative or zero interval for every(), (3) past date for at(), (4) empty string for handler name. The croner library likely throws on invalid cron syntax, but the CronService does not wrap this -- an error during scheduleJob would leave a persisted record with no active schedule, creating an inconsistent state. This boundary is completely untested.",
+      "suggestion": "Add boundary tests: (1) cron('invalid-expression', ...) -- verify it either throws a clear error or handles gracefully. (2) every(0, ...) and every(-1, ...) -- verify behavior. (3) at(pastDate, ...) -- verify it either fires immediately or is rejected. These tests document the API contract for edge cases and prevent regressions."
+    }
+  ],
+  "positive_observations": [
+    "No mock violations found -- zero usage of vi.fn(), vi.mock(), InMemory*, Mock*, or Fake* patterns",
+    "Real SQLite database used via better-sqlite3 with temp directories, following Dev/Prod Parity principle",
+    "Proper cleanup in afterEach (store.close() + rmSync) prevents resource leaks between tests",
+    "JobStore tests are thorough: CRUD operations, upsert behavior, persistence across reopens, all three schedule modes",
+    "CronService integration tests use real timer-based assertions to verify jobs actually fire",
+    "Test file organization mirrors source structure with clear naming conventions"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

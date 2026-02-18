@@ -6,6 +6,7 @@ export default defineConfig({
       'apps/server',
       'apps/stage-tamagotchi',
       'packages/context-engine',
+      'packages/cron-service',
       'packages/mcp-hub',
       'packages/persona-engine',
       'packages/skills-engine',

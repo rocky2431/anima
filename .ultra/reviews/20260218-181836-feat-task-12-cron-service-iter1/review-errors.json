@@ -1,0 +1,136 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260218-181836-feat-task-12-cron-service-iter1",
+  "timestamp": "2026-02-19T06:30:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/cron-service/src/cron-service.ts",
+      "packages/cron-service/src/job-store.ts"
+    ],
+    "total_lines_analyzed": 283,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 5, "P2": 2, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "unhandled-async-error",
+      "title": "Handler errors in cron callback propagate unhandled",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 136,
+      "line_end": 145,
+      "code_snippet": "try {\n  await handler(currentRecord)\n}\nfinally {\n  this.store.updateLastRun(\n    record.id,\n    new Date().toISOString(),\n    currentRecord.runCount + 1,\n  )\n}",
+      "description": "The try/finally block has no catch. If handler(currentRecord) throws, the error propagates into croner's internal scheduler. Depending on croner's behavior, this may silently kill the cron job or crash the process. There is no logging, no error context, and no way for the caller to know a job failed. Additionally, the finally block increments runCount even on failure, recording a 'successful' run for a failed execution.",
+      "suggestion": "Add a catch block that logs the error with job context (id, name, handler) and emits it through an onError callback or event. Track failed runs separately from successful ones (e.g., a lastError field or separate errorCount). Example:\n\ntry {\n  await handler(currentRecord)\n  this.store.updateLastRun(record.id, new Date().toISOString(), currentRecord.runCount + 1)\n} catch (err) {\n  this.onError?.(new Error(`Job ${record.id} (${record.name}) handler '${record.handler}' failed`, { cause: err }))\n}",
+      "claude_md_rule": "error_handling.forbidden.catch_console_log"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "silent-failure",
+      "title": "scheduleJob silently ignores unregistered handler",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 127,
+      "line_end": 129,
+      "code_snippet": "const handler = this.handlers.get(record.handler)\nif (!handler)\n  return",
+      "description": "When a handler is not registered, scheduleJob returns silently. The callers at(), every(), and cron() all call store.save(record) BEFORE scheduleJob(record), so the job is persisted to the database but never actually scheduled. The caller receives a valid job ID, creating the illusion of success. There is no warning, no error, and no way to detect this silent failure. On restart via start(), the orphaned job will again silently fail to schedule.",
+      "suggestion": "Throw an error when the handler is not registered, BEFORE saving to the store. Validate handler registration upfront:\n\nconst handler = this.handlers.get(options.handler)\nif (!handler) {\n  throw new Error(`Handler '${options.handler}' not registered. Register it with registerHandler() before scheduling jobs.`)\n}\n\nAlternatively, move store.save() after scheduleJob() succeeds, so failed scheduling does not leave orphaned records.",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "updateLastRun in finally block can mask original error",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 139,
+      "line_end": 145,
+      "code_snippet": "finally {\n  this.store.updateLastRun(\n    record.id,\n    new Date().toISOString(),\n    currentRecord.runCount + 1,\n  )\n}",
+      "description": "The finally block calls this.store.updateLastRun(), which is a database operation that can throw (e.g., DB closed, disk full, concurrent write error). If the handler also threw, the DB error from finally will mask the original handler error, making debugging extremely difficult. The original error is lost entirely.",
+      "suggestion": "Wrap the finally block's DB operation in its own try/catch:\n\nfinally {\n  try {\n    this.store.updateLastRun(record.id, new Date().toISOString(), currentRecord.runCount + 1)\n  } catch (dbErr) {\n    this.onError?.(new Error(`Failed to update run metadata for job ${record.id}`, { cause: dbErr }))\n  }\n}",
+      "claude_md_rule": "error_handling.rules.catch_log_rethrow"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "Cron constructor can throw, leaving orphaned DB records",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 154,
+      "line_end": 168,
+      "code_snippet": "switch (record.mode) {\n  case 'at':\n    cronJob = new Cron(new Date(record.schedule), cronOptions, callback)\n    break\n  case 'every':\n    cronJob = new Cron('* * * * * *', { ...cronOptions, interval: Number(record.schedule) }, callback)\n    break\n  case 'cron':\n    cronJob = new Cron(record.schedule, cronOptions, callback)\n    break\n}",
+      "description": "The Cron constructor throws for invalid cron expressions, invalid dates, or invalid timezone values. Since at(), every(), and cron() call store.save() before scheduleJob(), a failure here leaves an orphaned record in the database that can never be scheduled. The error propagates as a raw croner library error with no context about which job failed or why.",
+      "suggestion": "Wrap the Cron constructor in try/catch. Either remove the orphaned record on failure, or validate inputs before saving:\n\ntry {\n  // ... new Cron(...)\n} catch (err) {\n  this.store.remove(record.id)\n  throw new Error(`Failed to schedule job '${record.name}' (${record.mode}: ${record.schedule})`, { cause: err })\n}",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P1",
+      "confidence": 87,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "start() loop aborts on first scheduleJob failure",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 82,
+      "line_end": 91,
+      "code_snippet": "start(): void {\n  const jobs = this.store.list()\n  for (const job of jobs) {\n    if (!job.enabled)\n      continue\n    if (job.mode === 'at' && new Date(job.schedule) <= new Date())\n      continue\n    this.scheduleJob(job)\n  }\n}",
+      "description": "If scheduleJob throws on any single job (e.g., invalid cron expression in stored record), the entire start() loop aborts, leaving all remaining jobs unscheduled. This is a partial-failure scenario where one bad record prevents the entire service from starting. There is no per-job error isolation.",
+      "suggestion": "Wrap each scheduleJob call in try/catch to isolate per-job failures:\n\nfor (const job of jobs) {\n  if (!job.enabled) continue\n  if (job.mode === 'at' && new Date(job.schedule) <= new Date()) continue\n  try {\n    this.scheduleJob(job)\n  } catch (err) {\n    this.onError?.(new Error(`Failed to schedule job '${job.name}' (${job.id})`, { cause: err }))\n  }\n}",
+      "claude_md_rule": "error_handling.rules.handle_gracefully"
+    },
+    {
+      "id": "review-errors-006",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "resource-leak",
+      "title": "close() does not use try/finally for resource cleanup",
+      "file": "packages/cron-service/src/cron-service.ts",
+      "line": 100,
+      "line_end": 103,
+      "code_snippet": "close(): void {\n  this.stop()\n  this.store.close()\n}",
+      "description": "If this.stop() throws (e.g., croner's stop() method errors on an already-stopped job), this.store.close() is never called, leaking the SQLite database connection. The JobStore constructor correctly uses try/catch for this pattern -- close() should follow the same discipline.",
+      "suggestion": "Use try/finally to ensure the store is always closed:\n\nclose(): void {\n  try {\n    this.stop()\n  } finally {\n    this.store.close()\n  }\n}",
+      "claude_md_rule": "error_handling.rules.handle_gracefully"
+    },
+    {
+      "id": "review-errors-007",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "use-after-close",
+      "title": "No use-after-close guard on JobStore",
+      "file": "packages/cron-service/src/job-store.ts",
+      "line": 78,
+      "line_end": 80,
+      "code_snippet": "close(): void {\n  this.db.close()\n}",
+      "description": "After close() is called, any subsequent call to save(), get(), list(), remove(), or updateLastRun() will throw a raw better-sqlite3 error ('The database connection is not open'). There is no guard or meaningful error message. This is the same pattern previously identified in VectorStore.",
+      "suggestion": "Add a closed flag and guard at the top of each public method:\n\nprivate closed = false\n\nclose(): void {\n  this.closed = true\n  this.db.close()\n}\n\nprivate ensureOpen(): void {\n  if (this.closed) throw new Error('JobStore is closed')\n}"
+    }
+  ],
+  "positive_observations": [
+    "JobStore constructor uses try/catch with proper cleanup (db.close()) on init failure -- good resource management pattern",
+    "All SQL queries use parameterized queries (?) -- no injection risk",
+    "JobStore uses better-sqlite3 pragmas (WAL mode, synchronous NORMAL) for performance and durability",
+    "Clean separation between CronService (scheduling logic) and JobStore (persistence)"
+  ],
+  "metadata": {
+    "duration_ms": 20000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}
