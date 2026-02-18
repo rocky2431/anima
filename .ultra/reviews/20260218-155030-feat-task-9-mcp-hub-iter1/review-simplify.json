@@ -1,0 +1,78 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260218-155030-feat-task-9-mcp-hub-iter1",
+  "timestamp": "2026-02-18T15:51:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/server-store.ts",
+      "packages/mcp-hub/src/transport-factory.ts",
+      "packages/mcp-hub/src/mcp-client-manager.ts",
+      "packages/mcp-hub/src/mcp-hub.ts"
+    ],
+    "total_lines_analyzed": 382,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "Near-identical sse/http cases in createTransport switch",
+      "file": "packages/mcp-hub/src/transport-factory.ts",
+      "line": 22,
+      "line_end": 42,
+      "code_snippet": "case 'sse': {\n  if (!config.url) { throw new Error('sse transport requires \"url\"') }\n  return { type: 'sse' as const, url: config.url, ...(config.headers && { headers: config.headers }) }\n}\ncase 'http': {\n  // identical structure, only 'type' string differs\n}",
+      "description": "The 'sse' and 'http' cases are structurally identical: both guard on !config.url, both return { type, url, headers? }. The only difference is the type literal string. This is a near-duplicate block (~9 lines each, 18 total) that could be collapsed.",
+      "suggestion": "BEFORE:\ncase 'sse': {\n  if (!config.url) throw new Error('sse transport requires \"url\"')\n  return { type: 'sse' as const, url: config.url, ...(config.headers && { headers: config.headers }) }\n}\ncase 'http': {\n  if (!config.url) throw new Error('http transport requires \"url\"')\n  return { type: 'http' as const, url: config.url, ...(config.headers && { headers: config.headers }) }\n}\n\nAFTER:\ncase 'sse':\ncase 'http': {\n  if (!config.url) throw new Error(`${config.transport} transport requires \"url\"`)\n  return { type: config.transport as 'sse' | 'http', url: config.url, ...(config.headers && { headers: config.headers }) }\n}\n\nWHY: Eliminates a near-duplicate 9-line block. The two cases have identical logic; only the type literal differs, which can be derived from config.transport. Fall-through case grouping is a standard pattern for identical branches."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "duplicate-validation",
+      "title": "Duplicate url/command validation in store and transport factory",
+      "file": "packages/mcp-hub/src/server-store.ts",
+      "line": 142,
+      "line_end": 158,
+      "code_snippet": "// server-store.ts validateInput:\nif (input.transport === 'stdio' && !input.command) throw ...\nif (input.transport === 'sse' && !input.url) throw ...\nif (input.transport === 'http' && !input.url) throw ...\n// transport-factory.ts createTransport: same checks again",
+      "description": "The same transport-specific validation (stdio requires command, sse/http requires url) is performed in both McpServerStore.validateInput (lines 142-158) and createTransport (lines 13, 24, 34). This means every server that is added and then connected goes through the same validation twice in two different locations. If the validation rules evolve, both must be updated in lockstep.",
+      "suggestion": "BEFORE:\n// server-store.ts\nprivate validateInput(input) {\n  if (input.transport === 'stdio' && !input.command) throw ...\n  if (input.transport === 'sse' && !input.url) throw ...\n  if (input.transport === 'http' && !input.url) throw ...\n}\n// transport-factory.ts\nfunction createTransport(config) {\n  case 'stdio': if (!config.command) throw ...\n  case 'sse': if (!config.url) throw ...\n  case 'http': if (!config.url) throw ...\n}\n\nAFTER:\nExtract a shared validateTransportConfig(config) function in a common location (e.g., types.ts or a new validation.ts). Call it from both store.add() and createTransport(). The transport-factory guards can remain as defensive checks, but with an explicit comment: '// Defensive: validated at store level'.\n\nWHY: Single source of truth for transport validation rules. Currently, adding a new transport type (e.g., 'grpc') requires updating validation in two files. A shared validator reduces the risk of divergence."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "simplification",
+      "subcategory": "conditional-merge",
+      "title": "Merge sse/http validation branches in validateInput",
+      "file": "packages/mcp-hub/src/server-store.ts",
+      "line": 151,
+      "line_end": 157,
+      "code_snippet": "if (input.transport === 'sse' && !input.url) {\n  throw new Error('sse transport requires \"url\"')\n}\nif (input.transport === 'http' && !input.url) {\n  throw new Error('http transport requires \"url\"')\n}",
+      "description": "Two consecutive if-statements check the exact same condition (!input.url) for two transport types that share the same requirement. These can be merged into a single conditional.",
+      "suggestion": "BEFORE:\nif (input.transport === 'sse' && !input.url) {\n  throw new Error('sse transport requires \"url\"')\n}\nif (input.transport === 'http' && !input.url) {\n  throw new Error('http transport requires \"url\"')\n}\n\nAFTER:\nif ((input.transport === 'sse' || input.transport === 'http') && !input.url) {\n  throw new Error(`${input.transport} transport requires \"url\"`)\n}\n\nWHY: Removes a redundant branch. Both transports share the identical requirement, so grouping them makes the shared invariant explicit and reduces lines."
+    }
+  ],
+  "positive_observations": [
+    "All functions are short (< 40 lines), well within acceptable complexity thresholds",
+    "Consistent use of early returns and guard clauses throughout all four files",
+    "Clean separation of concerns: store (persistence), transport-factory (creation), client-manager (lifecycle), hub (facade)",
+    "Maximum nesting depth is 2 levels across all files, well below complexity thresholds",
+    "Cyclomatic complexity stays low (1-5) for all functions",
+    "filterUndefined helper is a clean pure function extracted appropriately"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

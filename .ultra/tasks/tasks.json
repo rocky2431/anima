@@ -105,7 +105,7 @@
       "type": "feature",
       "priority": "P0",
       "complexity": 5,
-      "status": "pending",
+      "status": "completed",
       "dependencies": ["8"],
       "estimated_days": 3,
       "context_file": "contexts/task-9.md",
@@ -294,8 +294,8 @@
   ],
   "stats": {
     "total": 24,
-    "completed": 8,
+    "completed": 9,
     "in_progress": 0,
-    "pending": 17
+    "pending": 15
   }
 }

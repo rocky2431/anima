@@ -6,6 +6,7 @@ export default defineConfig({
       'apps/server',
       'apps/stage-tamagotchi',
       'packages/context-engine',
+      'packages/mcp-hub',
       'packages/persona-engine',
       'packages/stage-ui',
       'packages/plugin-sdk',

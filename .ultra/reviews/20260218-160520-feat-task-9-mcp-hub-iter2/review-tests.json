@@ -1,0 +1,145 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260218-160520-feat-task-9-mcp-hub-iter2",
+  "timestamp": "2026-02-19T00:00:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/__tests__/server-store.test.ts",
+      "packages/mcp-hub/src/__tests__/transport-factory.test.ts",
+      "packages/mcp-hub/src/__tests__/mcp-client-manager.test.ts",
+      "packages/mcp-hub/src/__tests__/mcp-hub.test.ts",
+      "packages/mcp-hub/src/__tests__/fixtures/echo-mcp-server.ts",
+      "packages/mcp-hub/src/types.ts",
+      "packages/mcp-hub/src/server-store.ts",
+      "packages/mcp-hub/src/transport-factory.ts",
+      "packages/mcp-hub/src/mcp-client-manager.ts",
+      "packages/mcp-hub/src/mcp-hub.ts",
+      "packages/mcp-hub/src/index.ts",
+      "packages/mcp-hub/package.json",
+      "packages/mcp-hub/vitest.config.ts"
+    ],
+    "total_lines_analyzed": 1241,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 6, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P2",
+      "confidence": 95,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "McpClientManager.getTools() error path untested",
+      "file": "packages/mcp-hub/src/mcp-client-manager.ts",
+      "line": 63,
+      "line_end": 68,
+      "code_snippet": "async getTools(serverId: string): Promise<Record<string, unknown>> {\n    const client = this.clients.get(serverId)\n    if (!client) {\n      throw new Error(`Server not connected: ${serverId}`)\n    }\n    return await client.tools()\n  }",
+      "description": "The getTools() method throws when called with a non-connected server ID, but no test exercises this error path. The manager test file only tests getTools() on connected servers (line 48 of mcp-client-manager.test.ts). This leaves the error branch on line 65 unverified.",
+      "suggestion": "Add a test: `it('throws when getting tools for non-connected server', async () => { await expect(manager.getTools('non-existent')).rejects.toThrow('Server not connected: non-existent') })`"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "McpClientManager.disconnectAll() failure handling untested",
+      "file": "packages/mcp-hub/src/mcp-client-manager.ts",
+      "line": 44,
+      "line_end": 52,
+      "code_snippet": "async disconnectAll(): Promise<void> {\n    const ids = Array.from(this.clients.keys())\n    const results = await Promise.allSettled(ids.map(id => this.disconnect(id)))\n\n    const failures = results.filter(r => r.status === 'rejected')\n    if (failures.length > 0) {\n      this.clients.clear()\n    }\n  }",
+      "description": "The disconnectAll() method has specific failure-handling logic: when any disconnect fails, it clears the entire clients map. This important cleanup behavior is never tested. The afterEach hooks call disconnectAll() but only in the success path.",
+      "suggestion": "Add a test that forces a disconnect failure (e.g., by manually corrupting the client map or testing with an already-closed transport) and verifies that clients are cleared after failure. This ensures the recovery logic works."
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "McpHub.connectServer() error path for non-existent ID untested",
+      "file": "packages/mcp-hub/src/mcp-hub.ts",
+      "line": 46,
+      "line_end": 52,
+      "code_snippet": "async connectServer(id: string): Promise<void> {\n    const config = this.store.getById(id)\n    if (!config) {\n      throw new Error(`MCP server not found: ${id}`)\n    }\n    await this.clientManager.connect(config)\n  }",
+      "description": "McpHub.connectServer() throws when the server ID does not exist in the store. This error branch is not covered by any test in mcp-hub.test.ts. While the store-level tests cover getById returning undefined, the hub-level error path needs its own verification.",
+      "suggestion": "Add a test: `it('throws when connecting non-existent server', async () => { await expect(hub.connectServer('non-existent')).rejects.toThrow('MCP server not found: non-existent') })`"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-assertion",
+      "title": "McpHub.connectEnabled() return value not asserted",
+      "file": "packages/mcp-hub/src/__tests__/mcp-hub.test.ts",
+      "line": 56,
+      "line_end": 78,
+      "code_snippet": "it('does not connect disabled servers on connectEnabled', async () => {\n      ...\n      await hub.connectEnabled()\n\n      expect(hub.getServerStatus(enabledConfig.id)).toBe('connected')\n      ...\n    }, 30_000)",
+      "description": "The connectEnabled() method returns a ConnectEnabledResult with connected[] and failed[] arrays, but the test discards this return value. The test only checks statuses via getServerStatus(). The ConnectEnabledResult structure is part of the public API (exported in index.ts) and should be verified to ensure callers get accurate reporting.",
+      "suggestion": "Capture the return value: `const result = await hub.connectEnabled()` and assert `expect(result.connected).toContain(enabledConfig.id)` and `expect(result.failed).toEqual([])`."
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-coverage",
+      "title": "McpHub.updateServer() and McpHub.getServer() untested at hub level",
+      "file": "packages/mcp-hub/src/mcp-hub.ts",
+      "line": 30,
+      "line_end": 35,
+      "code_snippet": "getServer(id: string): McpServerConfig | undefined {\n    return this.store.getById(id)\n  }\n\n  updateServer(id: string, partial: Partial<McpServerConfigInput>): McpServerConfig {\n    return this.store.update(id, partial)\n  }",
+      "description": "Two public methods on McpHub (getServer and updateServer) have no test coverage in mcp-hub.test.ts. While the underlying store methods are tested in server-store.test.ts, the hub-level methods are part of the public API and could diverge from the store behavior (e.g., if hub adds connection-aware logic in the future). At minimum, a smoke test verifying delegation is warranted.",
+      "suggestion": "Add hub-level tests: (1) `hub.addServer(...)` then `hub.getServer(id)` returns the config, (2) `hub.updateServer(id, { name: 'new' })` updates and returns the modified config. These are quick to write and protect against future regressions when hub-level logic is added."
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "test-quality",
+      "subcategory": "missing-boundary",
+      "title": "Tool name collision/namespacing in aggregateTools() untested",
+      "file": "packages/mcp-hub/src/mcp-client-manager.ts",
+      "line": 71,
+      "line_end": 88,
+      "code_snippet": "async aggregateTools(): Promise<Record<string, unknown>> {\n    const allTools: Record<string, unknown> = {}\n    for (const [serverId, client] of this.clients) {\n      const tools = await client.tools()\n      for (const [toolName, toolDef] of Object.entries(tools)) {\n        const namespacedName = `${serverId}__${toolName}`\n        if (toolName in allTools) {\n          allTools[namespacedName] = toolDef\n        } else {\n          allTools[toolName] = toolDef\n        }\n      }\n    }\n    return allTools\n  }",
+      "description": "The aggregateTools() method has a collision-handling branch: when two servers expose a tool with the same name, the second gets namespaced as `${serverId}__${toolName}`. This branch is never exercised because the test suite only connects one server at a time. This is non-trivial business logic -- the collision handling has a subtle behavior where the first tool keeps its short name while only the second gets namespaced, which could confuse consumers.",
+      "suggestion": "Add a test with two connected MCP servers that both expose an 'echo' tool. Verify that one keeps the name 'echo' and the other gets namespaced as '<serverId>__echo'. This requires either a second fixture server or reusing the same fixture with a different config entry. The test proves the collision logic works correctly."
+    },
+    {
+      "id": "review-tests-007",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "fixture-quality",
+      "title": "Echo fixture server tools ignore input parameters",
+      "file": "packages/mcp-hub/src/__tests__/fixtures/echo-mcp-server.ts",
+      "line": 9,
+      "line_end": 19,
+      "code_snippet": "server.registerTool('echo', {\n  description: 'Echo back the input message',\n}, async () => ({\n  content: [{ type: 'text', text: 'Echo: hello' }],\n}))\n\nserver.registerTool('add', {\n  description: 'Add two numbers',\n}, async () => ({\n  content: [{ type: 'text', text: String(2 + 3) }],\n}))",
+      "description": "Both fixture tools ignore their input parameters and return hardcoded values. The 'echo' tool always returns 'Echo: hello' regardless of input, and 'add' always returns '5'. This prevents tests from verifying that tool invocations pass arguments correctly through the MCP transport layer. While sufficient for testing connectivity and tool discovery, it limits the ability to test actual tool execution round-trips.",
+      "suggestion": "Enhance the fixture to accept and process parameters: `server.registerTool('echo', { description: '...', parameters: { type: 'object', properties: { message: { type: 'string' } } } }, async ({ message }) => ({ content: [{ type: 'text', text: 'Echo: ' + message }] }))`. Then add a test that invokes the tool and verifies the response matches the input."
+    }
+  ],
+  "positive_observations": [
+    "Zero mock violations: no jest.fn(), vi.fn(), vi.mock(), InMemoryRepository, MockXxx, or FakeXxx patterns anywhere in the test suite",
+    "Excellent Dev/Prod Parity: server-store.test.ts uses real SQLite (better-sqlite3) with temp directories, not in-memory substitutes",
+    "Real integration tests: mcp-client-manager.test.ts and mcp-hub.test.ts spawn a real MCP server process (echo-mcp-server.ts) over stdio transport",
+    "Strong persistence testing: both server-store and mcp-hub verify data survives close/reopen cycles",
+    "Security tests cover command allowlist enforcement, shell metacharacter rejection, and validation on both add and update paths",
+    "Comprehensive input validation tests: empty name, missing command for stdio, missing url for sse/http",
+    "End-to-end test in mcp-hub.test.ts covers the full lifecycle: register -> connect -> aggregate tools -> disconnect",
+    "Test fixture uses the real @modelcontextprotocol/sdk, not a mock implementation"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}
