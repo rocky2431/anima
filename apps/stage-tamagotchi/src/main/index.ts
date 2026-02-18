@@ -15,8 +15,7 @@ import { emitAppBeforeQuit, emitAppReady, emitAppWindowAllClosed } from './libs/
 import { setElectronMainDirname } from './libs/electron/location'
 import { setupServerChannelHandlers } from './services/airi/channel-server'
 import { setupPluginHost } from './services/airi/plugins'
-import { setupContextEngine } from './services/anima/context-engine'
-import { setupPersonaEngine } from './services/anima/persona-engine'
+import { setupAnimaOrchestrator } from './services/anima/setup-orchestrator'
 import { setupAutoUpdater } from './services/electron/auto-updater'
 import { setupTray } from './tray'
 import { setupAboutWindowReusable } from './windows/about'
@@ -76,8 +75,7 @@ app.whenReady().then(async () => {
 
   const serverChannel = injeca.provide('modules:channel-server', () => setupServerChannelHandlers())
   const pluginHost = injeca.provide('modules:plugin-host', () => setupPluginHost())
-  const contextEngine = injeca.provide('modules:context-engine', () => setupContextEngine())
-  const personaEngine = injeca.provide('modules:persona-engine', () => setupPersonaEngine())
+  const animaOrchestrator = injeca.provide('modules:anima-orchestrator', () => setupAnimaOrchestrator())
   const autoUpdater = injeca.provide('services:auto-updater', () => setupAutoUpdater())
   const widgetsManager = injeca.provide('windows:widgets', () => setupWidgetsWindowManager())
   const noticeWindow = injeca.provide('windows:notice', () => setupNoticeWindowManager())
@@ -116,7 +114,7 @@ app.whenReady().then(async () => {
   })
 
   injeca.invoke({
-    dependsOn: { mainWindow, tray, serverChannel, pluginHost, contextEngine, personaEngine },
+    dependsOn: { mainWindow, tray, serverChannel, pluginHost, animaOrchestrator },
     callback: noop,
   })
 
