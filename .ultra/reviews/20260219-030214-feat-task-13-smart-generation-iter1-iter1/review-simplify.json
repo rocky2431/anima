@@ -1,0 +1,95 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260219-030214-feat-task-13-smart-generation-iter1-iter1",
+  "timestamp": "2026-02-19T03:10:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/consumption/report-generator.ts",
+      "packages/context-engine/src/consumption/smart-tip.ts",
+      "packages/context-engine/src/consumption/smart-todo.ts",
+      "packages/context-engine/src/__tests__/report-generator.test.ts",
+      "packages/context-engine/src/__tests__/smart-tip.test.ts",
+      "packages/context-engine/src/__tests__/smart-todo.test.ts"
+    ],
+    "total_lines_analyzed": 1166,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 95,
+      "category": "simplification",
+      "subcategory": "test-duplication",
+      "title": "StubLlmProvider duplicated identically across 3 test files",
+      "file": "packages/context-engine/src/__tests__/report-generator.test.ts",
+      "line": 12,
+      "line_end": 33,
+      "code_snippet": "class StubLlmProvider implements LlmProvider {\n  readonly calls: Array<{ system: string, prompt: string, schemaDescription?: string }> = []\n  private structuredResponse: unknown\n  ...\n}",
+      "description": "The exact same 22-line StubLlmProvider class appears in all three test files (report-generator.test.ts:12-33, smart-tip.test.ts:12-33, smart-todo.test.ts:19-40). This is well beyond the 'three similar lines' threshold where extraction is justified. If the LlmProvider interface changes, all three copies must be updated in lockstep.",
+      "suggestion": "BEFORE:\n// In report-generator.test.ts, smart-tip.test.ts, smart-todo.test.ts (22 lines each):\nclass StubLlmProvider implements LlmProvider {\n  readonly calls: Array<{ system: string, prompt: string, schemaDescription?: string }> = []\n  private structuredResponse: unknown\n  constructor(response: unknown) { ... }\n  async generateText(...) { ... }\n  async generateStructured<T>(...) { ... }\n}\n\nAFTER:\n// In __tests__/helpers/stub-llm-provider.ts (shared)\nexport class StubLlmProvider implements LlmProvider {\n  readonly calls: Array<{ system: string, prompt: string, schemaDescription?: string }> = []\n  private structuredResponse: unknown\n  constructor(response: unknown) { ... }\n  async generateText(...) { ... }\n  async generateStructured<T>(...) { ... }\n}\n\n// In each test file:\nimport { StubLlmProvider } from './helpers/stub-llm-provider'\n\nWHY: 22 identical lines x 3 files = 66 lines of pure duplication. Extracting reduces maintenance burden when LlmProvider interface evolves."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 92,
+      "category": "simplification",
+      "subcategory": "test-duplication",
+      "title": "makeProcessedContext and TEST_PERSONA duplicated across 3 test files",
+      "file": "packages/context-engine/src/__tests__/smart-tip.test.ts",
+      "line": 35,
+      "line_end": 58,
+      "code_snippet": "const TEST_PERSONA: PersonaConfig = {\n  name: '\u5c0f\u67d4',\n  personality: '\u6e29\u67d4\u4f53\u8d34\u3001\u5584\u89e3\u4eba\u610f',\n  speakingStyle: '\u8bf4\u8bdd\u8f7b\u67d4\uff0c\u5e38\u7528\u8bed\u6c14\u8bcd\"\u5462\"\u3001\"\u561b\"\u3001\"\u54e6\"',\n}\n\nfunction makeProcessedContext(\n  timestamp: number,\n  overrides: Partial<ProcessedContext> = {},\n): ProcessedContext { ... }",
+      "description": "The TEST_PERSONA constant (5 lines) and makeProcessedContext helper function (16 lines) are identically duplicated across all three test files. Combined with StubLlmProvider, each test file carries ~43 lines of shared boilerplate. The makeProcessedContext factory is a prime extraction candidate since it constructs the same default ProcessedContext shape each time.",
+      "suggestion": "BEFORE:\n// Identical in all 3 test files:\nconst TEST_PERSONA: PersonaConfig = { name: '\u5c0f\u67d4', ... }\nfunction makeProcessedContext(timestamp, overrides) { ... }\n\nAFTER:\n// In __tests__/helpers/test-fixtures.ts:\nexport const TEST_PERSONA: PersonaConfig = { name: '\u5c0f\u67d4', ... }\nexport function makeProcessedContext(\n  timestamp: number,\n  overrides: Partial<ProcessedContext> = {},\n): ProcessedContext { ... }\n\n// In each test file:\nimport { makeProcessedContext, TEST_PERSONA } from './helpers/test-fixtures'\n\nWHY: Eliminates ~21 lines of duplication per file (63 total). Factory function and fixture data are stable test infrastructure that benefit from single-source-of-truth."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "simplification",
+      "subcategory": "structural-duplication",
+      "title": "buildSystemPrompt first 3 lines identical across all 3 source classes",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 83,
+      "line_end": 92,
+      "code_snippet": "private buildSystemPrompt(): string {\n  return [\n    `\u4f60\u662f${this.persona.name}\uff0c\u4e00\u4e2a\u865a\u62df AI \u89d2\u8272\u3002`,\n    `\u6027\u683c: ${this.persona.personality}`,\n    `\u8bf4\u8bdd\u98ce\u683c: ${this.persona.speakingStyle}`,\n    '',\n    // task-specific lines differ...\n  ].join('\\n')\n}",
+      "description": "The buildSystemPrompt() methods in ReportGenerator (line 67), SmartTip (line 83), and SmartTodo (line 133) all share the same persona preamble (first 3 template literal lines). The task-specific instructions in lines 4-7 differ. This is noted as an observation -- per the 'three similar lines' principle in CLAUDE.md, 3 shared lines is at the threshold, and the methods are short (9 lines each), so extraction may be premature. Consider extracting only if a 4th consumer appears.",
+      "suggestion": "No change recommended yet. If a 4th consumer appears, extract a shared helper:\n\nfunction buildPersonaPreamble(persona: PersonaConfig): string[] {\n  return [\n    `\u4f60\u662f${persona.name}\uff0c\u4e00\u4e2a\u865a\u62df AI \u89d2\u8272\u3002`,\n    `\u6027\u683c: ${persona.personality}`,\n    `\u8bf4\u8bdd\u98ce\u683c: ${persona.speakingStyle}`,\n  ]\n}\n\nWHY: Currently at the 'three similar lines' threshold. Premature extraction would add indirection without significant clarity gain. Flag for future monitoring."
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "structural-duplication",
+      "title": "Error handling pattern (catch/onError/fallback) structurally identical in 3 classes",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 51,
+      "line_end": 64,
+      "code_snippet": "catch (cause) {\n  const error = new Error('ReportGenerator failed...', { cause })\n  if (this.onError) {\n    this.onError(error)\n    return { /* fallback */ }\n  }\n  throw error\n}",
+      "description": "All three classes (ReportGenerator:51-64, SmartTip:73-80, SmartTodo:100-107) use the same error handling pattern: wrap cause in a new Error with class-specific message, call onError if present and return a fallback value, otherwise rethrow. The pattern is structurally identical but differs in: (1) error message string, (2) fallback return value. This is acceptable duplication for now since each catch block is only 7-8 lines and the fallback values are domain-specific.",
+      "suggestion": "No change recommended. The pattern is clear and each instance is short (7-8 lines). Extracting would require generic type parameters for the fallback value and a factory for the error message, adding complexity without significant clarity gain.\n\nIf this pattern spreads to more classes, consider:\n\nasync function withErrorHandler<T>(\n  operation: () => Promise<T>,\n  errorMsg: string,\n  onError: ((e: Error) => void) | undefined,\n  fallback: T,\n): Promise<T> { ... }\n\nWHY: 7-line structural repetition with domain-specific differences is within the 'three similar lines / premature abstraction' threshold when accounting for the differing fallback values."
+    }
+  ],
+  "positive_observations": [
+    "All functions are short and focused: maximum function length is 23 lines (buildUserPrompt in smart-todo.ts), well within the 50-line threshold.",
+    "Cyclomatic complexity is low across all functions: maximum CC=7 in isValidSmartTipResult, all others CC<=3. No function exceeds the CC=10 concern threshold.",
+    "Maximum nesting depth is 2 levels throughout all source files -- well within the 3-level warning threshold.",
+    "Early returns and guard clauses are used consistently (e.g., dedup empty check, buildUserPrompt empty activities, isValidSmartTipResult).",
+    "Named constants VALID_KINDS and VALID_URGENCIES used instead of inline string literals in smart-tip.ts validation.",
+    "Error messages include class name context (e.g., 'ReportGenerator failed to generate daily summary'), making debugging straightforward.",
+    "cosineSimilarity is a clean pure function extracted at module scope, not a class method -- follows functional core principle."
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

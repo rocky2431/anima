@@ -1,0 +1,112 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260219-030214-feat-task-13-smart-generation-iter1-iter1",
+  "timestamp": "2026-02-19T03:10:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/consumption/report-generator.ts",
+      "packages/context-engine/src/consumption/smart-tip.ts",
+      "packages/context-engine/src/consumption/smart-todo.ts"
+    ],
+    "total_lines_analyzed": 638,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 3, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "invariant-enforcement",
+      "title": "LLM generateStructured<T> return is unvalidated in ReportGenerator",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 42,
+      "line_end": 46,
+      "code_snippet": "const result = await this.llm.generateStructured<DailySummary>({\n  system,\n  prompt,\n  schemaDescription,\n})",
+      "description": "Encapsulation: 7/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 2/10 (Aggregate: 4.5). LlmProvider.generateStructured<T> uses an unconstrained generic -- the return type T is asserted at compile-time only. The LLM can return malformed JSON, missing fields, or wrong types. ReportGenerator trusts the result with zero runtime validation and passes it directly to onReport callback and returns it. SmartTip correctly validates with isValidSmartTipResult (good), but ReportGenerator skips validation entirely. Since this is external input from an LLM (not a controlled function), missing validation on the Imperative Shell boundary is a P1 per the severity mapping for missing constructor validation on external input.",
+      "suggestion": "Add a runtime type guard (similar to SmartTip's isValidSmartTipResult) that validates the DailySummary shape before returning. Example: function isValidDailySummary(v: unknown): v is DailySummary { return !!v && typeof v === 'object' && typeof (v as any).date === 'string' && Array.isArray((v as any).highlights) && ... }. Apply the same pattern to SmartTodo's raw result validation.",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "invariant-expression",
+      "title": "DailySummary.date typed as plain string instead of date format",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 154,
+      "line_end": 160,
+      "code_snippet": "export interface DailySummary {\n  date: string\n  highlights: string[]\n  activityBreakdown: ActivityBreakdownEntry[]\n  totalWorkDurationMs: number\n  personalNote: string\n}",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.25). DailySummary.date is documented as 'YYYY-MM-DD format' in the schema description prompt but typed as plain string. This is primitive obsession -- the type cannot distinguish a valid ISO date string from arbitrary text. The fallback in the catch block uses new Date().toISOString().slice(0, 10) to construct it, further suggesting a specific format is expected. Similarly, ActivityBreakdownEntry.durationMs and totalWorkDurationMs are bare numbers with no domain meaning at the type level. All output interfaces (DailySummary, ActivityBreakdownEntry) lack readonly modifiers, allowing mutation after creation.",
+      "suggestion": "Consider a branded type: type DateString = string & { readonly __brand: 'DateString' }. Add a factory function: function toDateString(iso: string): DateString. At minimum, add readonly to all DailySummary fields since these are output data that should not be mutated. For consistency with PersonaConfig which already uses readonly.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "encapsulation",
+      "title": "SmartTodo.llm is non-readonly with public setter breaking encapsulation",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 46,
+      "line_end": 65,
+      "code_snippet": "private llm: LlmProvider\n...\nsetLlmProvider(llm: LlmProvider): void {\n  this.llm = llm\n}",
+      "description": "Encapsulation: 5/10, Expression: 6/10, Usefulness: 6/10, Enforcement: 6/10 (Aggregate: 5.75). SmartTodo.llm is the only non-readonly private field among the three consumption classes (ReportGenerator and SmartTip both use private readonly). The public setLlmProvider() method allows replacing the LLM provider at runtime without validation or lifecycle management. This creates a race condition risk if generate() is in flight when the provider is swapped. The recentEmbeddings array is also mutable via clearHistory(), but that is intentional state management for dedup history.",
+      "suggestion": "If hot-swapping the LLM provider is truly needed, make it explicit in the constructor via an observable or callback pattern. Otherwise, make llm readonly and remove setLlmProvider(). If the use case is testing, the constructor already accepts LlmProvider so test doubles can be injected there.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "invariant-enforcement",
+      "title": "SmartTodo does not validate LLM structured output shape",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 83,
+      "line_end": 89,
+      "code_snippet": "const raw = await this.llm.generateStructured<SmartTodoResult>({\n  system,\n  prompt,\n  schemaDescription,\n})\n\nconst suggestions = raw?.suggestions ?? []",
+      "description": "Encapsulation: 6/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 5.0). SmartTodo applies only a minimal null guard (raw?.suggestions ?? []) on the LLM output. It does not validate that each suggestion has string title and reason fields. The LLM could return suggestions with missing fields, numeric values, or nested objects. SmartTip demonstrates the correct pattern with isValidSmartTipResult -- SmartTodo should follow suit. The partial guard gives false safety since individual TodoSuggestion items pass through unvalidated to the embedding pipeline and onTodo callback.",
+      "suggestion": "Add a validation function: function isValidTodoSuggestion(v: unknown): v is TodoSuggestion { return !!v && typeof v === 'object' && typeof (v as any).title === 'string' && typeof (v as any).reason === 'string'; }. Filter suggestions through it: const suggestions = (raw?.suggestions ?? []).filter(isValidTodoSuggestion).",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "readonly-consistency",
+      "title": "Output interfaces lack readonly modifiers unlike PersonaConfig",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 145,
+      "line_end": 185,
+      "code_snippet": "export interface ActivityBreakdownEntry {\n  app: string\n  durationMs: number\n  description: string\n}\n...\nexport interface SmartTipResult {\n  headline: string\n  ...\n}",
+      "description": "Encapsulation: 5/10, Expression: 6/10, Usefulness: 7/10, Enforcement: 5/10 (Aggregate: 5.75). All new output types (ActivityBreakdownEntry, DailySummary, SmartTipResult, TodoSuggestion, SmartTodoResult) are mutable interfaces. PersonaConfig in the same file correctly uses readonly on all fields. Since these are output/result types produced by LLM generation and consumed by callbacks, they should be immutable after creation. This is an inconsistency within the same file and a missed opportunity to express the invariant that output data should not be modified by consumers. Consistent with the existing codebase pattern noted in memory (ActivityEvent/ActivityContext also lack readonly).",
+      "suggestion": "Add readonly to all fields in DailySummary, ActivityBreakdownEntry, SmartTipResult, TodoSuggestion, and SmartTodoResult. Example: export interface SmartTipResult { readonly headline: string; readonly note: string; readonly kind: 'alarm' | 'ping' | 'reminder'; readonly urgency: 'immediate' | 'soon' | 'later'; }.",
+      "claude_md_rule": "architecture.functional_core"
+    }
+  ],
+  "positive_observations": [
+    "SmartTipResult uses proper literal unions for kind ('alarm' | 'ping' | 'reminder') and urgency ('immediate' | 'soon' | 'later') -- good type-level constraint that prevents invalid states",
+    "SmartTip includes isValidSmartTipResult runtime type guard to validate LLM output -- excellent pattern for external input boundary",
+    "PersonaConfig uses readonly on all fields -- good immutability pattern for configuration data",
+    "LlmProvider and EmbeddingProvider are clean, minimal interfaces following the Dependency Inversion Principle -- implementations can wrap any SDK",
+    "All three consumption classes (ReportGenerator, SmartTip, SmartTodo) use private readonly fields with options-object constructors -- consistent, clean pattern",
+    "SmartTodo includes vector-based dedup with configurable cosine similarity threshold -- well-designed domain behavior embedded in the class"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 3
+  }
+}

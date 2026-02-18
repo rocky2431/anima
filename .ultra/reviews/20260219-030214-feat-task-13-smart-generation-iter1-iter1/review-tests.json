@@ -1,0 +1,128 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260219-030214-feat-task-13-smart-generation-iter1-iter1",
+  "timestamp": "2026-02-19T03:10:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/__tests__/report-generator.test.ts",
+      "packages/context-engine/src/__tests__/smart-tip.test.ts",
+      "packages/context-engine/src/__tests__/smart-todo.test.ts",
+      "packages/context-engine/src/consumption/report-generator.ts",
+      "packages/context-engine/src/consumption/smart-tip.ts",
+      "packages/context-engine/src/consumption/smart-todo.ts"
+    ],
+    "total_lines_analyzed": 1166,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 4, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "cosineSimilarity pure function lacks direct unit tests",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 21,
+      "line_end": 36,
+      "code_snippet": "function cosineSimilarity(a: number[], b: number[]): number {\n  if (a.length !== b.length || a.length === 0)\n    return 0\n  // ...\n}",
+      "description": "cosineSimilarity is a Functional Core pure function with non-trivial math (dot product, magnitude, division-by-zero guard). It is only tested indirectly through the SmartTodo dedup integration. Per project rules, Functional Core must have 100% coverage with direct unit tests. Boundary conditions are untested: empty arrays (returns 0), mismatched lengths (returns 0), zero vectors (denominator = 0, returns 0), identical vectors (returns 1.0), orthogonal vectors (returns 0). A bug here silently breaks dedup for the entire SmartTodo pipeline.",
+      "suggestion": "Export cosineSimilarity (or move to a shared math utility) and add direct unit tests: cosineSimilarity([], []) === 0, cosineSimilarity([1,0], [0,1]) === 0, cosineSimilarity([1,2,3], [1,2,3]) === 1.0, cosineSimilarity([1], [1,2]) === 0, cosineSimilarity([0,0], [0,0]) === 0. These are pure input-to-output tests requiring no mocks.",
+      "claude_md_rule": "testing.coverage.100_functional_core"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "SmartTodo embedding provider error path untested",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 110,
+      "line_end": 131,
+      "code_snippet": "for (const suggestion of suggestions) {\n  const vector = await this.embedding.embed(suggestion.title)\n  // ...\n}",
+      "description": "The SmartTodo.dedup() method calls this.embedding.embed() which can throw (network error, API limit, malformed response). If embed() throws during dedup, the error propagates through generate() and hits the catch block. However, there is no test verifying this path. The LLM error tests only cover the generateStructured call, not embedding failures. This is a distinct failure mode -- the LLM call succeeds but the post-processing dedup step fails.",
+      "suggestion": "Add a test with an EmbeddingProvider that throws: 'forwards embedding errors to onError callback'. Create a ThrowingEmbeddingProvider stub (with rationale comment) that throws on embed(). Verify that when LLM succeeds but embedding fails, the error is caught, wrapped with 'SmartTodo' context, and forwarded to onError. Also verify the re-throw path when no onError is set.",
+      "claude_md_rule": "testing.error_paths"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-validation-edge-case",
+      "title": "isValidSmartTipResult boundary cases not explicitly tested",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 13,
+      "line_end": 25,
+      "code_snippet": "function isValidSmartTipResult(value: unknown): value is SmartTipResult {\n  if (!value || typeof value !== 'object') return false\n  const obj = value as Record<string, unknown>\n  return (\n    typeof obj.headline === 'string'\n    && typeof obj.kind === 'string'\n    && VALID_KINDS.has(obj.kind)\n    && VALID_URGENCIES.has(obj.urgency)\n  )\n}",
+      "description": "isValidSmartTipResult is a Functional Core validation guard with 6 conditions. The test suite has one test for invalid input ({ headline: 'missing fields' }) but does not test: (1) invalid kind value (e.g., kind='unknown'), (2) invalid urgency value (e.g., urgency='never'), (3) extra fields present but valid, (4) headline/note as empty strings. The function also validates against specific enum sets (VALID_KINDS, VALID_URGENCIES) which should be tested at their boundaries.",
+      "suggestion": "Add parameterized tests for isValidSmartTipResult edge cases. Since it is a private function, test through SmartTip.generate() with StubLlmProvider returning: { headline: 'x', note: 'y', kind: 'invalid_kind', urgency: 'soon' } => null, { headline: 'x', note: 'y', kind: 'alarm', urgency: 'invalid' } => null, { headline: '', note: '', kind: 'alarm', urgency: 'immediate' } => valid (empty strings are valid strings). Consider exporting isValidSmartTipResult for direct unit testing.",
+      "claude_md_rule": "testing.coverage.100_functional_core"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-error-path-assertion",
+      "title": "ReportGenerator onError path does not verify fallback return value",
+      "file": "packages/context-engine/src/__tests__/report-generator.test.ts",
+      "line": 204,
+      "line_end": 220,
+      "code_snippet": "it('forwards errors from LLM provider to onError callback', async () => {\n  // ...\n  await generator.generate([makeProcessedContext(Date.now())])\n  expect(errors).toHaveLength(1)\n  expect(errors[0].message).toContain('ReportGenerator')\n})",
+      "description": "When ReportGenerator.generate() fails and onError is set, it returns a fallback DailySummary with empty highlights, empty activityBreakdown, totalWorkDurationMs=0, and today's date. The test verifies the error callback is invoked but does not assert the return value. This means the fallback structure could silently break (e.g., returning undefined instead of the fallback object) without failing a test.",
+      "suggestion": "Capture the return value: const result = await generator.generate(...). Then assert: expect(result.highlights).toEqual([]), expect(result.activityBreakdown).toEqual([]), expect(result.totalWorkDurationMs).toBe(0), expect(result.date).toMatch(/^\\d{4}-\\d{2}-\\d{2}$/). This ensures the graceful degradation contract is tested.",
+      "claude_md_rule": "testing.error_paths"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "SmartTodo dedup recentEmbeddings unbounded growth untested",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 52,
+      "line_end": 52,
+      "code_snippet": "private recentEmbeddings: number[][] = []",
+      "description": "The SmartTodo.recentEmbeddings array grows unboundedly -- every non-duplicate suggestion's embedding is pushed with no eviction. Over time (the class persists across cron cycles), this array will grow without limit, causing: (1) increasing memory usage, (2) increasing dedup comparison time (O(n) per suggestion), (3) eventually all new suggestions being classified as duplicates due to accumulated vectors. There is no test verifying behavior after many generations (e.g., 100+ cycles) or testing that clearHistory is called appropriately. The only management is clearHistory() which is a full reset with no sliding window option.",
+      "suggestion": "Add a test that calls generate() in a loop (e.g., 50 times with distinct suggestions) and verifies: (1) recentEmbeddings does not exceed a reasonable bound, or (2) if unbounded, document the expected usage pattern (clearHistory on daily reset). Consider adding maxHistory option with sliding window eviction in the implementation, and test that oldest embeddings are evicted when the limit is reached.",
+      "claude_md_rule": "testing.boundary_conditions"
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P3",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "test-duplication",
+      "title": "StubLlmProvider and makeProcessedContext duplicated across 3 test files",
+      "file": "packages/context-engine/src/__tests__/report-generator.test.ts",
+      "line": 12,
+      "line_end": 33,
+      "code_snippet": "class StubLlmProvider implements LlmProvider {\n  readonly calls: Array<{ system: string, prompt: string }> = []\n  private structuredResponse: unknown\n  // ... identical in 3 files\n}",
+      "description": "StubLlmProvider (22 lines) is copy-pasted identically in report-generator.test.ts, smart-tip.test.ts, and smart-todo.test.ts. Similarly, makeProcessedContext (14 lines) and TEST_PERSONA (4 lines) are duplicated across all three files. This is ~120 lines of duplicated test infrastructure. A bug fix or interface change to LlmProvider would require updating 3 files.",
+      "suggestion": "Extract shared test doubles and helpers to packages/context-engine/src/__tests__/fixtures/test-helpers.ts (following the project's existing pattern at packages/mcp-hub/src/__tests__/fixtures/echo-mcp-server.ts). Export StubLlmProvider, StubEmbeddingProvider, IdenticalEmbeddingProvider, makeProcessedContext, and TEST_PERSONA from there.",
+      "claude_md_rule": "code_quality.modular"
+    }
+  ],
+  "positive_observations": [
+    "All test doubles for external APIs (LlmProvider, EmbeddingProvider) include proper '// Test Double rationale:' comments explaining why the stub exists",
+    "No vi.fn(), vi.mock(), vi.spyOn() or jest equivalents used -- all test doubles implement the full interface contract",
+    "Error paths tested for both callback (onError) and throw (no onError) scenarios in all 3 modules",
+    "Empty/null input boundary tested: empty activities array (ReportGenerator), null LLM response (SmartTip), empty suggestions (SmartTodo)",
+    "Behavioral assertions verify prompt construction (persona in system prompt, activity data in user prompt, screenshot context) rather than implementation details",
+    "SmartTodo dedup logic tested with IdenticalEmbeddingProvider to verify high-similarity filtering and clearHistory reset"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

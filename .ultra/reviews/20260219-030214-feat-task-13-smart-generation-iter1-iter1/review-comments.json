@@ -1,0 +1,120 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260219-030214-feat-task-13-smart-generation-iter1-iter1",
+  "timestamp": "2026-02-19T03:10:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/consumption/report-generator.ts",
+      "packages/context-engine/src/consumption/smart-tip.ts",
+      "packages/context-engine/src/consumption/smart-todo.ts"
+    ],
+    "total_lines_analyzed": 590,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 3 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on public generate() method in ReportGenerator",
+      "file": "packages/context-engine/src/consumption/report-generator.ts",
+      "line": 29,
+      "line_end": 29,
+      "code_snippet": "async generate(activities: ProcessedContext[]): Promise<DailySummary> {",
+      "description": "The project convention uses JSDoc on all exported interfaces and public methods. ReportGenerator.generate() is the primary public API but lacks JSDoc. The class-level JSDoc describes the flow at a high level, but the method itself does not document its parameter (activities: what time range? can it be empty?), return value semantics, or error behavior (throws vs returns fallback when onError is absent vs present).",
+      "suggestion": "Add JSDoc to generate() documenting: (1) what 'activities' represents (e.g., all ProcessedContext entries for a given day), (2) error behavior - throws if no onError callback is provided, returns empty fallback if onError is provided, (3) that onReport callback is invoked on success."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on public generate() method in SmartTip",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 46,
+      "line_end": 46,
+      "code_snippet": "async generate(context: ProcessedContext): Promise<SmartTipResult | null> {",
+      "description": "SmartTip.generate() is the primary public API but has no JSDoc. The null return has two distinct meanings: (1) LLM determined no tip was needed, (2) LLM returned structurally invalid data. The error-handling branching (throws vs returns null depending on onError) is also undocumented. A future maintainer cannot distinguish these cases without reading the full implementation.",
+      "suggestion": "Add JSDoc documenting: (1) returns null when no meaningful tip can be generated OR when LLM output fails validation, (2) throws if generation fails and no onError callback was provided, (3) invokes onTip callback on successful non-null generation."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on 3 public methods in SmartTodo",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 63,
+      "line_end": 68,
+      "code_snippet": "setLlmProvider(llm: LlmProvider): void {\n    this.llm = llm\n  }\n\n  clearHistory(): void {\n    this.recentEmbeddings = []",
+      "description": "SmartTodo exposes three public methods (generate, setLlmProvider, clearHistory) with no JSDoc. setLlmProvider() enables hot-swapping the LLM provider at runtime, and clearHistory() resets the deduplication embedding cache. Without documentation, a maintainer may not understand when or why to call these methods, or what side effects they have (e.g., clearHistory makes previously-deduped suggestions eligible again).",
+      "suggestion": "Add JSDoc to all three public methods. For generate(): document existingTodos parameter purpose and error behavior. For setLlmProvider(): document that it enables runtime provider replacement. For clearHistory(): document that it clears the dedup embedding cache, making previously-filtered suggestions eligible again."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "Hardcoded 'AI SDK 6' version in LlmProvider JSDoc will rot",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 114,
+      "line_end": 115,
+      "code_snippet": " * Implementations wrap specific LLM SDKs (e.g., AI SDK 6 generateObject/generateText).",
+      "description": "The LlmProvider interface JSDoc references 'AI SDK 6' by version number. When the project upgrades to a newer version (or switches SDKs), this comment will become misleading. The interface itself is SDK-agnostic, so the version reference adds little value.",
+      "suggestion": "Remove the version number: 'Implementations wrap specific LLM SDKs (e.g., Vercel AI SDK generateObject/generateText).' or simply 'Implementations wrap specific LLM SDKs for text and structured generation.'"
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "SmartTip JSDoc hardcodes '1-hour cycle' scheduling detail",
+      "file": "packages/context-engine/src/consumption/smart-tip.ts",
+      "line": 29,
+      "line_end": 29,
+      "code_snippet": " * Designed to run on a 1-hour cycle via cron-service.",
+      "description": "The class JSDoc states a specific scheduling frequency ('1-hour cycle') that is configured externally in cron-service. If the schedule changes, this comment will silently become incorrect. The scheduling detail belongs in the cron configuration, not in the consumer class documentation.",
+      "suggestion": "Replace with scheduling-agnostic wording: 'Designed to run periodically via cron-service.' The actual cycle duration should be documented where the cron job is configured."
+    },
+    {
+      "id": "review-comments-006",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "SmartTodo JSDoc hardcodes '30-minute cycle' scheduling detail",
+      "file": "packages/context-engine/src/consumption/smart-todo.ts",
+      "line": 40,
+      "line_end": 40,
+      "code_snippet": " * Designed to run on a 30-minute cycle via cron-service.",
+      "description": "Same issue as SmartTip: the class JSDoc hardcodes a specific scheduling frequency ('30-minute cycle') that is configured externally. This creates a maintenance burden where two locations must be updated when the schedule changes.",
+      "suggestion": "Replace with: 'Designed to run periodically via cron-service.' Document the actual cycle duration in the cron-service configuration where the job is registered."
+    }
+  ],
+  "positive_observations": [
+    "All new exported interfaces in types.ts have thorough JSDoc with field-level documentation",
+    "The LlmProvider.generateStructured JSDoc clearly explains the schemaDescription contract and why it uses plain-language rather than a rigid schema type - a valuable 'why' comment",
+    "PersonaConfig JSDoc explains the design decision to mirror PersonaTemplate to avoid cross-package dependency - excellent architectural context for future maintainers",
+    "Class-level JSDoc on all three consumption modules includes a 'Flow' line showing the data pipeline, which aids comprehension",
+    "No forbidden comment patterns (TODO, FIXME, HACK, PLACEHOLDER, etc.) found in any of the changed files",
+    "SmartTodoOptions.similarityThreshold JSDoc accurately documents the range (0-1) and default (0.95), matching the implementation"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}
