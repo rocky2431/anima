@@ -1,0 +1,111 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260218-160520-feat-task-9-mcp-hub-iter2",
+  "timestamp": "2026-02-19T00:00:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/types.ts",
+      "packages/mcp-hub/src/server-store.ts",
+      "packages/mcp-hub/src/transport-factory.ts",
+      "packages/mcp-hub/src/mcp-client-manager.ts",
+      "packages/mcp-hub/src/mcp-hub.ts",
+      "packages/mcp-hub/src/index.ts"
+    ],
+    "total_lines_analyzed": 590,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 3, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "Unsafe `as McpServerConfig` cast in update() breaks union safety",
+      "file": "packages/mcp-hub/src/server-store.ts",
+      "line": 108,
+      "line_end": 113,
+      "code_snippet": "const merged = {\n  ...existing,\n  ...filterUndefined(partial),\n  updatedAt: Date.now(),\n} as McpServerConfig",
+      "description": "Encapsulation: 7/10, Expression: 6/10, Usefulness: 6/10, Enforcement: 4/10 (Aggregate: 5.75). The spread of `Partial<McpServerConfigInput>` onto an existing `McpServerConfig` produces an untyped object that is force-cast with `as McpServerConfig`. Because McpServerConfig is a discriminated union, the compiler cannot verify the merged result is a valid variant. For example, spreading `{ transport: 'sse', url: '...' }` onto a `StdioServerConfig` would produce an object with both `command` and `url` fields -- an illegal state the union is specifically designed to prevent. The subsequent `validateConfig(merged)` catches some issues at runtime, but the cast bypasses the type system's compile-time protection entirely.",
+      "suggestion": "Instead of spreading and casting, reconstruct the config through `buildConfig()` using the merged input values. Parse the merged partial back into a `McpServerConfigInput` first, then call `buildConfig(base, mergedInput)` to get a properly typed `McpServerConfig`. This ensures the discriminated union is constructed through a validated code path.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "non-uniform-union",
+      "title": "McpTransport union mixes class instance with plain objects",
+      "file": "packages/mcp-hub/src/transport-factory.ts",
+      "line": 5,
+      "line_end": 8,
+      "code_snippet": "export type McpTransport =\n  | InstanceType<typeof Experimental_StdioMCPTransport>\n  | { type: 'sse'; url: string; headers?: Record<string, string> }\n  | { type: 'http'; url: string; headers?: Record<string, string> }",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 6/10, Enforcement: 5/10 (Aggregate: 5.0). The McpTransport union mixes a class instance (Experimental_StdioMCPTransport) that lacks a `type` discriminant with plain objects that have `type: 'sse' | 'http'`. This makes type narrowing impossible via a single discriminant field. Consumers must use `instanceof` for the stdio variant and property checks for others. This forces the `transport as McpTransport` cast at line 21 of mcp-client-manager.ts because the SDK's createMCPClient cannot accept the heterogeneous union directly.",
+      "suggestion": "Wrap the stdio transport in an object with a `type: 'stdio'` discriminant, e.g., `{ type: 'stdio'; transport: Experimental_StdioMCPTransport }`. This makes the union consistently discriminated on `type` and eliminates the need for `as` casts when passing to the SDK. Alternatively, since `createTransport` is only consumed by `McpClientManager.connect()`, make it return the SDK-expected type directly and remove the exported `McpTransport` union."
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "type-information-loss",
+      "title": "getTools/aggregateTools return Record<string, unknown> losing type info",
+      "file": "packages/mcp-hub/src/mcp-client-manager.ts",
+      "line": 62,
+      "line_end": 88,
+      "code_snippet": "async getTools(serverId: string): Promise<Record<string, unknown>> {\n  ...\n}\nasync aggregateTools(): Promise<Record<string, unknown>> {\n  ...\n}",
+      "description": "Encapsulation: 8/10, Expression: 3/10, Usefulness: 4/10, Enforcement: 5/10 (Aggregate: 5.0). Both `getTools()` and `aggregateTools()` return `Record<string, unknown>`, discarding the SDK's tool definition type information. The `@ai-sdk/mcp` client's `.tools()` method returns typed tool definitions that include parameter schemas, descriptions, and execute functions. Collapsing this to `unknown` forces every consumer to perform unsafe casts or runtime checks to use the tools, defeating the purpose of the typed SDK.",
+      "suggestion": "Use the SDK's return type: `type McpTools = Awaited<ReturnType<McpClient['tools']>>` and use `McpTools` as the return type for both methods. This preserves the full tool definition types through the hub facade and allows consumers to use tools without casting."
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "architecture",
+      "subcategory": "boundary-validation",
+      "title": "No Valibot schema validation at Imperative Shell boundary",
+      "file": "packages/mcp-hub/src/server-store.ts",
+      "line": 249,
+      "line_end": 290,
+      "code_snippet": "function validateConfig(input: McpServerConfigInput | McpServerConfig): void {\n  if (!input.name || input.name.trim() === '') {\n    throw new Error('Server name must not be empty')\n  }\n  switch (input.transport) { ... }\n}",
+      "description": "Encapsulation: 7/10, Expression: 6/10, Usefulness: 7/10, Enforcement: 5/10 (Aggregate: 6.25). The project standard is Valibot for validation (per CLAUDE.md), but McpServerStore uses a hand-rolled `validateConfig()` function. While the manual validation covers basic cases (empty name, missing command/url, shell metacharacter injection), it lacks: URL format validation for SSE/HTTP transports, header key/value sanitization, and name length limits. A Valibot schema would provide declarative, composable validation that is easier to maintain and test, and would produce consistent error formats across the codebase.",
+      "suggestion": "Define Valibot schemas for McpServerConfigInput variants (e.g., `StdioServerConfigInputSchema = v.object({ transport: v.literal('stdio'), command: v.pipe(v.string(), ...), ... })`). Use `v.union([StdioSchema, SseSchema, HttpSchema])` as the discriminated validator. The command allowlist and shell metachar checks can be custom Valibot validators. This aligns with the project's validation standard and makes the constraints declarative.",
+      "claude_md_rule": "integration.contract_first"
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "immutability",
+      "title": "McpServerConfig interfaces lack readonly modifiers",
+      "file": "packages/mcp-hub/src/types.ts",
+      "line": 3,
+      "line_end": 9,
+      "code_snippet": "interface McpServerConfigBase {\n  id: string\n  name: string\n  enabled: boolean\n  createdAt: number\n  updatedAt: number\n}",
+      "description": "Encapsulation: 6/10, Expression: 7/10, Usefulness: 7/10, Enforcement: 6/10 (Aggregate: 6.5). McpServerConfigBase and all derived interfaces (StdioServerConfig, SseServerConfig, HttpServerConfig) use mutable fields. Since these represent persisted configuration read from the database, they should be treated as immutable values -- mutations should only occur through the store's update() method. Adding `readonly` to all fields would prevent accidental mutation by consumers and reinforce the store-as-single-source-of-truth pattern.",
+      "suggestion": "Mark all fields in McpServerConfigBase as `readonly`. Since the derived interfaces inherit these fields and add their own, also mark the transport-specific fields as `readonly`. Alternatively, use `Readonly<McpServerConfigBase>` as the base or wrap the exported type: `export type McpServerConfig = Readonly<StdioServerConfig> | Readonly<SseServerConfig> | Readonly<HttpServerConfig>`."
+    }
+  ],
+  "positive_observations": [
+    "McpServerConfig is now a proper discriminated union on `transport` field with StdioServerConfig, SseServerConfig, and HttpServerConfig variants -- a significant improvement from iter1's flat interface with optional fields.",
+    "McpServerConfigInput mirrors the discriminated union pattern, ensuring input validation aligns with the config structure.",
+    "safeRowToConfig() uses a proper isTransportType() type guard and exhaustive switch instead of unsafe `as` cast -- eliminates the previous iter1 P1 for unsafe DB row deserialization.",
+    "validateConfig() now runs on both add() and update() paths, closing the iter1 gap where update() had no validation.",
+    "Command allowlist (ALLOWED_COMMANDS) and shell metacharacter detection (SHELL_METACHAR_PATTERN) provide defense-in-depth for stdio transport security.",
+    "McpClientManager has good encapsulation with private Map and proper cleanup in disconnectAll() using Promise.allSettled.",
+    "ServerStatus is a focused 2-value literal union; ConnectEnabledResult provides structured success/failure reporting."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

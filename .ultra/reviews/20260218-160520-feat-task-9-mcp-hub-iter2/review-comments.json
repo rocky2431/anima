@@ -1,0 +1,96 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260218-160520-feat-task-9-mcp-hub-iter2",
+  "timestamp": "2026-02-19T00:00:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/types.ts",
+      "packages/mcp-hub/src/server-store.ts",
+      "packages/mcp-hub/src/transport-factory.ts",
+      "packages/mcp-hub/src/mcp-client-manager.ts",
+      "packages/mcp-hub/src/mcp-hub.ts",
+      "packages/mcp-hub/src/index.ts",
+      "packages/mcp-hub/src/__tests__/server-store.test.ts",
+      "packages/mcp-hub/src/__tests__/transport-factory.test.ts",
+      "packages/mcp-hub/src/__tests__/mcp-client-manager.test.ts",
+      "packages/mcp-hub/src/__tests__/mcp-hub.test.ts"
+    ],
+    "total_lines_analyzed": 1215,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 4, "P3": 0 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on exported McpHub class (primary public API)",
+      "file": "packages/mcp-hub/src/mcp-hub.ts",
+      "line": 13,
+      "line_end": 13,
+      "code_snippet": "export class McpHub {",
+      "description": "McpHub is the primary facade exported by this package. It has no JSDoc documenting its purpose, constructor parameters (dbPath), or lifecycle (shutdown). Project convention per MEMORY.md: 'JSDoc is used consistently on all exported interfaces and functions.' As the main entry point consumers interact with, this class especially benefits from documentation covering: what it does, that dbPath creates/opens a SQLite database, and that shutdown() must be called for cleanup.",
+      "suggestion": "Add JSDoc to the class and its public methods. At minimum: class-level description, constructor param documentation, and a note about shutdown() lifecycle requirement."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on exported McpServerStore class",
+      "file": "packages/mcp-hub/src/server-store.ts",
+      "line": 22,
+      "line_end": 22,
+      "code_snippet": "export class McpServerStore {",
+      "description": "McpServerStore is exported and manages SQLite-backed MCP server configuration persistence. It has no JSDoc on the class or any of its public methods (add, getAll, getById, getEnabled, update, remove, close). Project convention requires JSDoc on all exported interfaces and functions. Key details worth documenting: the constructor opens a SQLite database and creates tables, command allowlist validation is enforced, and close() must be called for cleanup.",
+      "suggestion": "Add JSDoc to the class and its public methods. Document the constructor's dbPath parameter, the command allowlist security model, and the close() lifecycle requirement."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on exported McpClientManager class",
+      "file": "packages/mcp-hub/src/mcp-client-manager.ts",
+      "line": 10,
+      "line_end": 10,
+      "code_snippet": "export class McpClientManager {",
+      "description": "McpClientManager is exported and manages MCP client connections and tool aggregation. It has no JSDoc on the class or its public methods (connect, disconnect, disconnectAll, isConnected, getConnectedIds, getTools, aggregateTools). The aggregateTools method has a non-obvious namespacing behavior for duplicate tool names that especially warrants documentation.",
+      "suggestion": "Add JSDoc to the class and its public methods. The aggregateTools() method should document the collision-avoidance strategy: duplicate tool names get namespaced as 'serverId__toolName'."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Missing JSDoc on exported createTransport function",
+      "file": "packages/mcp-hub/src/transport-factory.ts",
+      "line": 10,
+      "line_end": 10,
+      "code_snippet": "export function createTransport(config: McpServerConfig): McpTransport {",
+      "description": "createTransport is an exported factory function with no JSDoc. It has an important behavioral distinction worth documenting: stdio transport creates a real Experimental_StdioMCPTransport instance that spawns a subprocess, while sse/http return plain config objects (not actual transport instances). This asymmetry could surprise consumers.",
+      "suggestion": "Add JSDoc documenting the function's purpose and the behavioral difference between stdio (returns live transport instance) and sse/http (returns config object to be consumed by createMCPClient)."
+    }
+  ],
+  "positive_observations": [
+    "No forbidden patterns (TODO/FIXME/HACK/PLACEHOLDER) found anywhere in the codebase.",
+    "The two inline comments ('best-effort cleanup' and 'proceed with removal even if disconnect fails') correctly explain 'why' for otherwise suspicious empty catch blocks, preventing future maintainers from flagging them as bugs.",
+    "Test comments ('Reopen for afterEach cleanup') are well-placed and explain a non-obvious test lifecycle workaround that would otherwise confuse future maintainers.",
+    "Code is generally self-documenting with clear naming conventions, reducing the need for inline comments."
+  ],
+  "metadata": {
+    "duration_ms": 20000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

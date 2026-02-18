@@ -1,0 +1,140 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260218-155030-feat-task-9-mcp-hub-iter1",
+  "timestamp": "2026-02-18T15:51:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/server-store.ts",
+      "packages/mcp-hub/src/transport-factory.ts",
+      "packages/mcp-hub/src/mcp-client-manager.ts",
+      "packages/mcp-hub/src/mcp-hub.ts"
+    ],
+    "total_lines_analyzed": 382,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 5, "P2": 1, "P3": 1 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "JSON.parse without try/catch on DB-sourced data in rowToConfig",
+      "file": "packages/mcp-hub/src/server-store.ts",
+      "line": 181,
+      "line_end": 183,
+      "code_snippet": "args: row.args ? JSON.parse(row.args) : undefined,\nurl: row.url ?? undefined,\nheaders: row.headers ? JSON.parse(row.headers) : undefined,",
+      "description": "rowToConfig calls JSON.parse on args and headers columns read from SQLite. If stored data is corrupted or manually tampered with, JSON.parse throws a SyntaxError that will propagate unhandled from any read operation (getAll, getById, getEnabled). This is an I/O boundary where defensive parsing is required.",
+      "suggestion": "Wrap each JSON.parse in try/catch. On parse failure, either return a default value and log a warning with the row ID, or throw a typed error: `throw new Error(`Corrupted args for server ${row.id}`, { cause: err })`.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "resource-leak",
+      "title": "Transport resource leak when createMCPClient fails in connect()",
+      "file": "packages/mcp-hub/src/mcp-client-manager.ts",
+      "line": 18,
+      "line_end": 23,
+      "code_snippet": "const transport = createTransport(config)\nconst client = await createMCPClient({\n  transport: transport as McpTransport,\n})\n\nthis.clients.set(config.id, client)",
+      "description": "If createTransport succeeds (spawning a stdio child process) but createMCPClient subsequently throws, the transport is never closed. For stdio transports this leaves an orphaned child process. The transport reference is lost since it was never stored in the clients map.",
+      "suggestion": "Wrap in try/catch. In the catch block, check if transport has a close/destroy method and call it before re-throwing: `try { const transport = createTransport(config); ... } catch (err) { if (transport && 'close' in transport) await transport.close(); throw new Error(`Failed to connect server ${config.id}`, { cause: err }); }`.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "partial-failure",
+      "title": "Promise.all in connectEnabled() fails fast, leaving servers unconnected",
+      "file": "packages/mcp-hub/src/mcp-hub.ts",
+      "line": 52,
+      "line_end": 55,
+      "code_snippet": "const enabled = this.store.getEnabled()\nconst connections = enabled.map(config => this.clientManager.connect(config))\nawait Promise.all(connections)",
+      "description": "connectEnabled uses Promise.all, which rejects on the first failure. If one of N enabled servers fails to connect, the remaining servers may not complete their connection (their promises are abandoned). In a hub managing multiple MCP servers, one bad server should not prevent connecting to the rest. This is an operational error scenario that should be handled gracefully per CLAUDE.md error_handling.classification.",
+      "suggestion": "Use Promise.allSettled instead. Collect results, log failures with server IDs, connect successful ones, and return a summary: `const results = await Promise.allSettled(connections); const failures = results.filter(r => r.status === 'rejected'); if (failures.length) { /* log each with server context */ }`.",
+      "claude_md_rule": "error_handling.classification"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "resource-leak",
+      "title": "shutdown() leaks store if disconnectAll() throws",
+      "file": "packages/mcp-hub/src/mcp-hub.ts",
+      "line": 66,
+      "line_end": 69,
+      "code_snippet": "async shutdown(): Promise<void> {\n  await this.clientManager.disconnectAll()\n  this.store.close()\n}",
+      "description": "If disconnectAll() throws (e.g., one client.close() rejects), store.close() is never called. The SQLite database connection is leaked. Shutdown is a cleanup path where all resources must be released regardless of individual failures.",
+      "suggestion": "Use try/finally to guarantee store cleanup: `async shutdown(): Promise<void> { try { await this.clientManager.disconnectAll() } finally { this.store.close() } }`. Additionally, disconnectAll itself should use Promise.allSettled (see finding review-errors-005).",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "partial-failure",
+      "title": "Promise.all in disconnectAll() aborts remaining disconnects on failure",
+      "file": "packages/mcp-hub/src/mcp-client-manager.ts",
+      "line": 36,
+      "line_end": 38,
+      "code_snippet": "const disconnections = Array.from(this.clients.keys()).map(id => this.disconnect(id))\nawait Promise.all(disconnections)",
+      "description": "disconnectAll uses Promise.all for cleanup. If one client.close() rejects, the remaining disconnect promises may not complete. This leaves stale entries in the clients Map and potentially orphaned transports/processes. Cleanup operations must be best-effort for all items.",
+      "suggestion": "Replace with Promise.allSettled: `const results = await Promise.allSettled(disconnections); const failures = results.filter(r => r.status === 'rejected'); for (const f of failures) { /* log failure context */ } this.clients.clear();`.",
+      "claude_md_rule": "error_handling.classification"
+    },
+    {
+      "id": "review-errors-006",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "error-handling",
+      "subcategory": "inconsistent-state",
+      "title": "removeServer leaves store entry if disconnect throws",
+      "file": "packages/mcp-hub/src/mcp-hub.ts",
+      "line": 33,
+      "line_end": 38,
+      "code_snippet": "async removeServer(id: string): Promise<void> {\n  if (this.clientManager.isConnected(id)) {\n    await this.clientManager.disconnect(id)\n  }\n  this.store.remove(id)\n}",
+      "description": "If clientManager.disconnect(id) throws, store.remove(id) is never reached. The server config remains in the database while the user believes the removal failed entirely. On retry, disconnect may work but the user gets a confusing error flow. The store entry should still be removed even if disconnect fails, since keeping a config for a server the user wants deleted is worse than a potential orphaned connection.",
+      "suggestion": "Use try/finally or handle disconnect failure gracefully: `try { await this.clientManager.disconnect(id) } catch (err) { /* log warning: disconnect failed during removal */ } this.store.remove(id)`.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-007",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "no-typed-errors",
+      "title": "All errors are generic Error -- no typed error hierarchy",
+      "file": "packages/mcp-hub/src/server-store.ts",
+      "line": 98,
+      "line_end": 98,
+      "code_snippet": "throw new Error(`MCP server not found: ${id}`)",
+      "description": "All error throws across the 4 files use plain `new Error(message)`. Callers cannot programmatically distinguish between 'not found', 'already connected', 'transport failure', 'corrupted data', or 'connection failure' without parsing error message strings. Per CLAUDE.md, the functional core should use Result/Either or typed errors for expected failures.",
+      "suggestion": "Create typed error classes: McpServerNotFoundError, McpTransportError, McpConnectionError, McpStoreError. Alternatively, use a Result type for operations that have expected failure modes (e.g., getById returning Result<McpServerConfig, NotFoundError>).",
+      "claude_md_rule": "error_handling.rules"
+    }
+  ],
+  "positive_observations": [
+    "Constructor in McpServerStore properly cleans up DB on init failure with try/catch + close + re-throw pattern",
+    "All SQL uses parameterized queries (?) -- no string concatenation injection risk",
+    "Input validation in McpServerStore.validateInput is thorough with transport-specific field checks",
+    "Error messages include relevant context (server IDs, transport types) in most throw statements",
+    "Transport factory has exhaustive switch with default case for unknown transport types"
+  ],
+  "metadata": {
+    "duration_ms": 22000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

@@ -26,6 +26,7 @@ patchedDependencies:
   srvx@0.9.8: patches/srvx@0.9.8.patch
 catalog:
   '@ai-sdk/anthropic': ^3.0.45
+  '@ai-sdk/mcp': ^1.0.21
   '@ai-sdk/openai': ^3.0.29
   '@capacitor/cli': ^8.0.1
   '@capacitor/core': ^8.0.1
@@ -38,6 +39,7 @@ catalog:
   '@iconify-json/logos': ^1.2.10
   '@iconify-json/tabler': ^1.2.26
   '@lancedb/lancedb': ^0.26.2
+  '@modelcontextprotocol/sdk': ^1.26.0
   '@moeru/eslint-config': 0.1.0-beta.15
   '@moeru/eventa': 1.0.0-alpha.14
   '@moeru/std': 0.1.0-beta.14

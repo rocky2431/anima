@@ -1,0 +1,64 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260218-155030-feat-task-9-mcp-hub-iter1",
+  "timestamp": "2026-02-18T15:51:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/server-store.ts",
+      "packages/mcp-hub/src/transport-factory.ts",
+      "packages/mcp-hub/src/mcp-client-manager.ts",
+      "packages/mcp-hub/src/mcp-hub.ts",
+      "packages/mcp-hub/src/types.ts",
+      "packages/mcp-hub/src/index.ts"
+    ],
+    "total_lines_analyzed": 418,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 2,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 0 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "No JSDoc on exported classes/functions (3 classes, 1 function)",
+      "file": "packages/mcp-hub/src/index.ts",
+      "line": 1,
+      "line_end": 11,
+      "code_snippet": "export { McpHub } from './mcp-hub'\nexport { McpClientManager } from './mcp-client-manager'\nexport { McpServerStore } from './server-store'\nexport { createTransport } from './transport-factory'",
+      "description": "The mcp-hub package exports McpHub (12 public methods), McpClientManager (7 public methods), McpServerStore (7 public methods), and createTransport -- all without any JSDoc documentation. The project convention observed in other packages (context-engine, ccc, model-driver-lipsync) is to provide JSDoc on exported public APIs. McpHub is the main facade and its methods (addServer, connectServer, aggregateTools, shutdown, etc.) have non-obvious semantics and preconditions that would benefit from documentation. For example, connectEnabled() silently connects all enabled servers but callers have no documentation about error behavior if one connection fails in the Promise.all batch.",
+      "suggestion": "Add JSDoc to each exported class and its public methods. At minimum, document McpHub (the primary public facade), including parameter descriptions, return types, and error conditions. Example: /** Connects all servers marked as enabled. Rejects if any single connection fails. */ async connectEnabled(): Promise<void>"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "No JSDoc on exported interfaces defining the public contract",
+      "file": "packages/mcp-hub/src/types.ts",
+      "line": 1,
+      "line_end": 24,
+      "code_snippet": "export type TransportType = 'stdio' | 'sse' | 'http'\n\nexport interface McpServerConfig {\n  id: string\n  name: string\n  transport: TransportType",
+      "description": "McpServerConfig and McpServerConfigInput are the primary data contracts for the package, re-exported from index.ts. Neither interface has JSDoc explaining the purpose of fields, particularly the conditional requirements: 'command' is required when transport='stdio', 'url' is required when transport='sse' or 'http'. These constraints are enforced at runtime by validateInput() but invisible from the type definitions alone. A consumer reading the types would not know which optional fields are conditionally required.",
+      "suggestion": "Add JSDoc to both interfaces and annotate conditionally-required fields. Example:\n/** Persisted MCP server configuration. */\nexport interface McpServerConfig {\n  /** Unique identifier (nanoid). */\n  id: string\n  /** Required when transport is 'stdio'. The executable to spawn. */\n  command?: string\n  /** Required when transport is 'sse' or 'http'. The server endpoint URL. */\n  url?: string\n}"
+    }
+  ],
+  "positive_observations": [
+    "No forbidden comment patterns (TODO/FIXME/HACK/PLACEHOLDER) found in any of the 6 files.",
+    "No misleading or factually inaccurate comments -- the codebase avoids comment rot risk by having zero comments to maintain.",
+    "Error messages in throw statements are clear and descriptive, serving as implicit documentation of preconditions (e.g., 'stdio transport requires \"command\"').",
+    "Code is well-structured and largely self-documenting with clear method names (connect, disconnect, aggregateTools, shutdown)."
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}
