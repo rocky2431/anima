@@ -95,6 +95,18 @@
       "p1": 2,
       "total": 32,
       "parent": null
+    },
+    {
+      "id": "20260219-011700-feat-task-11-integration-checkpoint-iter1-iter1",
+      "branch": "feat/task-11-integration-checkpoint-iter1",
+      "iteration": 1,
+      "mode": "all",
+      "timestamp": "2026-02-19T01:17:00Z",
+      "verdict": "COMMENT",
+      "p0": 0,
+      "p1": 6,
+      "total": 24,
+      "parent": null
     }
   ]
 }

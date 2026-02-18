@@ -1,0 +1,125 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260219-011700-feat-task-11-integration-checkpoint-iter1-iter1",
+  "timestamp": "2026-02-19T01:25:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 570,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 4, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "createAiOrchestrator is orphan code with no entry point wiring",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 66,
+      "line_end": 155,
+      "code_snippet": "export function createAiOrchestrator(config: AiOrchestratorConfig): AiOrchestrator {",
+      "description": "createAiOrchestrator is exported but not imported by any entry point: no setup file (compare with createAnimaOrchestrator which has setup-orchestrator.ts), no DI registration via injeca, no IPC handler, no event listener. The only consumer is the test file. Grepping the entire apps/stage-tamagotchi/src tree and the full monorepo confirms zero non-test imports. This is dead-on-arrival code per the orphan detection rule.",
+      "suggestion": "Create a setup-ai-orchestrator.ts (similar to setup-orchestrator.ts) that wires createAiOrchestrator into the Electron main process, registers it with injeca DI, and exposes it via IPC to the renderer. Without entry point wiring, this code cannot execute in production.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "code-quality",
+      "subcategory": "missing-logging",
+      "title": "No logging in ai-orchestrator module (@guiiai/logg not used)",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 1,
+      "line_end": 155,
+      "code_snippet": "import { McpHub } from '@proj-airi/mcp-hub'\nimport { buildSkillsContext, SkillRegistry } from '@proj-airi/skills-engine'\nimport { generateText, stepCountIs } from 'ai'",
+      "description": "The ai-orchestrator module has zero logging. @guiiai/logg is not imported. The sibling orchestrator.ts in the same directory uses useLogg for structured logging. Key operations that need logging: initialize() (MCP connection results, skills loaded count), generate() (LLM call start/finish, token usage, duration), shutdown() (cleanup status). Without logging, production debugging of MCP connection failures, LLM errors, or performance issues will be impossible.",
+      "suggestion": "Add `import { useLogg } from '@guiiai/logg'` and create a logger: `const log = useLogg('ai-orchestrator').useGlobalConfig()`. Log at INFO level in initialize() (connected/failed counts), generate() (model ID, message count, token usage, duration_ms), and shutdown(). Log at ERROR level for failures.",
+      "claude_md_rule": "logging.structured_json"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "missing-error-context",
+      "title": "generate() has no error handling - raw errors propagate",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 121,
+      "line_end": 149,
+      "code_snippet": "async generate(model, messages, options = {}): Promise<GenerateResult> {\n  const systemPrompt = this.buildSystemPrompt()\n  const tools = await this.getTools()\n  const result = await generateText({\n    model,",
+      "description": "The generate() method calls generateText() (AI SDK) with no try/catch. If the LLM call fails (network timeout, rate limit, invalid model, malformed response), the error propagates without context about what operation failed, which model was used, or what the input was. The sibling orchestrator.ts wraps operations in try/catch with errorHandler that adds context. This is an Imperative Shell boundary that should handle errors gracefully.",
+      "suggestion": "Wrap the generateText call in try/catch. On failure, log the error with context (model ID, message count, system prompt length) and either re-throw a typed error with context or return a Result type. Example: `catch (err) { const error = err instanceof Error ? err : new Error(String(err)); log.withError(error).error('AI generation failed', { modelId: model.modelId, messageCount: messages.length }); throw error; }`",
+      "claude_md_rule": "error_handling.required"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "code-quality",
+      "subcategory": "hidden-side-effect",
+      "title": "buildSystemPrompt() has hidden mutation - activates skills cumulatively",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 95,
+      "line_end": 115,
+      "code_snippet": "buildSystemPrompt(activeSkillIds?: string[]): string {\n  if (activeSkillIds) {\n    for (const id of activeSkillIds) {\n      skillRegistry.activate(id)\n    }\n  }",
+      "description": "buildSystemPrompt() mutates the SkillRegistry by calling activate() for each provided skill ID, but never deactivates previously activated skills. This means: (1) calling buildSystemPrompt(['a']) then buildSystemPrompt(['b']) results in both 'a' and 'b' being active, (2) calling buildSystemPrompt() without arguments uses whatever was previously activated as a side effect of prior calls, (3) the method name suggests a pure builder/getter but actually mutates shared state. This violates the principle of least surprise and can cause subtle bugs in production where the prompt grows unexpectedly.",
+      "suggestion": "Either: (a) Deactivate all skills before activating the requested ones: `for (const entry of skillRegistry.getAll()) { skillRegistry.deactivate(entry.skill.metadata.id) }` before the activate loop. Or (b) separate the concerns: make activate/deactivate explicit caller responsibilities and make buildSystemPrompt() purely read the current state without mutating it.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "missing-input-validation",
+      "title": "No config validation - empty paths produce confusing downstream errors",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 66,
+      "line_end": 72,
+      "code_snippet": "export function createAiOrchestrator(config: AiOrchestratorConfig): AiOrchestrator {\n  const mcpHub = new McpHub(config.mcpDbPath)\n  const skillRegistry = new SkillRegistry({\n    builtinSkillsDir: config.builtinSkillsDir,\n    userSkillsDir: config.userSkillsDir,\n  })",
+      "description": "AiOrchestratorConfig fields (mcpDbPath, builtinSkillsDir, userSkillsDir) are not validated. An empty string for mcpDbPath will create an in-memory SQLite database (silent behavior change). Empty or non-existent paths for skills directories will silently load zero skills. These are external boundary inputs that should be validated early per the security/validation rules.",
+      "suggestion": "Add validation at the top of createAiOrchestrator: `if (!config.mcpDbPath) throw new Error('mcpDbPath is required'); if (!config.builtinSkillsDir) throw new Error('builtinSkillsDir is required');`. Consider using valibot (project standard) for schema validation of the config object.",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "code-quality",
+      "subcategory": "unsafe-type-cast",
+      "title": "Unsafe 'as' type casts bypass type safety in generate()",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 128,
+      "line_end": 130,
+      "code_snippet": "messages: messages as Array<{ role: 'user' | 'assistant', content: string }>,\ntools: tools as Parameters<typeof generateText>[0]['tools'],\nstopWhen: stepCountIs(options.maxSteps ?? 5),",
+      "description": "Two `as` type casts are used to force types into generateText(). The `tools` cast is particularly concerning: aggregateTools() returns Record<string, unknown> which is cast to the AI SDK's tool type. If the actual MCP tool format does not match the AI SDK's expected tool schema, this will cause runtime errors that TypeScript cannot catch. The `messages` cast is less concerning but still bypasses compile-time checks.",
+      "suggestion": "For tools: define a proper return type from aggregateTools() that matches the AI SDK tool interface, or create a mapping function that validates/transforms the MCP tool format to AI SDK format with runtime checks. For messages: use the AI SDK's own message types from '@ai-sdk/provider' in the generate() signature.",
+      "claude_md_rule": "code_quality"
+    }
+  ],
+  "positive_observations": [
+    "Factory function pattern (createAiOrchestrator) follows the established Functional Core / Imperative Shell convention used by the sibling createAnimaOrchestrator",
+    "Test file uses real MCP server fixture (echo-mcp-server.ts) and real SkillRegistry with real file system - excellent integration test pattern",
+    "Test Double for LanguageModelV2 has proper rationale comment explaining why external LLM API cannot be used in tests",
+    "Clean interface-first design: AiOrchestrator interface defined separately from implementation, enabling future alternative implementations",
+    "End-to-end integration test (line 293) exercises the full createAiOrchestrator -> initialize -> buildSystemPrompt -> getTools -> generate path",
+    "Test verifies actual MCP tool names (echo, add) and skill content (warm, caring AI companion) - not just shape assertions"
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

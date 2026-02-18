@@ -1,0 +1,89 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260219-011700-feat-task-11-integration-checkpoint-iter1-iter1",
+  "timestamp": "2026-02-19T01:25:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 570,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "encapsulation-leak",
+      "title": "AiOrchestrator exposes mcpHub and skillRegistry as public properties",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 47,
+      "line_end": 49,
+      "code_snippet": "readonly mcpHub: McpHub\nreadonly skillRegistry: SkillRegistry",
+      "description": "Encapsulation: 5/10, Expression: 6/10, Usefulness: 7/10, Enforcement: 5/10 (Aggregate: 5.8). The AiOrchestrator interface exposes mcpHub and skillRegistry as public readonly properties. While readonly prevents reassignment, it does not prevent calling mutating methods on these objects (e.g., `orchestrator.mcpHub.addServer()` or `orchestrator.skillRegistry.activate()` outside the orchestrator's intended workflow). The test file exploits this at lines 304 and 361-362 to add servers and activate skills directly, bypassing the orchestrator's own methods. This is the same pattern seen in Task 7's AnimaOrchestrator which properly hides internals as closure variables. The factory function creates both objects internally but then leaks them, undermining the encapsulation that factory+interface pattern is supposed to provide.",
+      "suggestion": "Remove mcpHub and skillRegistry from the AiOrchestrator interface. Instead, expose specific methods the consumer needs: addServer(config), activateSkill(id), getServerStatus(id). Keep mcpHub and skillRegistry as closure-scoped variables in createAiOrchestrator, similar to how AnimaOrchestrator in Task 7 hides emotionActor and pipeline."
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "untyped-return",
+      "title": "getTools() returns Record<string, unknown> -- propagates untyped tools",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 55,
+      "line_end": 55,
+      "code_snippet": "getTools(): Promise<Record<string, unknown>>",
+      "description": "Encapsulation: 7/10, Expression: 3/10, Usefulness: 4/10, Enforcement: N/A (Aggregate: 4.7). The getTools() method returns Record<string, unknown>, which provides no type information about what an AI SDK tool looks like. This forces unsafe casts downstream at line 129 (`tools as Parameters<typeof generateText>[0]['tools']`). The `unknown` value type means consumers cannot access tool properties without additional casts. This is a known issue inherited from McpClientManager.aggregateTools() (previously flagged P2 in MCP Hub review). Since AiOrchestrator is meant to be the integration surface, it has the opportunity to define a proper AiTool type or use AI SDK's Tool type alias.",
+      "suggestion": "Import the CoreTool type from the 'ai' package (or the appropriate AI SDK type for tools) and use it as the return type: `getTools(): Promise<Record<string, CoreTool>>`. Alternatively, define an `AiSdkTool` interface that captures the expected shape (description, parameters, execute). This would eliminate the unsafe cast on line 129."
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "Unsafe `as` casts in generate() bypass type safety",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 128,
+      "line_end": 129,
+      "code_snippet": "messages: messages as Array<{ role: 'user' | 'assistant', content: string }>,\ntools: tools as Parameters<typeof generateText>[0]['tools'],",
+      "description": "Encapsulation: N/A, Expression: 3/10, Usefulness: 4/10, Enforcement: 3/10 (Aggregate: 3.3). Two unsafe casts in the generate() method: (1) messages are cast to a narrower type despite already being typed in the function signature -- this cast is redundant but signals the types do not align properly. (2) tools are cast using `Parameters<typeof generateText>[0]['tools']` which is a complex extraction that could silently break if the AI SDK changes its generateText signature. Both casts indicate a gap between the orchestrator's own type definitions and the AI SDK's expected types.",
+      "suggestion": "For messages: use AI SDK's CoreMessage type directly in the generate() signature instead of defining a custom narrower type. For tools: fix the getTools() return type (see finding review-types-002) so the cast becomes unnecessary. If the AI SDK types are not directly usable, create an explicit adapter function with proper type narrowing rather than using `as` casts."
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "readonly-consistency",
+      "title": "GenerateResult.usage inner object fields lack readonly modifier",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "line": 34,
+      "line_end": 34,
+      "code_snippet": "readonly usage: { inputTokens: number | undefined, outputTokens: number | undefined }",
+      "description": "Encapsulation: 7/10, Expression: 7/10, Usefulness: 7/10, Enforcement: 7/10 (Aggregate: 7.0). The GenerateResult interface correctly uses readonly on top-level fields, but the nested usage object's properties (inputTokens, outputTokens) are not readonly. This means `result.usage.inputTokens = 999` would be allowed by the type checker. This is a minor consistency issue -- the other result interfaces (InitResult) are fully readonly. The top-level `readonly usage` prevents reassigning the usage object itself but does not protect its contents.",
+      "suggestion": "Add readonly to the nested usage fields: `readonly usage: { readonly inputTokens: number | undefined, readonly outputTokens: number | undefined }`. Alternatively, extract a `UsageInfo` interface with readonly fields for reuse."
+    }
+  ],
+  "positive_observations": [
+    "AiOrchestratorConfig uses readonly modifiers on all fields -- good immutable config pattern consistent with Functional Core / Imperative Shell",
+    "InitResult and GenerateResult are well-structured readonly result types that avoid leaking implementation details",
+    "Factory function pattern (createAiOrchestrator) with interface return type properly hides implementation as an Imperative Shell component",
+    "AiOrchestrator interface is clearly documented with JSDoc comments explaining its role as an integration orchestrator"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

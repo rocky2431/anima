@@ -1,0 +1,79 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260219-011700-feat-task-11-integration-checkpoint-iter1-iter1",
+  "timestamp": "2026-02-19T01:25:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 761,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 2, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "No error path tests for AiOrchestrator.initialize() failures",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "line": 292,
+      "line_end": 341,
+      "code_snippet": "it('creates orchestrator, initializes, builds prompt with skills, gets MCP tools, generates', async () => {\n  ...\n  expect(initResult.mcpConnected).toHaveLength(1)\n  expect(initResult.mcpFailed).toHaveLength(0)\n  ...",
+      "description": "The orchestrator's initialize() method handles MCP connection failures by returning them in mcpFailed, and the source code at ai-orchestrator.ts:87-89 maps failed connections to { id, error } objects. However, no test verifies this failure path. There is no test for: (1) an MCP server that fails to connect (returns in mcpFailed), (2) generateText throwing an error during generation, (3) aggregateTools failing when no servers are connected. The initialize() happy path is tested but the error paths are completely uncovered. Since this is the integration checkpoint that wires MCP + Skills + AI SDK together, failure modes are critical to validate.",
+      "suggestion": "Add integration tests that: (1) Register an MCP server with an invalid command (e.g., 'nonexistent-binary') and verify initialize() returns it in mcpFailed with a meaningful error string. (2) Create a test model whose doGenerate throws an error, call orchestrator.generate(), and verify the error propagates correctly. (3) Call getTools() before initialize() and verify graceful behavior. Example:\n\nit('reports MCP server connection failures in initResult', async () => {\n  orchestrator.mcpHub.addServer({ name: 'bad-server', transport: 'stdio', command: 'nonexistent-binary', args: [] });\n  const result = await orchestrator.initialize();\n  expect(result.mcpFailed.length).toBeGreaterThanOrEqual(1);\n  expect(result.mcpFailed[0].error).toBeTruthy();\n});",
+      "claude_md_rule": "testing.coverage.critical_paths_for_shell"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "No boundary tests for buildSystemPrompt with edge inputs",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "line": 292,
+      "line_end": 341,
+      "code_snippet": "const systemPrompt = orchestrator.buildSystemPrompt(['companion-persona'])\nexpect(systemPrompt).toContain('You are Anima')\nexpect(systemPrompt).toContain('companion-persona')",
+      "description": "buildSystemPrompt() is tested only with valid skill IDs and a non-empty base prompt. Missing boundary conditions: (1) Calling buildSystemPrompt() with no arguments and no base prompt (both parts empty). (2) Passing nonexistent skill IDs in activeSkillIds -- the method calls skillRegistry.activate(id) for each, but behavior for invalid IDs is untested. (3) Calling buildSystemPrompt() before initialize() (skills not loaded). These edge cases could produce unexpected empty prompts or throw errors that would silently degrade AI quality.",
+      "suggestion": "Add boundary condition tests:\n\nit('buildSystemPrompt returns empty string when no base prompt and no skills loaded', () => {\n  const orch = createAiOrchestrator({ mcpDbPath: dbPath, builtinSkillsDir: '/nonexistent', userSkillsDir: '/nonexistent' });\n  const prompt = orch.buildSystemPrompt();\n  expect(prompt).toBe('');\n});\n\nit('buildSystemPrompt handles nonexistent skill IDs gracefully', async () => {\n  await orchestrator.initialize();\n  // Should not throw\n  const prompt = orchestrator.buildSystemPrompt(['nonexistent-skill-id']);\n  expect(typeof prompt).toBe('string');\n});"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "generate() not tested with empty messages or maxSteps edge values",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/ai-orchestrator.test.ts",
+      "line": 329,
+      "line_end": 335,
+      "code_snippet": "const result = await orchestrator.generate(model, [\n  { role: 'user', content: 'Hello, Anima!' },\n])\n\nexpect(result.text).toBe('Hello from test model')",
+      "description": "The generate() method is tested with a single valid user message. Boundary conditions not covered: (1) Empty messages array -- what does generateText() do with no messages? (2) maxSteps set to 0 or 1 -- does stepCountIs(0) behave correctly? (3) Very large maxSteps value. Since generate() is the primary user-facing method of the orchestrator and wraps AI SDK's generateText with stepCountIs stop condition, boundary behavior of the step count parameter matters for preventing runaway agent loops.",
+      "suggestion": "Add boundary tests for generate():\n\nit('generate with maxSteps=1 limits to single step', async () => {\n  const result = await orchestrator.generate(model, [{ role: 'user', content: 'test' }], { maxSteps: 1 });\n  expect(result.finishReason).toBeDefined();\n});\n\nit('generate with empty messages array does not throw', async () => {\n  const result = await orchestrator.generate(model, []);\n  expect(result).toBeDefined();\n});"
+    }
+  ],
+  "positive_observations": [
+    "Test double for LanguageModelV2 is properly documented with '// Test Double rationale:' explaining why external LLM APIs cannot be used in CI -- correct application of the external API test double pattern",
+    "Real MCP server (echo-mcp-server.ts via stdio transport) is used for integration tests instead of mocking MCP connections -- proper dev/prod parity",
+    "Real SQLite databases created in temp directories for McpHub -- no InMemoryRepository or mock DB",
+    "Real SkillRegistry with real filesystem skills directory -- tests prove actual SKILL.md loading works",
+    "Test structure follows progressive integration: individual components tested first (AI SDK, MCP, Skills), then full orchestrator end-to-end -- good test architecture",
+    "Proper cleanup with afterEach removing temp directories and shutting down MCP hubs",
+    "Full end-to-end test verifies the complete chain: init -> buildSystemPrompt -> getTools -> generate with all three subsystems wired together"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}
