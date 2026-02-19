@@ -1,0 +1,131 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260219-034800-feat-task-14-memory-pipeline-iter1",
+  "timestamp": "2026-02-19T03:52:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/__tests__/document-store-memory.test.ts",
+      "packages/context-engine/src/__tests__/memory-extractor.test.ts",
+      "packages/context-engine/src/__tests__/memory-integration.test.ts",
+      "packages/context-engine/src/__tests__/memory-orchestrator.test.ts",
+      "packages/context-engine/src/__tests__/vector-store-semantic.test.ts",
+      "packages/context-engine/src/storage/memory-extractor.ts",
+      "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "packages/context-engine/src/storage/document-store.ts",
+      "packages/context-engine/src/storage/vector-store.ts"
+    ],
+    "total_lines_analyzed": 1954,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 1, "P1": 2, "P2": 2, "P3": 1 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P0",
+      "confidence": 92,
+      "category": "test-quality",
+      "subcategory": "correctness-bug-untested",
+      "title": "MemoryOrchestrator.recall hardcodes importance: 0, untested",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 88,
+      "line_end": 94,
+      "code_snippet": "return vectorResults.map(r => ({\n  content: r.content,\n  category: r.source,\n  importance: 0,\n  relevance: r.similarity,\n  sourceDate: new Date(r.createdAt).toISOString().slice(0, 10),\n}))",
+      "description": "The recall() method hardcodes importance to 0 for all recalled memories instead of looking up the actual importance value from DocumentStore. This means consumers of recall results (e.g., proactive triggers, persona engine) will always see importance=0, losing critical prioritization data. The test at memory-orchestrator.test.ts:128 only checks typeof relevance and never asserts the importance field, so this bug passes silently.",
+      "suggestion": "After vector search, look up each memory in DocumentStore by content or id to retrieve the actual importance score. Add a test that persists a memory with importance=9, recalls it, and asserts result.importance === 9. Example: expect(results[0].importance).toBe(9).",
+      "claude_md_rule": "testing.coverage.critical_paths"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "test-quality",
+      "subcategory": "error-path-missing",
+      "title": "No test for embedding failure during persistExtractionResults",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 117,
+      "line_end": 148,
+      "code_snippet": "async persistExtractionResults(results: ExtractionResult): Promise<void> {\n  // ...\n  const vectors = await Promise.all(\n    results.memories.map(async (m) => {\n      const vector = await this.embedding.embed(m.content)\n      // ...\n    }),\n  )",
+      "description": "If embedding.embed() throws during persistExtractionResults(), the entire persist operation fails with an unhandled Promise rejection. There is no test verifying this error path. Memory entries that were partially persisted to DocumentStore before the embedding failure could leave the system in an inconsistent state (entries in SQLite but not in VectorStore). This is a critical boundary-crossing operation that needs an error path test.",
+      "suggestion": "Add a test with a throwing EmbeddingProvider that verifies: (1) the error is propagated or handled gracefully, (2) partial persistence state is documented or rolled back. Example test: create orchestrator with embedding that throws, call persistExtractionResults, verify either clean error or that DocumentStore and VectorStore remain consistent.",
+      "claude_md_rule": "testing.error_paths"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "error-path-missing",
+      "title": "No test for embedding failure during recall()",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 72,
+      "line_end": 95,
+      "code_snippet": "async recall(query: {\n  text: string\n  topK?: number\n  threshold?: number\n}): Promise<MemoryRecallResult[]> {\n  const queryVector = await this.embedding.embed(query.text)",
+      "description": "The recall() method calls this.embedding.embed(query.text) without any try/catch. If the embedding provider fails (network error, rate limit, API down), the error propagates unhandled to the caller. No test verifies this error path. Given that recall is the primary read path for the memory system and embedding APIs are external services prone to failure, this is a significant gap.",
+      "suggestion": "Add a test with a throwing EmbeddingProvider: verify that recall() either (a) propagates a typed error with context, or (b) returns an empty result set gracefully. Consider adding error handling in the recall method itself. Example test: const failOrch = new MemoryOrchestrator({ ..., embedding: { embed: async () => { throw new Error('API down') }, dimension: 8 } }); await expect(failOrch.recall({ text: 'test' })).rejects.toThrow() or expect empty results.",
+      "claude_md_rule": "testing.error_paths"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "boundary-condition-missing",
+      "title": "No test for empty conversations input to MemoryExtractor",
+      "file": "packages/context-engine/src/__tests__/memory-extractor.test.ts",
+      "line": 119,
+      "line_end": 320,
+      "code_snippet": "describe('memoryExtractor', () => {\n  describe('extract', () => {\n    // ... no test with empty conversations array\n  })\n})",
+      "description": "All MemoryExtractor tests use makeExtractionInput() which always provides 3 conversations, 2 activities, and 1 todo. No test exercises the empty-input boundary: zero conversations, zero activities, zero todos. The buildUserPrompt method has conditional blocks (lines 214-239 in memory-extractor.ts) for empty inputs, but these code paths are never exercised by tests.",
+      "suggestion": "Add tests for boundary inputs: (1) empty conversations array, (2) empty activities, (3) all empty. Example: it('handles empty input gracefully', async () => { const result = await extractor.extract({ conversations: [], activities: [], todos: [] }, []); expect(result).toBeDefined(); }).",
+      "claude_md_rule": "testing.boundary_conditions"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "boundary-condition-missing",
+      "title": "MemoryOrchestrator.recall threshold parameter never tested",
+      "file": "packages/context-engine/src/__tests__/memory-orchestrator.test.ts",
+      "line": 111,
+      "line_end": 152,
+      "code_snippet": "describe('recall (Layer 2+3)', () => {\n  it('recalls memories by semantic similarity', async () => {\n    // ... no threshold parameter used\n  })\n  it('respects topK parameter', async () => {\n    // ... topK tested but threshold not\n  })\n})",
+      "description": "The recall() method accepts an optional threshold parameter (line 75 of memory-orchestrator.ts) which is forwarded to vectorStore.semanticSearch(). While the semanticSearch threshold is tested in vector-store-semantic.test.ts, the orchestrator's threshold forwarding is never tested. A wiring bug (e.g., not passing threshold) would go undetected.",
+      "suggestion": "Add a test that passes a high threshold to recall() and verifies that low-similarity results are filtered out. Example: const results = await orchestrator.recall({ text: 'hiking', threshold: 0.99 }); // should return fewer or no results compared to threshold: 0.",
+      "claude_md_rule": "testing.boundary_conditions"
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "test-duplication",
+      "title": "StubEmbeddingProvider duplicated across 3 test files",
+      "file": "packages/context-engine/src/__tests__/memory-extractor.test.ts",
+      "line": 46,
+      "line_end": 60,
+      "code_snippet": "class StubEmbeddingProvider implements EmbeddingProvider {\n  readonly dimension = 8\n  async embed(text: string): Promise<number[]> {\n    const vector = Array.from({ length: this.dimension }, () => 0)\n    // ... identical in 3 files\n  }\n}",
+      "description": "The exact same StubEmbeddingProvider class (with identical hash-based embedding logic) is defined in memory-extractor.test.ts, memory-integration.test.ts, and memory-orchestrator.test.ts. Similarly, StubLlmProvider is duplicated between memory-extractor.test.ts and memory-integration.test.ts. This violates DRY and means a fix to the stub logic requires changes in 3 places.",
+      "suggestion": "Extract shared test doubles into a __tests__/fixtures/ or __tests__/helpers/ module (e.g., __tests__/fixtures/stub-providers.ts) and import them in each test file. This follows the existing pattern seen with the echo-mcp-server fixture in packages/mcp-hub."
+    }
+  ],
+  "positive_observations": [
+    "All external API test doubles (LlmProvider, EmbeddingProvider) include proper '// Test Double rationale:' comments explaining why they exist, following project conventions.",
+    "DocumentStore and VectorStore tests use real SQLite (better-sqlite3) and real LanceDB databases in temp directories -- no InMemoryRepository or mock DB violations.",
+    "Temp directory cleanup pattern is consistent and correct: mkdtempSync in beforeEach, rmSync in afterEach.",
+    "memory-integration.test.ts provides a genuine end-to-end pipeline test (extract -> persist -> recall) using real storage layers, proving the full data flow.",
+    "MemoryExtractor tests cover both validation of malformed LLM output and individual field validation, which is thorough for an LLM-consuming component.",
+    "No vi.fn(), vi.mock(), vi.spyOn(), jest.fn(), jest.mock(), InMemoryRepository, MockXxx, FakeXxx, or it.skip patterns found anywhere in the test files.",
+    "Working memory tests verify immutability (readonly array copy behavior) and FIFO eviction, which are important domain invariants."
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

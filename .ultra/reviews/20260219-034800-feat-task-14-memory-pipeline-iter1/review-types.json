@@ -1,0 +1,135 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260219-034800-feat-task-14-memory-pipeline-iter1",
+  "timestamp": "2026-02-19T03:52:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/storage/types.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/storage/memory-extractor.ts",
+      "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 883,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 5, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "invariant-loss",
+      "title": "MemoryRecallResult.importance hardcoded to 0 in recall()",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 88,
+      "line_end": 94,
+      "code_snippet": "return vectorResults.map(r => ({\n  content: r.content,\n  category: r.source,\n  importance: 0,\n  relevance: r.similarity,\n  sourceDate: new Date(r.createdAt).toISOString().slice(0, 10),\n}))",
+      "description": "Encapsulation: 7/10, Expression: 4/10, Usefulness: 3/10, Enforcement: 3/10 (Aggregate: 4.25). MemoryRecallResult declares an `importance` field typed as `number`, implying it carries meaningful information. However, the only producer (MemoryOrchestrator.recall) hardcodes it to `0` for every result. This makes the field semantically dead -- consumers cannot distinguish important from unimportant recalled memories. The type promises a value it cannot deliver, violating the principle that types should express useful invariants. The importance data exists in DocumentStore (memory_entries table) but is never joined into the vector recall path.",
+      "suggestion": "Either (a) remove `importance` from MemoryRecallResult if it is not recoverable from the vector path, or (b) cross-reference the vector results with DocumentStore.getMemoryEntries to populate the real importance score. If (a), update consumers that depend on this field. If (b), add a lookup by content or id to enrich the result: `const entry = this.documentStore.getMemoryEntryById(r.id); importance: entry?.importance ?? 0`."
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "MemoryEntry.category is string but has documented literal values",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 124,
+      "line_end": 124,
+      "code_snippet": "/** Category (e.g., 'preference', 'event', 'habit', 'goal') */\ncategory: string",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 6/10, Enforcement: 2/10 (Aggregate: 4.0). The JSDoc documents specific valid categories ('preference', 'event', 'habit', 'goal') and the MemoryExtractor schema description adds 'emotion', but the type is plain `string`. This means any misspelled or invalid category silently passes type-checking. The same issue applies to ExtractedMemoryItem.category in types.ts line 206. This is a textbook primitive obsession on a domain concept with known valid values.",
+      "suggestion": "Define a literal union type: `export type MemoryCategory = 'preference' | 'event' | 'habit' | 'goal' | 'emotion'` and use it in both MemoryEntry.category and ExtractedMemoryItem.category. The MemoryExtractor schema description and validation should reference the same values."
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "ImportantDate.dateType is string but has documented literal values",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 105,
+      "line_end": 105,
+      "code_snippet": "/** Category of date (e.g., 'birthday', 'anniversary', 'deadline') */\ndateType: string",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 6/10, Enforcement: 2/10 (Aggregate: 4.0). Same primitive obsession pattern as MemoryEntry.category. The JSDoc documents known dateType values but the TypeScript type is unconstrained `string`. ExtractedImportantDate.dateType (types.ts line 229) has the same issue. Invalid dateType values would silently pass through the system and persist to SQLite without any type-level protection.",
+      "suggestion": "Define `export type DateType = 'birthday' | 'anniversary' | 'deadline'` (extensible if needed). Use it for both ImportantDate.dateType and ExtractedImportantDate.dateType."
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "Relationship.relationshipType is unconstrained string",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 89,
+      "line_end": 89,
+      "code_snippet": "relationshipType: string",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 5/10, Enforcement: 2/10 (Aggregate: 3.75). Unlike dateType and category which at least have JSDoc hints, relationshipType has no documented valid values at all. This is LLM-extracted data that flows through ExtractedRelationship -> MemoryOrchestrator -> DocumentStore with no validation or normalization. Different LLM runs could produce 'friend', 'Friend', 'close friend', 'best friend' for semantically similar relationships, making queries and dedup unreliable.",
+      "suggestion": "At minimum, document expected values in JSDoc. Better: define a literal union like `export type RelationshipType = 'family' | 'friend' | 'colleague' | 'romantic' | 'acquaintance' | 'other'` and add normalization in the MemoryExtractor validation step. The LLM schema description should specify the allowed values."
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P2",
+      "confidence": 86,
+      "category": "type-design",
+      "subcategory": "type-mismatch",
+      "title": "ExtractionInput.conversations[].role is string, not ConversationRole",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 248,
+      "line_end": 248,
+      "code_snippet": "conversations: Array<{ role: string, content: string }>",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.25). ConversationRole is already defined as `'user' | 'assistant' | 'system'` in storage/types.ts and is used by the Conversation interface. ExtractionInput.conversations uses an inline anonymous type with `role: string` instead of reusing ConversationRole. This widens the type unnecessarily -- any string would be accepted where only three values are valid. The MemoryExtractor builds prompts that format `[${conv.role}]` directly into LLM prompts, so invalid roles would produce malformed prompts.",
+      "suggestion": "Change the type to: `conversations: Array<{ role: ConversationRole, content: string }>` and add the import of ConversationRole from storage/types. Alternatively, use `Pick<Conversation, 'role' | 'content'>` to reuse the existing Conversation shape."
+    },
+    {
+      "id": "review-types-006",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "missing-readonly",
+      "title": "New storage interfaces lack readonly modifiers on all fields",
+      "file": "packages/context-engine/src/storage/types.ts",
+      "line": 72,
+      "line_end": 129,
+      "code_snippet": "export interface UserProfileFact {\n  id: string\n  fact: string\n  ...\n}\nexport interface Relationship {\n  id: string\n  ...\n}",
+      "description": "Encapsulation: 4/10, Expression: 5/10, Usefulness: 5/10, Enforcement: 5/10 (Aggregate: 4.75). UserProfileFact, Relationship, ImportantDate, and MemoryEntry are all new storage types representing persisted records. These should be treated as immutable data from the database -- mutation should only happen through DocumentStore methods. However, all fields are mutable, allowing any consumer to accidentally modify a record without persisting the change. This is consistent with the pre-existing pattern (Conversation, Todo, ContextVector are also mutable), but each new type deepens the tech debt. The extraction types (ExtractedMemoryItem, etc.) in types.ts lines 202-263 have the same issue.",
+      "suggestion": "Add `readonly` to all fields on these record interfaces, or wrap them with `Readonly<T>` at the export site. This is a codebase-wide pattern issue; consider a follow-up to add readonly across all storage types. At minimum, new types should not repeat the mistake: `export interface MemoryEntry { readonly id: string; readonly content: string; ... }`."
+    },
+    {
+      "id": "review-types-007",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "validation-boundary",
+      "title": "No Valibot schemas at memory extraction LLM boundary",
+      "file": "packages/context-engine/src/storage/memory-extractor.ts",
+      "line": 61,
+      "line_end": 82,
+      "code_snippet": "function validateExtractionResult(raw: unknown): ExtractionResult {\n  if (!raw || typeof raw !== 'object') {\n    return { memories: [], profileFacts: [], relationships: [], importantDates: [] }\n  }\n  ...\n}",
+      "description": "Encapsulation: 7/10, Expression: 6/10, Usefulness: 6/10, Enforcement: 6/10 (Aggregate: 6.25). The MemoryExtractor includes manual runtime validation (validateExtractionResult, isValidMemoryItem, etc.) which is commendable -- this is better than most LLM output handling in the codebase. However, the project standard is Valibot for schema validation. Manual type guards are more error-prone and harder to keep in sync with the TypeScript interfaces. That said, the existing validation is functional and follows the SmartTip gold-standard pattern from Task 13. Flagging as P3 informational since the manual guards work correctly.",
+      "suggestion": "Consider migrating to Valibot schemas for ExtractionResult validation in a future iteration. Valibot would provide: (1) co-located type inference so the TS interface and runtime check cannot drift, (2) better error messages with path information, (3) range validation for importance (1-10) and confidence (0-1) that the current guards skip. Example: `const MemoryItemSchema = v.object({ content: v.string(), importance: v.pipe(v.number(), v.minValue(1), v.maxValue(10)), category: v.picklist(['preference', 'event', 'habit', 'goal', 'emotion']) })`."
+    }
+  ],
+  "positive_observations": [
+    "MemoryExtractor has comprehensive runtime validation of LLM output (validateExtractionResult with 4 type guards) -- follows SmartTip gold-standard pattern from Task 13",
+    "MemoryOrchestrator.getWorkingMemory() returns a spread copy as readonly Conversation[] -- good immutability pattern for working memory access",
+    "VectorSource literal union was properly extended with 'memory', 'preference', 'relationship' rather than widening to string",
+    "MemoryExtractor uses private readonly fields with options-object constructor pattern -- consistent with codebase conventions",
+    "ExtractionResult is a well-structured composite type clearly separating four extraction categories",
+    "ConversationRole literal union ('user' | 'assistant' | 'system') properly constrains the Conversation.role field in storage types"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

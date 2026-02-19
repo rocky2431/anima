@@ -1,0 +1,171 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260219-034800-feat-task-14-memory-pipeline-iter1",
+  "timestamp": "2026-02-19T03:50:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/storage/memory-extractor.ts",
+      "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "packages/context-engine/src/storage/document-store.ts",
+      "packages/context-engine/src/storage/vector-store.ts"
+    ],
+    "total_lines_analyzed": 848,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 9,
+    "by_severity": { "P0": 2, "P1": 5, "P2": 2, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P0",
+      "confidence": 97,
+      "category": "error-handling",
+      "subcategory": "empty-catch",
+      "title": "Bare catch in onError callback wrapper swallows error silently",
+      "file": "packages/context-engine/src/storage/memory-extractor.ts",
+      "line": 161,
+      "line_end": 161,
+      "code_snippet": "try { this.onError(error) }\ncatch { /* onError callback itself failed */ }",
+      "description": "The nested catch block inside the extract() error handler has no error parameter binding and no logging. If the onError callback throws, the failure is completely invisible. This is the same bare catch pattern found in ScreenshotPipeline.tick() and skill-loader.ts -- it is a codebase-wide recurring habit. The comment acknowledges the scenario but does nothing about it. Even if re-throwing is undesirable, the error from the callback must at minimum be logged with context (what callback failed, what original error triggered it).",
+      "suggestion": "Bind the error and log it: `catch (callbackErr) { console.error('MemoryExtractor: onError callback threw', { original: error, callbackErr }) }`. Better yet, use a shared safeCallback utility that logs and suppresses, to standardize this pattern across the codebase.",
+      "claude_md_rule": "error_handling.forbidden.catch_empty"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P0",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "empty-catch",
+      "title": "Bare catch in dedup loop hides embedding failures",
+      "file": "packages/context-engine/src/storage/memory-extractor.ts",
+      "line": 190,
+      "line_end": 193,
+      "code_snippet": "catch {\n  // Embedding failed - include the memory rather than losing it\n  result.push(memory)\n}",
+      "description": "The catch block in the dedup loop has no error parameter binding. While the fallback behavior (include the memory rather than lose it) is a defensible choice, the error is entirely invisible -- no log, no metric, no callback to onError. A systematic embedding provider failure (wrong API key, rate limit, network down) would silently skip deduplication for all memories without any observable signal. Additionally, this is the same bare `catch {}` pattern flagged as P0 in skill-loader.ts -- error param not even bound.",
+      "suggestion": "Bind the error and report it: `catch (err) { this.onError?.(new Error(`Dedup embedding failed for memory: ${memory.content.slice(0, 50)}`, { cause: err })); result.push(memory) }`. This preserves the include-on-failure behavior while making failures observable.",
+      "claude_md_rule": "error_handling.forbidden.catch_empty"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "error-as-valid-state",
+      "title": "extract() returns empty result on error -- indistinguishable from no data",
+      "file": "packages/context-engine/src/storage/memory-extractor.ts",
+      "line": 162,
+      "line_end": 162,
+      "code_snippet": "return { memories: [], profileFacts: [], relationships: [], importantDates: [] }",
+      "description": "When onError is provided, the catch block returns an empty ExtractionResult. This is the same value that would be returned if the LLM genuinely found nothing noteworthy. Callers cannot distinguish 'extraction failed' from 'nothing to extract'. This is the same error-as-valid-state pattern found in ReportGenerator (empty DailySummary), SmartTodo (empty suggestions), and SmartTip (null) -- all in this codebase's consumption layer. The pattern makes monitoring impossible: you cannot alert on extraction failures because they look like normal empty days.",
+      "suggestion": "Return a Result type that distinguishes success from failure, e.g., `{ ok: false, error }` vs `{ ok: true, data: ExtractionResult }`. At minimum, add a `failed: boolean` field to ExtractionResult or use a separate return type for the error path.",
+      "claude_md_rule": "error_handling.rules.result_either_pattern"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 93,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "persistExtractionResults has zero error handling for multi-step I/O",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 117,
+      "line_end": 184,
+      "code_snippet": "async persistExtractionResults(results: ExtractionResult): Promise<void> {\n  // ... embedding, vectorStore.insert, documentStore.insert*\n  // No try/catch anywhere in 67 lines of I/O\n}",
+      "description": "persistExtractionResults performs 5 categories of I/O operations: (1) embedding.embed per memory, (2) vectorStore.insert, (3) documentStore.insertMemoryEntry per memory, (4) documentStore.insertProfileFact per fact, (5) documentStore.upsertRelationship / insertImportantDate per item. None are wrapped in try/catch. A failure at step 2 (vectorStore.insert) leaves memories already embedded but not stored in DocumentStore, creating inconsistency between vector and document stores. A failure at step 4 aborts before relationships and dates are persisted. There is no rollback, no partial-success reporting, and no error context.",
+      "suggestion": "Wrap each category of persistence in its own try/catch for error isolation. At minimum, wrap the entire method body in try/catch with a descriptive error: `catch (cause) { throw new Error('Failed to persist extraction results (memories=${results.memories.length}, facts=${results.profileFacts.length})', { cause }) }`. For production robustness, use a transaction for SQLite writes and handle vector/document stores separately.",
+      "claude_md_rule": "error_handling.rules.catch_log_rethrow"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "recall() has no error handling for embedding + vector search I/O",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 72,
+      "line_end": 95,
+      "code_snippet": "async recall(query: { text: string ... }): Promise<MemoryRecallResult[]> {\n  const queryVector = await this.embedding.embed(query.text)\n  const vectorResults = await this.vectorStore.semanticSearch(...)\n  return vectorResults.map(...)\n}",
+      "description": "recall() calls embedding.embed() and vectorStore.semanticSearch() with no try/catch. If the embedding provider is down or the query text is empty/malformed, the raw provider error propagates to the caller with no context about what operation was being attempted. The caller has no way to distinguish 'no memories found' from 'recall failed' since both could result in an empty array (if the caller catches and returns []). Error message will be a raw LanceDB or embedding SDK error with no mention of 'recall' or the query text.",
+      "suggestion": "Wrap in try/catch: `catch (cause) { throw new Error(`Memory recall failed for query: \"${query.text.slice(0, 80)}\"`, { cause }) }`. Alternatively, return a Result type.",
+      "claude_md_rule": "error_handling.rules.catch_log_rethrow"
+    },
+    {
+      "id": "review-errors-006",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "init() has no error handling for vectorStore.createTable",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 45,
+      "line_end": 47,
+      "code_snippet": "async init(): Promise<void> {\n  await this.vectorStore.createTable(MEMORY_TABLE, this.embedding.dimension)\n}",
+      "description": "init() is documented as a prerequisite that 'must be called before using recall or persistExtractionResults'. If createTable fails (e.g., disk full, permission error, LanceDB corruption), the raw error propagates with no context. Worse, the MemoryOrchestrator instance is left in an uninitialized state with no flag to prevent subsequent recall/persist calls from failing with confusing LanceDB errors about missing tables.",
+      "suggestion": "Wrap in try/catch with context: `catch (cause) { throw new Error('MemoryOrchestrator init failed: could not create memories table', { cause }) }`. Consider adding an `initialized` flag and checking it in recall/persistExtractionResults.",
+      "claude_md_rule": "error_handling.rules.catch_log_rethrow"
+    },
+    {
+      "id": "review-errors-007",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "partial-failure",
+      "title": "Promise.all for memory embeddings -- one failure loses entire batch",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 123,
+      "line_end": 135,
+      "code_snippet": "const vectors = await Promise.all(\n  results.memories.map(async (m) => {\n    const vector = await this.embedding.embed(m.content)\n    return { id, vector, source: 'memory', content: m.content, createdAt: now }\n  }),\n)",
+      "description": "Promise.all rejects on the first failure. If one embedding call fails (rate limit, timeout, malformed content), all successfully computed embeddings are discarded and no memories are persisted. This is the same Promise.all-for-independent-I/O pattern previously flagged in AiOrchestrator.initialize() (task-11) and McpHub (task-9, fixed to allSettled in iter2). With 10+ memories to embed, a single transient failure should not prevent the other 9 from being stored.",
+      "suggestion": "Use Promise.allSettled and filter fulfilled results: `const settled = await Promise.allSettled(results.memories.map(...)); const vectors = settled.filter(r => r.status === 'fulfilled').map(r => r.value); const failures = settled.filter(r => r.status === 'rejected'); if (failures.length > 0) { /* log failures */ }`.",
+      "claude_md_rule": "error_handling.rules.operational_errors"
+    },
+    {
+      "id": "review-errors-008",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "optional-callback-swallow",
+      "title": "onError optional callback -- errors silently swallowed when not provided",
+      "file": "packages/context-engine/src/storage/memory-extractor.ts",
+      "line": 159,
+      "line_end": 165,
+      "code_snippet": "if (this.onError) {\n  try { this.onError(error) }\n  catch { /* onError callback itself failed */ }\n  return { memories: [], profileFacts: [], relationships: [], importantDates: [] }\n}\nthrow error",
+      "description": "When onError is provided, errors are caught and the empty fallback is returned. When onError is NOT provided, the error is re-thrown (good). However, the dual-path behavior means callers must know whether they provided onError to understand the contract: with onError the method never throws; without onError it throws. This inconsistent contract is error-prone. It is the same pattern found in ScreenshotPipeline, ActivityMonitor, ReportGenerator, SmartTip, and SmartTodo -- now also in MemoryExtractor.",
+      "suggestion": "Document the dual contract explicitly in JSDoc. Consider always throwing (let callers catch) or always returning a Result type, for a consistent contract regardless of onError presence.",
+      "claude_md_rule": "error_handling.rules.result_either_pattern"
+    },
+    {
+      "id": "review-errors-009",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "error-handling",
+      "subcategory": "data-inconsistency",
+      "title": "persistExtractionResults uses separate IDs for vector and document stores",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 122,
+      "line_end": 148,
+      "code_snippet": "const id = crypto.randomUUID()  // in Promise.all for vectors\n// ...\nfor (const m of results.memories) {\n  this.documentStore.insertMemoryEntry({ id: crypto.randomUUID(), ... })\n}",
+      "description": "Each memory gets two different UUIDs: one for the vector store (line 125) and one for the document store (line 140). This means there is no way to correlate a vector record with its document record. If you need to delete a memory, update it, or debug a recall result, you cannot trace from the vector hit back to the document entry. Additionally, if the vector insert succeeds but the document insert loop fails partway, you have orphaned vectors with no document counterpart and no way to identify which ones to clean up.",
+      "suggestion": "Generate the UUID once per memory and use it for both stores: `const id = crypto.randomUUID()` then pass the same `id` to both `vectors` array and `insertMemoryEntry`. This enables cross-store correlation and simplifies cleanup on partial failure.",
+      "claude_md_rule": "architecture.functional_core"
+    }
+  ],
+  "positive_observations": [
+    "MemoryExtractor.extract() wraps errors with new Error(msg, { cause }) providing good error chain context including conversation count",
+    "DocumentStore constructor properly cleans up (db.close()) in catch block on init failure -- good resource management pattern",
+    "VectorStore.getDb() guard prevents use-after-close with a clear error message",
+    "MemoryExtractor has comprehensive LLM output validation (validateExtractionResult with per-field type checking) -- prevents invalid LLM responses from corrupting downstream data",
+    "DocumentStore uses parameterized queries consistently across all new methods (insertProfileFact, upsertRelationship, insertImportantDate, insertMemoryEntry, getImportantDatesForToday) -- no SQL injection risk",
+    "VectorStore.deleteById escapes single quotes in the ID string to prevent LanceDB filter injection"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

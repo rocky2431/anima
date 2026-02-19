@@ -165,7 +165,7 @@
       "type": "feature",
       "priority": "P1",
       "complexity": 6,
-      "status": "pending",
+      "status": "completed",
       "dependencies": ["7", "12"],
       "estimated_days": 4,
       "context_file": "contexts/task-14.md",

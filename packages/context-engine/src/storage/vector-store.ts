@@ -91,6 +91,35 @@ export class VectorStore {
   }
 
   /**
+   * Search for semantically similar vectors with a similarity threshold.
+   * Converts L2 distance to cosine similarity for normalized vectors.
+   * Returns results sorted by similarity descending, filtered by threshold.
+   */
+  async semanticSearch(
+    tableName: string,
+    queryVector: number[],
+    topK: number,
+    similarityThreshold: number = 0.0,
+  ): Promise<(VectorSearchResult & { similarity: number })[]> {
+    // Fetch more candidates than needed to allow for threshold filtering
+    const candidates = await this.search(tableName, queryVector, topK * 3)
+    if (candidates.length === 0) {
+      return []
+    }
+
+    const results = candidates.map(c => ({
+      ...c,
+      // LanceDB _distance = squared L2; for unit vectors: cos_sim = 1 - (squared_L2 / 2)
+      similarity: Math.max(0, Math.min(1, 1 - (c._distance / 2))),
+    }))
+
+    return results
+      .filter(r => r.similarity >= similarityThreshold)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, topK)
+  }
+
+  /**
    * Delete a single vector by its id.
    */
   async deleteById(tableName: string, id: string): Promise<void> {

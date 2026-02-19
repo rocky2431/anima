@@ -193,3 +193,71 @@ export interface PersonaConfig {
   readonly personality: string
   readonly speakingStyle: string
 }
+
+// --- Memory Extraction Types ---
+
+/**
+ * A single extracted memory item from daily conversations.
+ */
+export interface ExtractedMemoryItem {
+  content: string
+  importance: number
+  category: string
+}
+
+/**
+ * A profile fact extracted from conversations.
+ */
+export interface ExtractedProfileFact {
+  fact: string
+  confidence: number
+}
+
+/**
+ * A relationship extracted from conversations.
+ */
+export interface ExtractedRelationship {
+  personName: string
+  relationshipType: string
+}
+
+/**
+ * An important date extracted from conversations.
+ */
+export interface ExtractedImportantDate {
+  date: string
+  dateType: string
+  label: string
+  description: string
+}
+
+/**
+ * Complete result from the memory extraction LLM call.
+ */
+export interface ExtractionResult {
+  memories: ExtractedMemoryItem[]
+  profileFacts: ExtractedProfileFact[]
+  relationships: ExtractedRelationship[]
+  importantDates: ExtractedImportantDate[]
+}
+
+/**
+ * Input data for memory extraction.
+ */
+export interface ExtractionInput {
+  conversations: Array<{ role: string, content: string }>
+  activities: Array<{ app: string, description: string, timestamp: number }>
+  todos: Array<{ title: string, completed: boolean }>
+}
+
+/**
+ * A recalled memory with relevance score.
+ */
+export interface MemoryRecallResult {
+  content: string
+  category: string
+  importance: number
+  /** Cosine similarity 0-1 */
+  relevance: number
+  sourceDate: string
+}

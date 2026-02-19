@@ -1,0 +1,124 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260219-034800-feat-task-14-memory-pipeline-iter1",
+  "timestamp": "2026-02-19T03:50:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/storage/memory-extractor.ts",
+      "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "packages/context-engine/src/storage/document-store.ts",
+      "packages/context-engine/src/storage/vector-store.ts",
+      "packages/context-engine/src/storage/types.ts",
+      "packages/context-engine/src/types.ts"
+    ],
+    "total_lines_analyzed": 1240,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 3, "P3": 2 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "comments",
+      "subcategory": "factual-accuracy",
+      "title": "L2-to-cosine comment formula notation misleads about _distance semantics",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 112,
+      "line_end": 113,
+      "code_snippet": "// L2 distance to cosine similarity: for normalized vectors, sim = 1 - (d\u00b2/2)\nsimilarity: 1 - (c._distance / 2),",
+      "description": "The comment says `sim = 1 - (d^2/2)` using `d^2` notation, which implies squaring the distance value. However, LanceDB's `_distance` field already returns the *squared* L2 distance (i.e., `||a-b||^2`), so the code correctly computes `1 - (_distance / 2)` without squaring again. The comment's `d^2` notation suggests `_distance` is an unsquared Euclidean distance that needs squaring, which would lead a maintainer to incorrectly \"fix\" the formula by squaring `_distance` first. The comment should clarify that `_distance` is the squared L2 distance and the formula is `sim = 1 - (dist_sq / 2)`.",
+      "suggestion": "Rewrite the comment to: `// LanceDB _distance = squared L2; for unit vectors: cos_sim = 1 - (squared_L2 / 2)`",
+      "claude_md_rule": "comments.factual-accuracy"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "misleading-name-as-documentation",
+      "title": "hasNearDeadlineTodos name/doc implies deadline proximity but checks any incomplete",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 106,
+      "line_end": 109,
+      "code_snippet": "hasNearDeadlineTodos(): boolean {\n    const todos = this.documentStore.getTodos()\n    return todos.some(t => !t.completed)\n  }",
+      "description": "The method is named `hasNearDeadlineTodos` which implies it checks for todos that are *near their deadline*, but the implementation simply returns `true` if any todo is incomplete -- no deadline proximity check at all. The method name functions as implicit documentation that contradicts the code. A future maintainer will trust the name and believe deadline-aware logic exists when it does not.",
+      "suggestion": "Either rename to `hasIncompleteTodos()` to match actual behavior, or add a comment explicitly noting this is a simplified stub (and preferably implement actual deadline proximity logic).",
+      "claude_md_rule": "comments.factual-accuracy"
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "comments",
+      "subcategory": "misleading-class-doc",
+      "title": "MemoryOrchestrator JSDoc references LanceDB by name -- implementation coupling",
+      "file": "packages/context-engine/src/consumption/memory-orchestrator.ts",
+      "line": 19,
+      "line_end": 26,
+      "code_snippet": "/**\n * Three-layer memory orchestrator:\n *   Layer 1: Working Memory (RAM) \u2014 recent N conversation turns\n *   Layer 2: Real-time Memory (LanceDB) \u2014 semantic vector search\n *   Layer 3: Structured Memory (SQLite) \u2014 profile facts, relationships, dates, entries\n */",
+      "description": "The class JSDoc names specific storage technologies (LanceDB, SQLite) in the architecture description. The class itself depends on `VectorStore` and `DocumentStore` abstractions, not directly on LanceDB or SQLite. If the backing implementations change (which is plausible given the walking-skeleton pattern), this comment will become stale and misleading. Per project memory, forward-looking or technology-specific comments in abstractions are a known rot risk.",
+      "suggestion": "Replace technology names with abstraction names: `Layer 2: Real-time Memory (VectorStore) -- semantic vector search` and `Layer 3: Structured Memory (DocumentStore) -- profile facts, relationships, dates, entries`. Mention concrete technologies in the implementation classes instead.",
+      "claude_md_rule": "comments.long-term-value"
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "New public methods in DocumentStore lack JSDoc despite project convention",
+      "file": "packages/context-engine/src/storage/document-store.ts",
+      "line": 171,
+      "line_end": 259,
+      "code_snippet": "insertProfileFact(fact: UserProfileFact): void {\n  ...\ngetProfileFacts(): UserProfileFact[] {\n  ...\nupsertRelationship(rel: Relationship): void {",
+      "description": "The new public methods added in this diff -- `insertProfileFact`, `getProfileFacts`, `upsertRelationship`, `getRelationships`, `getRelationshipByName`, `insertImportantDate`, `getImportantDates`, `getImportantDatesForToday`, `insertMemoryEntry`, `getMemoryEntries`, `getMemoryEntriesByCategory` -- all lack JSDoc comments. The existing methods in DocumentStore (e.g., `insertConversation`, `getRecentConversations`, `upsertTodo`) also lack JSDoc, so the class is internally consistent. However, the project convention per CLAUDE.md is JSDoc on all exported interfaces and functions, and these are public methods on an exported class. The section-header comments (`// --- Profile Facts ---`, etc.) partially compensate but are not equivalent.",
+      "suggestion": "Add brief JSDoc to each new public method, at minimum describing parameters and return values for methods with non-obvious behavior (e.g., `getImportantDatesForToday` matches both MM-DD exact and YYYY-MM-DD suffix patterns)."
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Section divider comments in DocumentStore restate class structure",
+      "file": "packages/context-engine/src/storage/document-store.ts",
+      "line": 169,
+      "line_end": 261,
+      "code_snippet": "// --- Profile Facts ---\n...\n// --- Relationships ---\n...\n// --- Important Dates ---\n...\n// --- Memory Entries ---\n...\n// --- Lifecycle ---",
+      "description": "The section divider comments (`// --- Profile Facts ---`, `// --- Relationships ---`, etc.) merely restate what is already clear from the method names and types. In a 266-line file, IDE navigation features (outline, go-to-symbol) already provide this structure. These comments have negative ROI: they add visual noise and must be maintained if sections are reorganized.",
+      "suggestion": "Consider removing section divider comments. If navigability is a concern, rely on IDE symbol navigation or group methods by extracting smaller, focused classes."
+    },
+    {
+      "id": "review-comments-006",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "comments",
+      "subcategory": "comment-roi",
+      "title": "Inline comment in catch block states the obvious",
+      "file": "packages/context-engine/src/storage/memory-extractor.ts",
+      "line": 161,
+      "line_end": 161,
+      "code_snippet": "catch { /* onError callback itself failed */ }",
+      "description": "The comment `/* onError callback itself failed */` explains what is already obvious from the surrounding code structure: a catch block wrapping the `this.onError(error)` call. Any developer reading this code can deduce that the catch is guarding against the callback throwing. The comment adds minimal value relative to its maintenance cost.",
+      "suggestion": "Remove the comment or, if keeping it, make it actionable by explaining *why* the failure is silently swallowed (e.g., `/* Swallow to prevent callback errors from masking the original extraction failure */`)."
+    }
+  ],
+  "positive_observations": [
+    "Excellent JSDoc on all interfaces in storage/types.ts with concrete examples (e.g., 'MM-DD for recurring or YYYY-MM-DD for one-time') that help future maintainers understand data formats.",
+    "The MemoryExtractor class-level JSDoc includes a clear flow diagram (input -> prompt -> LLM -> validate -> filter -> dedup -> result) that explains the full pipeline in one line.",
+    "Type interfaces in types.ts use inline JSDoc on fields consistently, providing unit specifications (e.g., 'Unix timestamp in milliseconds') that prevent unit-of-measure bugs.",
+    "The VectorStore JSDoc comments accurately describe behavior for all methods, including edge cases ('If the table already exists, this is a no-op').",
+    "The dedup catch block comment in memory-extractor.ts line 192 ('Embedding failed -- include the memory rather than losing it') explains the design *decision* (why), not just the what."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}
