@@ -1,4 +1,4 @@
-import type { Conversation, Todo } from './types'
+import type { Conversation, ImportantDate, MemoryEntry, Relationship, Todo, UserProfileFact } from './types'
 
 import Database from 'better-sqlite3'
 
@@ -51,6 +51,40 @@ export class DocumentStore {
       );
 
       INSERT OR IGNORE INTO intimacy (id, level) VALUES (1, 0);
+
+      CREATE TABLE IF NOT EXISTS user_profile_facts (
+        id TEXT PRIMARY KEY,
+        fact TEXT NOT NULL,
+        evidence_date TEXT NOT NULL,
+        confidence REAL NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS relationships (
+        id TEXT PRIMARY KEY,
+        person_name TEXT NOT NULL UNIQUE,
+        relationship_type TEXT NOT NULL,
+        last_mentioned INTEGER NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS important_dates (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        date_type TEXT NOT NULL,
+        label TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        created_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS memory_entries (
+        id TEXT PRIMARY KEY,
+        content TEXT NOT NULL,
+        importance INTEGER NOT NULL,
+        category TEXT NOT NULL,
+        source_date TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
     `)
   }
 
@@ -130,6 +164,98 @@ export class DocumentStore {
     )
     stmt.run(delta)
     return this.getIntimacy()
+  }
+
+  // --- Profile Facts ---
+
+  insertProfileFact(fact: UserProfileFact): void {
+    const stmt = this.db.prepare(
+      'INSERT INTO user_profile_facts (id, fact, evidence_date, confidence, created_at) VALUES (?, ?, ?, ?, ?)',
+    )
+    stmt.run(fact.id, fact.fact, fact.evidenceDate, fact.confidence, fact.createdAt)
+  }
+
+  getProfileFacts(): UserProfileFact[] {
+    const stmt = this.db.prepare(
+      'SELECT id, fact, evidence_date AS evidenceDate, confidence, created_at AS createdAt FROM user_profile_facts ORDER BY created_at DESC',
+    )
+    return stmt.all() as UserProfileFact[]
+  }
+
+  // --- Relationships ---
+
+  upsertRelationship(rel: Relationship): void {
+    const stmt = this.db.prepare(`
+      INSERT INTO relationships (id, person_name, relationship_type, last_mentioned, created_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(person_name) DO UPDATE SET
+        relationship_type = excluded.relationship_type,
+        last_mentioned = excluded.last_mentioned
+    `)
+    stmt.run(rel.id, rel.personName, rel.relationshipType, rel.lastMentioned, rel.createdAt)
+  }
+
+  getRelationships(): Relationship[] {
+    const stmt = this.db.prepare(
+      'SELECT id, person_name AS personName, relationship_type AS relationshipType, last_mentioned AS lastMentioned, created_at AS createdAt FROM relationships ORDER BY last_mentioned DESC',
+    )
+    return stmt.all() as Relationship[]
+  }
+
+  getRelationshipByName(personName: string): Relationship | null {
+    const stmt = this.db.prepare(
+      'SELECT id, person_name AS personName, relationship_type AS relationshipType, last_mentioned AS lastMentioned, created_at AS createdAt FROM relationships WHERE person_name = ?',
+    )
+    return (stmt.get(personName) as Relationship) ?? null
+  }
+
+  // --- Important Dates ---
+
+  insertImportantDate(date: ImportantDate): void {
+    const stmt = this.db.prepare(
+      'INSERT INTO important_dates (id, date, date_type, label, description, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    )
+    stmt.run(date.id, date.date, date.dateType, date.label, date.description, date.createdAt)
+  }
+
+  getImportantDates(): ImportantDate[] {
+    const stmt = this.db.prepare(
+      'SELECT id, date, date_type AS dateType, label, description, created_at AS createdAt FROM important_dates ORDER BY created_at DESC',
+    )
+    return stmt.all() as ImportantDate[]
+  }
+
+  getImportantDatesForToday(monthDay: string): ImportantDate[] {
+    const stmt = this.db.prepare(
+      `SELECT id, date, date_type AS dateType, label, description, created_at AS createdAt
+       FROM important_dates
+       WHERE date = ? OR date LIKE ?
+       ORDER BY created_at DESC`,
+    )
+    return stmt.all(monthDay, `%-${monthDay}`) as ImportantDate[]
+  }
+
+  // --- Memory Entries ---
+
+  insertMemoryEntry(entry: MemoryEntry): void {
+    const stmt = this.db.prepare(
+      'INSERT INTO memory_entries (id, content, importance, category, source_date, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    )
+    stmt.run(entry.id, entry.content, entry.importance, entry.category, entry.sourceDate, entry.createdAt)
+  }
+
+  getMemoryEntries(limit: number): MemoryEntry[] {
+    const stmt = this.db.prepare(
+      'SELECT id, content, importance, category, source_date AS sourceDate, created_at AS createdAt FROM memory_entries ORDER BY created_at DESC LIMIT ?',
+    )
+    return stmt.all(limit) as MemoryEntry[]
+  }
+
+  getMemoryEntriesByCategory(category: string, limit: number): MemoryEntry[] {
+    const stmt = this.db.prepare(
+      'SELECT id, content, importance, category, source_date AS sourceDate, created_at AS createdAt FROM memory_entries WHERE category = ? ORDER BY created_at DESC LIMIT ?',
+    )
+    return stmt.all(category, limit) as MemoryEntry[]
   }
 
   // --- Lifecycle ---

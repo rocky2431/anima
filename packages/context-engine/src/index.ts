@@ -9,6 +9,8 @@ export { ScreenshotPipeline } from './capture/screenshot-pipeline'
 export type { ScreenshotPipelineOptions } from './capture/screenshot-pipeline'
 export { ActivityMonitor } from './consumption/activity-monitor'
 export type { ActivityMonitorOptions } from './consumption/activity-monitor'
+export { MemoryOrchestrator } from './consumption/memory-orchestrator'
+export type { MemoryOrchestratorOptions } from './consumption/memory-orchestrator'
 export { ReportGenerator } from './consumption/report-generator'
 export type { ReportGeneratorOptions } from './consumption/report-generator'
 export { SmartTip } from './consumption/smart-tip'
@@ -18,11 +20,17 @@ export type { SmartTodoOptions } from './consumption/smart-todo'
 export { ScreenshotProcessor } from './processing/screenshot-processor'
 export type { ScreenshotUnderstanding } from './processing/screenshot-processor'
 export { DocumentStore } from './storage/document-store'
+export { MemoryExtractor } from './storage/memory-extractor'
+export type { MemoryExtractorOptions } from './storage/memory-extractor'
 export type {
   ContextVector,
   Conversation,
   ConversationRole,
+  ImportantDate,
+  MemoryEntry,
+  Relationship,
   Todo,
+  UserProfileFact,
   VectorSearchResult,
   VectorSource,
 } from './storage/types'
@@ -34,7 +42,14 @@ export type {
   ActivityState,
   DailySummary,
   EmbeddingProvider,
+  ExtractedImportantDate,
+  ExtractedMemoryItem,
+  ExtractedProfileFact,
+  ExtractedRelationship,
+  ExtractionInput,
+  ExtractionResult,
   LlmProvider,
+  MemoryRecallResult,
   PersonaConfig,
   ProcessedContext,
   ProcessedScreenshotContext,
