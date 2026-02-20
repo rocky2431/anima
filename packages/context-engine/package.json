@@ -37,11 +37,16 @@
   },
   "dependencies": {
     "@lancedb/lancedb": "catalog:",
+    "@parcel/watcher": "^2.5.1",
     "better-sqlite3": "catalog:",
+    "exceljs": "^4.4.0",
+    "mammoth": "^1.8.0",
+    "pdfjs-dist": "^4.10.38",
     "sharp": "catalog:"
   },
   "devDependencies": {
     "@types/better-sqlite3": "catalog:",
+    "jszip": "^3.10.1",
     "vitest": "catalog:vitest"
   }
 }
