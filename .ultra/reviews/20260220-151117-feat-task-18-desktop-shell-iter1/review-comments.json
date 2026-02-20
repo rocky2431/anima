@@ -1,0 +1,104 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260220-151117-feat-task-18-desktop-shell-iter1",
+  "timestamp": "2026-02-20T15:12:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/desktop-shell/src/active-window.ts",
+      "packages/desktop-shell/src/clipboard-monitor.ts",
+      "packages/desktop-shell/src/global-shortcuts.ts",
+      "packages/desktop-shell/src/types.ts",
+      "packages/desktop-shell/src/index.ts"
+    ],
+    "total_lines_analyzed": 230,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 4, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "No JSDoc on exported interfaces/types in types.ts",
+      "file": "packages/desktop-shell/src/types.ts",
+      "line": 1,
+      "line_end": 34,
+      "code_snippet": "export interface ActiveWindowInfo {\n  appName: string\n  windowTitle: string\n  pid: number\n}",
+      "description": "The project convention (confirmed in MEMORY.md and CLAUDE.md) is that all exported interfaces and functions have JSDoc. This file exports 6 public types (ActiveWindowInfo, ClipboardChange, ClipboardMonitorOptions, ShortcutAction, ShortcutBinding, ShortcutManagerOptions) with zero JSDoc. While the type names are reasonably self-documenting, consumers of this package need to understand semantics: e.g., what does pid=0 mean in ActiveWindowInfo? Is timestamp in ClipboardChange epoch-ms or epoch-seconds? What format is the accelerator string in ShortcutBinding?",
+      "suggestion": "Add JSDoc to each exported interface/type. At minimum document non-obvious fields: ActiveWindowInfo.pid (0 when unavailable), ClipboardChange.timestamp (epoch milliseconds), ShortcutBinding.accelerator (Electron-style accelerator string format)."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "No JSDoc on exported functions in active-window.ts",
+      "file": "packages/desktop-shell/src/active-window.ts",
+      "line": 19,
+      "line_end": 48,
+      "code_snippet": "export function parseAppleScriptOutput(stdout: string): ActiveWindowInfo {\n  ...\n}\n\nexport function getActiveWindow(): Promise<ActiveWindowInfo> {\n  ...\n}",
+      "description": "Two exported functions (parseAppleScriptOutput, getActiveWindow) lack JSDoc. parseAppleScriptOutput is exported and available to consumers but its contract is non-obvious: it expects a tab-delimited string from osascript. getActiveWindow has a 5-second timeout and is macOS-only, neither of which is documented. A consumer calling getActiveWindow on Linux would get an opaque 'Failed to get active window' error with no guidance.",
+      "suggestion": "Add JSDoc to both functions. For getActiveWindow, document: (1) macOS-only platform requirement, (2) the 5000ms timeout, (3) the error thrown on failure. For parseAppleScriptOutput, document the expected input format (tab-delimited: appName\\twindowTitle\\tpid) and that it returns zeroed fields on empty input."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "No JSDoc on ClipboardMonitor class and public methods",
+      "file": "packages/desktop-shell/src/clipboard-monitor.ts",
+      "line": 5,
+      "line_end": 64,
+      "code_snippet": "export class ClipboardMonitor {\n  ...\n  start(): void {\n  ...\n  stop(): void {\n  ...\n  get isRunning(): boolean {",
+      "description": "The ClipboardMonitor class is exported with 3 public members (start, stop, isRunning) and no JSDoc on the class or any of them. The polling mechanism, the idempotent start/stop behavior, and the fact that start() synchronously reads the clipboard (and can throw) are all non-obvious details that should be documented for consumers.",
+      "suggestion": "Add JSDoc to the class describing its purpose (poll-based clipboard change detection) and to each public method. Document that start() is idempotent (no-op if already running), that it immediately reads the clipboard, and that stop() clears the interval timer."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "No JSDoc on ShortcutManager class and public methods",
+      "file": "packages/desktop-shell/src/global-shortcuts.ts",
+      "line": 10,
+      "line_end": 73,
+      "code_snippet": "export class ShortcutManager {\n  ...\n  registerAll(): void {\n  ...\n  unregisterAll(): void {\n  ...\n  get isRegistered(): boolean {",
+      "description": "The ShortcutManager class and its 3 public members (registerAll, unregisterAll, isRegistered) plus the DEFAULT_BINDINGS constant all lack JSDoc. The behavior that registerAll sets registered=true even when some individual shortcuts fail is a significant design decision that should be documented.",
+      "suggestion": "Add JSDoc to the class, each public method, and DEFAULT_BINDINGS. Document that registerAll is idempotent, that partial registration failures are reported via onError but do not prevent the 'registered' flag from being set, and that DEFAULT_BINDINGS uses Electron-style accelerator syntax."
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "walking-skeleton-scope",
+      "title": "No comment documenting macOS-only scope of active-window",
+      "file": "packages/desktop-shell/src/active-window.ts",
+      "line": 5,
+      "line_end": 17,
+      "code_snippet": "const APPLESCRIPT = `\ntell application \"System Events\"\n  set frontApp to first application process whose frontmost is true\n  ...\nend tell\n`",
+      "description": "The active-window module is hardcoded to macOS via AppleScript with no comment or documentation indicating the platform constraint. In a walking skeleton iteration this is expected, but the scope limitation should be explicitly annotated so future maintainers know this is intentional and not an oversight. Without it, someone may try to use this module cross-platform and wonder why it silently fails.",
+      "suggestion": "Add a file-level or constant-level comment such as: /** Platform: macOS only. Uses osascript/AppleScript. Windows and Linux support requires platform-specific implementations (e.g., xdotool on Linux, user32.dll on Windows). */"
+    }
+  ],
+  "positive_observations": [
+    "No forbidden patterns (TODO/FIXME/HACK/PLACEHOLDER/TEMP) found in any of the 5 files.",
+    "Error messages in code are descriptive and include context (e.g., 'Failed to register shortcut: ${binding.accelerator}'), following the error handling conventions.",
+    "The code is clean and self-documenting at the implementation level -- variable names, method names, and class structure are clear. The missing JSDoc is a convention gap, not a readability crisis."
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}
