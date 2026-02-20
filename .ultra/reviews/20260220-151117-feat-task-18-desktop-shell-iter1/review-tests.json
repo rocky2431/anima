@@ -1,0 +1,114 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260220-151117-feat-task-18-desktop-shell-iter1",
+  "timestamp": "2026-02-20T15:12:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/desktop-shell/src/__tests__/active-window.test.ts",
+      "packages/desktop-shell/src/__tests__/active-window.integration.test.ts",
+      "packages/desktop-shell/src/__tests__/clipboard-monitor.test.ts",
+      "packages/desktop-shell/src/__tests__/global-shortcuts.test.ts",
+      "packages/desktop-shell/src/active-window.ts",
+      "packages/desktop-shell/src/clipboard-monitor.ts",
+      "packages/desktop-shell/src/global-shortcuts.ts",
+      "packages/desktop-shell/src/types.ts"
+    ],
+    "total_lines_analyzed": 778,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 3, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-behavioral-coverage",
+      "title": "ShortcutManager marks registered=true even when all registrations fail",
+      "file": "packages/desktop-shell/src/global-shortcuts.ts",
+      "line": 49,
+      "line_end": 49,
+      "code_snippet": "    this.registered = true",
+      "description": "When an onError handler is provided, registerAll() swallows all registration failures and unconditionally sets this.registered = true on line 49. This means isRegistered returns true even when zero shortcuts were successfully registered. The test at global-shortcuts.test.ts:62-78 ('reports registration failure via onError') verifies errors are emitted but never asserts manager.isRegistered afterward -- missing the bug. This is both a logic bug in the implementation and a gap in test coverage.",
+      "suggestion": "Add a test case: after registerAll() where every binding fails (register returns false) with onError set, assert that manager.isRegistered is false (or that a partial-success state is tracked). Fix the implementation to only set registered = true if at least one binding succeeded, or track per-binding registration status.",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "ClipboardMonitor.start() unhandled throw when readClipboard fails on init",
+      "file": "packages/desktop-shell/src/clipboard-monitor.ts",
+      "line": 26,
+      "line_end": 26,
+      "code_snippet": "    this.lastText = this.readClipboard()",
+      "description": "ClipboardMonitor.start() calls this.readClipboard() directly at line 26 without try/catch. If readClipboard throws during the initial read, the error propagates uncaught -- the onError handler is only used inside poll(). The timer is never set, leaving the monitor in a partially initialized state. No test covers this scenario. This is an error path that callers have no way to handle gracefully through the onError callback.",
+      "suggestion": "Add a test: construct ClipboardMonitor with readClipboard that throws on first call, call start(), verify it either (a) routes to onError and does not start polling, or (b) propagates the error. Then fix start() to wrap the initial readClipboard() call in try/catch consistent with poll() behavior.",
+      "claude_md_rule": "testing.forbidden_patterns.missing_error_coverage"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-integration-test",
+      "title": "No integration test for ClipboardMonitor with real system clipboard",
+      "file": "packages/desktop-shell/src/__tests__/clipboard-monitor.test.ts",
+      "line": 1,
+      "line_end": 235,
+      "code_snippet": "readClipboard: () => clipboardText,",
+      "description": "ClipboardMonitor has thorough unit tests using injected readClipboard callbacks, which is appropriate for the Functional Core. However, unlike active-window which has active-window.integration.test.ts proving the real osascript round-trip works, there is no integration test proving ClipboardMonitor works with the real system clipboard API (e.g., Electron's clipboard.readText()). The unit tests verify the polling/diffing logic but not that the real clipboard binding works end-to-end.",
+      "suggestion": "Add a clipboard-monitor.integration.test.ts that constructs ClipboardMonitor with electron.clipboard.readText (or a node clipboard library) as the readClipboard callback, writes to the clipboard, and asserts onChange fires. Use describe.runIf() to gate on desktop environment availability, similar to the active-window integration test pattern.",
+      "claude_md_rule": "integration.integration_proof"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-integration-test",
+      "title": "No integration test for ShortcutManager with real Electron globalShortcut",
+      "file": "packages/desktop-shell/src/__tests__/global-shortcuts.test.ts",
+      "line": 1,
+      "line_end": 213,
+      "code_snippet": "register: (accelerator, callback) => {\n  registered.push(accelerator)\n  callback()\n  return true\n},",
+      "description": "ShortcutManager unit tests use injected register/unregister callbacks. While this correctly tests the Functional Core (action dispatch, idempotency, error handling), there is no integration test proving the wiring works with Electron's real globalShortcut.register/unregisterAll APIs. The active-window module sets the precedent with its integration test. ShortcutManager lacks the same proof of real-boundary connectivity.",
+      "suggestion": "Add a global-shortcuts.integration.test.ts that constructs ShortcutManager with Electron's globalShortcut API (or a conditional describe.runIf that detects Electron environment), registers a shortcut, and verifies isRegistered. This proves the DI wiring is correct at the real boundary.",
+      "claude_md_rule": "integration.integration_proof"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "dead-parameter",
+      "title": "ShortcutManagerOptions.unregister is accepted but never used or tested",
+      "file": "packages/desktop-shell/src/global-shortcuts.ts",
+      "line": 10,
+      "line_end": 24,
+      "code_snippet": "constructor(options: ShortcutManagerOptions) {\n    this.bindings = options.bindings\n    this.registerFn = options.register\n    this.unregisterAllFn = options.unregisterAll\n    // options.unregister is never stored\n}",
+      "description": "ShortcutManagerOptions requires an 'unregister' function (types.ts line 30), and all tests dutifully pass 'unregister: () => {}'. However, ShortcutManager's constructor never stores options.unregister and the class has no method that calls it. This is a dead parameter that increases the API surface for no reason. Tests should verify individual unregistration works or the parameter should be removed.",
+      "suggestion": "Either (a) implement per-accelerator unregister support in ShortcutManager (add an unregister(accelerator) method) and test it, or (b) remove 'unregister' from ShortcutManagerOptions to avoid misleading callers into thinking individual unregistration is supported."
+    }
+  ],
+  "positive_observations": [
+    "parseAppleScriptOutput tests are exemplary Functional Core unit tests: no mocks, direct input/output, comprehensive edge cases (empty, whitespace, unicode, non-numeric pid, missing tabs, trailing newline)",
+    "active-window.integration.test.ts demonstrates correct pattern for OS-level integration testing with describe.runIf for platform gating and reasonable timeout",
+    "ClipboardMonitor uses clean dependency injection (readClipboard callback) rather than hardcoding clipboard access, making the Functional Core independently testable",
+    "ShortcutManager follows the same DI pattern, separating the Electron globalShortcut boundary from business logic (action dispatch, idempotency, error handling)",
+    "Error handling paths are tested in both ClipboardMonitor and ShortcutManager, covering both onError callback and throw-when-no-handler scenarios",
+    "Timer-based tests correctly use vi.useFakeTimers() which is appropriate infrastructure for deterministic timer testing (not a mock violation)"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

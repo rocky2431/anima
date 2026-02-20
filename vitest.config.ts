@@ -8,6 +8,7 @@ export default defineConfig({
       'packages/channels-extra',
       'packages/context-engine',
       'packages/cron-service',
+      'packages/desktop-shell',
       'packages/mcp-hub',
       'packages/persona-engine',
       'packages/skills-engine',
