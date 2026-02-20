@@ -1,0 +1,91 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260220-111526-feat-task-16-channels-extra-iter1",
+  "timestamp": "2026-02-20T11:16:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/channel-registry.ts",
+      "packages/channels-extra/src/slack/index.ts",
+      "packages/channels-extra/src/whatsapp/index.ts",
+      "packages/channels-extra/src/types.ts"
+    ],
+    "total_lines_analyzed": 420,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 92,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "connectAll and disconnectAll are near-identical (18 lines each)",
+      "file": "packages/channels-extra/src/channel-registry.ts",
+      "line": 42,
+      "line_end": 80,
+      "code_snippet": "async connectAll(): Promise<Map<ChannelPlatform, ChannelOperationResult>> {\n  const results = new Map<...>()\n  const promises = [...this.entries.entries()].map(async ([platform, entry]) => {\n    try { await entry.channel.connect(); results.set(platform, { success: true }) }\n    catch (error) { results.set(platform, { success: false, error: ... }) } })",
+      "description": "connectAll() (lines 42-60) and disconnectAll() (lines 62-80) share identical structure -- the only difference is calling entry.channel.connect() vs entry.channel.disconnect(). This is 18 lines duplicated nearly verbatim, exceeding the 10-line near-duplicate threshold.",
+      "suggestion": "BEFORE:\nasync connectAll(): Promise<Map<ChannelPlatform, ChannelOperationResult>> {\n  const results = new Map<ChannelPlatform, ChannelOperationResult>()\n  const promises = [...this.entries.entries()].map(async ([platform, entry]) => {\n    try {\n      await entry.channel.connect()\n      results.set(platform, { success: true })\n    } catch (error) {\n      results.set(platform, { success: false, error: error instanceof Error ? error : new Error(String(error)) })\n    }\n  })\n  await Promise.all(promises)\n  return results\n}\nasync disconnectAll(): Promise<...> { /* identical structure with .disconnect() */ }\n\nAFTER:\nprivate async executeOnAll(\n  operation: (channel: Channel) => Promise<void>\n): Promise<Map<ChannelPlatform, ChannelOperationResult>> {\n  const results = new Map<ChannelPlatform, ChannelOperationResult>()\n  const promises = [...this.entries.entries()].map(async ([platform, entry]) => {\n    try {\n      await operation(entry.channel)\n      results.set(platform, { success: true })\n    } catch (error) {\n      results.set(platform, {\n        success: false,\n        error: error instanceof Error ? error : new Error(String(error)),\n      })\n    }\n  })\n  await Promise.all(promises)\n  return results\n}\n\nasync connectAll() { return this.executeOnAll(ch => ch.connect()) }\nasync disconnectAll() { return this.executeOnAll(ch => ch.disconnect()) }\n\nWHY: Eliminates 18 lines of near-identical code. The extracted helper clearly communicates the shared pattern (run an operation on all channels, collect results). Both public methods become one-liners."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "repeated-pattern",
+      "title": "Handler add/remove pattern duplicated 5 times across files",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 53,
+      "line_end": 58,
+      "code_snippet": "onStatusChange(handler: StatusChangeHandler): () => void {\n  this.statusHandlers.push(handler)\n  return () => {\n    const idx = this.statusHandlers.indexOf(handler)\n    if (idx >= 0) this.statusHandlers.splice(idx, 1)\n  }\n}",
+      "description": "The push-handler / return-unsubscribe-closure pattern (push + indexOf + splice) appears 5 times: SlackChannel.onStatusChange (line 53), SlackChannel.onMessage (line 97), WhatsAppChannel.onStatusChange (line 62), WhatsAppChannel.onMessage (line 100), and ChannelRegistry.onAnyMessage (line 82). Each instance is 5-6 lines of identical logic with only the array name changing. Since the pattern appears 5 times (well above the 3+ threshold for extraction), it is a candidate for a shared utility.",
+      "suggestion": "BEFORE:\nonStatusChange(handler: StatusChangeHandler): () => void {\n  this.statusHandlers.push(handler)\n  return () => {\n    const idx = this.statusHandlers.indexOf(handler)\n    if (idx >= 0) this.statusHandlers.splice(idx, 1)\n  }\n}\n\nAFTER:\n// Shared utility (e.g., in utils.ts)\nfunction addHandler<T>(handlers: T[], handler: T): () => void {\n  handlers.push(handler)\n  return () => {\n    const idx = handlers.indexOf(handler)\n    if (idx >= 0) handlers.splice(idx, 1)\n  }\n}\n\n// Usage in each class:\nonStatusChange(handler: StatusChangeHandler): () => void {\n  return addHandler(this.statusHandlers, handler)\n}\n\nWHY: Reduces 5 copies of 5-line boilerplate to 5 one-liners plus a single shared utility. The pattern is identical across all instances, making this a safe and clear extraction."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "simplification",
+      "subcategory": "deep-nesting",
+      "title": "setupEventHandlers has 4-level nesting depth",
+      "file": "packages/channels-extra/src/whatsapp/index.ts",
+      "line": 108,
+      "line_end": 138,
+      "code_snippet": "this.socket.ev.on('messages.upsert', (data: unknown) => {\n  const event = data as BaileysUpsertEvent\n  for (const msg of event.messages) {\n    if (msg.key.fromMe) continue\n    if (!msg.message) continue\n    ...\n    for (const handler of this.messageHandlers) {",
+      "description": "setupEventHandlers contains 4 levels of nesting: callback body -> for loop -> conditional guards -> inner for loop (dispatching to handlers). Level 1: ev.on callback, Level 2: for...of event.messages, Level 3: guard clauses (if/continue), Level 4: for...of messageHandlers. The 4-level depth hits the P2 threshold and makes the message-parsing logic harder to follow.",
+      "suggestion": "BEFORE:\nprivate setupEventHandlers(): void {\n  if (!this.socket) return\n  this.socket.ev.on('messages.upsert', (data: unknown) => {\n    const event = data as BaileysUpsertEvent\n    for (const msg of event.messages) {\n      if (msg.key.fromMe) continue\n      if (!msg.message) continue\n      const text = msg.message.conversation ?? msg.message.extendedTextMessage?.text ?? ''\n      if (!text) continue\n      const incomingMessage: IncomingMessage = { ... }\n      for (const handler of this.messageHandlers) { handler(incomingMessage) }\n    }\n  })\n}\n\nAFTER:\nprivate parseMessage(msg: BaileysMessage): IncomingMessage | null {\n  if (msg.key.fromMe) return null\n  if (!msg.message) return null\n  const text = msg.message.conversation ?? msg.message.extendedTextMessage?.text ?? ''\n  if (!text) return null\n  return {\n    id: msg.key.id,\n    platform: 'whatsapp',\n    channelId: msg.key.remoteJid,\n    senderId: msg.key.remoteJid,\n    text,\n    timestamp: new Date((msg.messageTimestamp ?? 0) * 1000),\n    raw: msg,\n  }\n}\n\nprivate setupEventHandlers(): void {\n  if (!this.socket) return\n  this.socket.ev.on('messages.upsert', (data: unknown) => {\n    const event = data as BaileysUpsertEvent\n    for (const msg of event.messages) {\n      const parsed = this.parseMessage(msg)\n      if (parsed) {\n        for (const handler of this.messageHandlers) { handler(parsed) }\n      }\n    }\n  })\n}\n\nWHY: Extracting parseMessage reduces max nesting from 4 to 3 levels, separates message parsing (pure logic) from event wiring (imperative shell), and makes the parsing independently testable."
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "guard-clause",
+      "title": "Slack connect() uses if/else where guard clause is cleaner",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 61,
+      "line_end": 76,
+      "code_snippet": "async connect(): Promise<void> {\n  this.setStatus('connecting')\n  if (this.deps) {\n    this.app = this.deps.createApp()\n  } else {\n    throw new Error(\n      `Slack channel requires createApp dependency...`\n    )\n  }\n  this.setupMessageListener()\n  await this.app.start()\n  this.setStatus('connected')\n}",
+      "description": "The connect() method uses if/else to check deps, with the happy path inside the if-block and the throw in else. The WhatsApp channel (line 73) already uses the cleaner guard-clause pattern (if (!this.deps) throw ... then proceed). The Slack version should match for consistency and reduced nesting.",
+      "suggestion": "BEFORE:\nasync connect(): Promise<void> {\n  this.setStatus('connecting')\n  if (this.deps) {\n    this.app = this.deps.createApp()\n  } else {\n    throw new Error(`Slack channel requires createApp dependency. Config platform: ${this.config.platform}`)\n  }\n  this.setupMessageListener()\n  await this.app.start()\n  this.setStatus('connected')\n}\n\nAFTER:\nasync connect(): Promise<void> {\n  this.setStatus('connecting')\n  if (!this.deps) {\n    throw new Error(`Slack channel requires createApp dependency. Config platform: ${this.config.platform}`)\n  }\n  this.app = this.deps.createApp()\n  this.setupMessageListener()\n  await this.app.start()\n  this.setStatus('connected')\n}\n\nWHY: Guard clause (early return/throw) eliminates one nesting level, matches the WhatsApp channel's existing pattern, and makes the happy path the un-indented default flow -- consistent with project conventions."
+    }
+  ],
+  "positive_observations": [
+    "All functions are short (under 30 lines), consistent with project conventions",
+    "Types are cleanly separated in types.ts with clear interface definitions",
+    "Guard clauses and early returns used well in WhatsApp channel (connect, setupEventHandlers)",
+    "Cyclomatic complexity per function stays in the 1-4 range (within project thresholds)",
+    "No nested ternaries, no magic numbers, good use of named constants (60_000 for rate limit window)"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

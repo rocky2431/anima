@@ -1,0 +1,139 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260220-111526-feat-task-16-channels-extra-iter1",
+  "timestamp": "2026-02-20T19:20:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/__tests__/channel-registry.test.ts",
+      "packages/channels-extra/src/__tests__/slack/slack-channel.test.ts",
+      "packages/channels-extra/src/__tests__/whatsapp/whatsapp-channel.test.ts",
+      "packages/channels-extra/src/channel-registry.ts",
+      "packages/channels-extra/src/slack/index.ts",
+      "packages/channels-extra/src/whatsapp/index.ts",
+      "packages/channels-extra/src/types.ts"
+    ],
+    "total_lines_analyzed": 945,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 5, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-behavioral-coverage",
+      "title": "onAnyMessage test never verifies message delivery",
+      "file": "packages/channels-extra/src/__tests__/channel-registry.test.ts",
+      "line": 124,
+      "line_end": 136,
+      "code_snippet": "const messages: IncomingMessage[] = []\nregistry.onAnyMessage((msg) => { messages.push(msg) })\n\nexpect(messages).toHaveLength(0)",
+      "description": "The test for onAnyMessage only verifies the handler is subscribed and the array starts empty. It never triggers a message through any registered channel to verify that the global handler actually receives messages. This is a critical behavioral gap -- the core purpose of onAnyMessage (fan-in from multiple channels) is untested. The ChannelRegistry.register() method wires channel.onMessage to forward to globalHandlers, but no test proves this wiring works.",
+      "suggestion": "Add a test that registers a channel with a controllable onMessage trigger, calls the trigger, and asserts the global handler receives the message. For example:\n\nit('should forward channel messages to global handler', () => {\n  const registry = new ChannelRegistry()\n  const wa = createStubChannel('whatsapp')\n  // Capture the onMessage handler registered by the registry\n  let registryHandler: MessageHandler | null = null\n  const originalOnMessage = wa.onMessage\n  wa.onMessage = (handler) => { registryHandler = handler; return originalOnMessage(handler) }\n  registry.register(wa, config)\n  const received: IncomingMessage[] = []\n  registry.onAnyMessage((msg) => received.push(msg))\n  // Trigger through the captured handler\n  registryHandler!({ id: '1', platform: 'whatsapp', ... })\n  expect(received).toHaveLength(1)\n})",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "SlackChannel and WhatsAppChannel connect-without-deps error untested",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 64,
+      "line_end": 71,
+      "code_snippet": "if (this.deps) {\n  this.app = this.deps.createApp()\n}\nelse {\n  throw new Error(\n    `Slack channel requires createApp dependency...`\n  )\n}",
+      "description": "Both SlackChannel.connect() (line 64-71) and WhatsAppChannel.connect() (line 73-75) throw errors when called without injected dependencies, but no test verifies these error paths. The tests for 'should throw when sending before connect' only test the sendMessage-before-connect case, not the connect-without-deps case. These are distinct error paths -- one is a state guard, the other is a dependency configuration error.",
+      "suggestion": "Add tests for both channels:\n\nit('should throw when connecting without createApp dependency', async () => {\n  const channel = new SlackChannel(config) // no deps\n  await expect(channel.connect()).rejects.toThrow(/requires createApp/)\n})\n\nit('should throw when connecting without createSocket dependency', async () => {\n  const channel = new WhatsAppChannel(config) // no deps\n  await expect(channel.connect()).rejects.toThrow(/createSocket/)\n})",
+      "claude_md_rule": "testing.error_path_coverage"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "test-quality",
+      "subcategory": "missing-fault-isolation",
+      "title": "disconnectAll fault isolation not tested",
+      "file": "packages/channels-extra/src/__tests__/channel-registry.test.ts",
+      "line": 80,
+      "line_end": 93,
+      "code_snippet": "it('should disconnect all registered channels', async () => {\n  ...\n  await registry.connectAll()\n  await registry.disconnectAll()\n  expect(wa.status).toBe('disconnected')\n  expect(slack.status).toBe('disconnected')\n})",
+      "description": "The connectAll method has a fault isolation test (line 95-111) that verifies one channel failing does not block others. The disconnectAll method (channel-registry.ts line 62-80) has identical Promise.allSettled-style fault isolation logic, but no corresponding test. If one channel throws during disconnect, the test suite does not verify that other channels are still properly disconnected.",
+      "suggestion": "Add a parallel test:\n\nit('should isolate disconnect faults - one channel error should not affect others', async () => {\n  const registry = new ChannelRegistry()\n  const failingChannel = createStubChannel('whatsapp', {\n    async disconnect() { throw new Error('disconnect failed') },\n  })\n  const workingChannel = createStubChannel('slack')\n  registry.register(failingChannel, waConfig)\n  registry.register(workingChannel, slackConfig)\n  await registry.connectAll()\n  const results = await registry.disconnectAll()\n  expect(results.get('whatsapp')?.success).toBe(false)\n  expect(results.get('slack')?.success).toBe(true)\n  expect(workingChannel.status).toBe('disconnected')\n})",
+      "claude_md_rule": "testing.error_path_coverage"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "WhatsApp extendedTextMessage path untested",
+      "file": "packages/channels-extra/src/whatsapp/index.ts",
+      "line": 117,
+      "line_end": 119,
+      "code_snippet": "const text = msg.message.conversation\n  ?? msg.message.extendedTextMessage?.text\n  ?? ''",
+      "description": "The WhatsApp message handler supports two text extraction paths: conversation (direct text) and extendedTextMessage.text (forwarded/quoted messages). All tests only use the conversation path. The extendedTextMessage fallback is untested -- if the optional chaining or nullish coalescing has a bug, tests will not catch it.",
+      "suggestion": "Add a test with extendedTextMessage format:\n\nit('should extract text from extendedTextMessage', async () => {\n  const mockSocket = createMockBaileysSocket()\n  const channel = new WhatsAppChannel(config, { createSocket: () => mockSocket })\n  await channel.connect()\n  const received: Array<{ text: string }> = []\n  channel.onMessage((msg) => received.push({ text: msg.text }))\n  mockSocket._emit('messages.upsert', {\n    messages: [{\n      key: { remoteJid: '123@s.whatsapp.net', fromMe: false, id: 'msg-ext' },\n      message: { extendedTextMessage: { text: 'Quoted reply text' } },\n      messageTimestamp: Math.floor(Date.now() / 1000),\n    }],\n    type: 'notify',\n  })\n  expect(received[0].text).toBe('Quoted reply text')\n})"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "WhatsApp message with no text content not tested",
+      "file": "packages/channels-extra/src/whatsapp/index.ts",
+      "line": 115,
+      "line_end": 121,
+      "code_snippet": "if (!msg.message) continue\n\nconst text = msg.message.conversation\n  ?? msg.message.extendedTextMessage?.text\n  ?? ''\n\nif (!text) continue",
+      "description": "The WhatsApp handler has guards for messages with no message property and messages where text resolves to empty string. Neither boundary condition is tested. A message with { message: {} } (no conversation, no extendedTextMessage) should be silently skipped -- this is an important edge case for media-only messages (images, stickers, etc.) that the WhatsApp protocol delivers.",
+      "suggestion": "Add boundary tests:\n\nit('should skip messages with no text content (media-only)', async () => {\n  mockSocket._emit('messages.upsert', {\n    messages: [{\n      key: { remoteJid: '123@s.whatsapp.net', fromMe: false, id: 'media-1' },\n      message: { imageMessage: { url: '...' } },\n      messageTimestamp: Math.floor(Date.now() / 1000),\n    }],\n    type: 'notify',\n  })\n  expect(received).toHaveLength(0)\n})\n\nit('should skip messages with no message property', async () => {\n  mockSocket._emit('messages.upsert', {\n    messages: [{\n      key: { remoteJid: '123@s.whatsapp.net', fromMe: false, id: 'status-1' },\n      messageTimestamp: Math.floor(Date.now() / 1000),\n    }],\n    type: 'notify',\n  })\n  expect(received).toHaveLength(0)\n})"
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "Slack message with empty text not tested",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 112,
+      "line_end": 112,
+      "code_snippet": "if (!slackMsg.text) return",
+      "description": "The Slack message handler guards against messages with empty or undefined text (line 112), but no test covers this boundary condition. Slack sends events for message edits, deletions, and subtype messages that may have no text field. Without a test, a regression that removes this guard would silently pass invalid messages to handlers.",
+      "suggestion": "Add a boundary test:\n\nit('should ignore messages with no text', async () => {\n  const mockApp = createMockBoltApp()\n  const channel = new SlackChannel(config, { createApp: () => mockApp })\n  await channel.connect()\n  const received: string[] = []\n  channel.onMessage((msg) => received.push(msg.text))\n  mockApp._triggerMessage({\n    text: '',\n    user: 'U12345',\n    channel: 'C12345',\n    ts: '1234567890.123456',\n  })\n  expect(received).toHaveLength(0)\n})"
+    },
+    {
+      "id": "review-tests-007",
+      "severity": "P2",
+      "confidence": 76,
+      "category": "test-quality",
+      "subcategory": "missing-state-transition",
+      "title": "ChannelStatus 'error' state never tested or transitioned to",
+      "file": "packages/channels-extra/src/types.ts",
+      "line": 1,
+      "code_snippet": "export type ChannelStatus = 'disconnected' | 'connecting' | 'connected' | 'error'",
+      "description": "The ChannelStatus type includes an 'error' state, but neither SlackChannel nor WhatsAppChannel ever transitions to 'error' status. When connect() fails, the status is left in 'connecting' state (the error is thrown before setStatus('connected') is called, and no catch block sets 'error'). No test verifies what status the channel is in after a failed connection attempt. This is either a missing implementation or a dead type variant -- either way it should be tested to surface the issue.",
+      "suggestion": "Add a test that verifies status after connection failure, then fix the implementation:\n\nit('should set status to error when connect fails', async () => {\n  const channel = new SlackChannel(config, {\n    createApp: () => ({ ...createMockBoltApp(), start: vi.fn().mockRejectedValue(new Error('auth failed')) }),\n  })\n  await expect(channel.connect()).rejects.toThrow('auth failed')\n  expect(channel.status).toBe('error') // Currently fails -- status stuck at 'connecting'\n})\n\nThen update connect() to catch errors and set status to 'error' before re-throwing."
+    }
+  ],
+  "positive_observations": [
+    "Both SlackChannel and WhatsAppChannel test files include proper '// Test Double rationale:' comments explaining why external API mocking is necessary",
+    "Test doubles for external APIs (@slack/bolt, @whiskeysockets/baileys) use dependency injection via constructor, making the test double boundary explicit and swappable",
+    "WhatsApp rate limiting is tested with a concrete scenario proving the boundary enforcement",
+    "Channel registry tests cover the full CRUD lifecycle: register, retrieve, list, unregister, and duplicate prevention",
+    "Both channel implementations test message handler unsubscription, ensuring no memory leaks from lingering handlers",
+    "Fault isolation for connectAll is properly tested, verifying one channel failure does not cascade to others"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

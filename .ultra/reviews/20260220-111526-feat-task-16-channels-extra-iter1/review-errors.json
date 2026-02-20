@@ -1,0 +1,153 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260220-111526-feat-task-16-channels-extra-iter1",
+  "timestamp": "2026-02-20T11:16:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/channel-registry.ts",
+      "packages/channels-extra/src/slack/index.ts",
+      "packages/channels-extra/src/whatsapp/index.ts"
+    ],
+    "total_lines_analyzed": 369,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 8,
+    "by_severity": { "P0": 0, "P1": 5, "P2": 2, "P3": 1 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "fire-and-forget-handler",
+      "title": "Message handlers invoked without try/catch or await",
+      "file": "packages/channels-extra/src/channel-registry.ts",
+      "line": 24,
+      "line_end": 26,
+      "code_snippet": "for (const handler of this.globalHandlers) {\n  handler(msg)\n}",
+      "description": "MessageHandler type signature is `(message: IncomingMessage) => void | Promise<void>`. When a handler returns a Promise (async), that promise is neither awaited nor given a .catch(). If the handler throws synchronously, the error propagates into the message event callback, potentially crashing the Slack/WhatsApp event loop. If async, the rejection is unhandled and silently lost. This is both a fire-and-forget async issue and a missing error boundary around user-supplied callbacks.",
+      "suggestion": "Wrap each handler call in try/catch and handle async returns: `try { const result = handler(msg); if (result instanceof Promise) result.catch(err => console.error('Handler error', { platform: msg.platform, handlerId: idx, error: err })); } catch (err) { console.error('Sync handler error', { platform: msg.platform, error: err }); }`",
+      "claude_md_rule": "error_handling.forbidden.silent_swallow"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "fire-and-forget-handler",
+      "title": "Slack message handlers invoked without error boundary",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 124,
+      "line_end": 126,
+      "code_snippet": "for (const handler of this.messageHandlers) {\n  handler(incomingMessage)\n}",
+      "description": "Same pattern as channel-registry.ts: message handlers (which can be async per the MessageHandler type) are called in a loop without try/catch and without awaiting. A sync throw in handler N aborts handlers N+1..end. An async rejection is silently lost. This runs inside the Bolt message callback, so a sync throw could crash the Bolt event processing.",
+      "suggestion": "Wrap each handler invocation in try/catch. Await or .catch() any returned Promise. Log errors with context including platform, channelId, senderId, and handler index.",
+      "claude_md_rule": "error_handling.forbidden.silent_swallow"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "fire-and-forget-handler",
+      "title": "WhatsApp message handlers invoked without error boundary",
+      "file": "packages/channels-extra/src/whatsapp/index.ts",
+      "line": 133,
+      "line_end": 135,
+      "code_snippet": "for (const handler of this.messageHandlers) {\n  handler(incomingMessage)\n}",
+      "description": "Same pattern as Slack channel. MessageHandler can return Promise<void>, but the return value is discarded. A synchronous throw in any handler aborts remaining handlers. An async rejection is silently lost as an unhandled promise rejection. This executes inside a Baileys 'messages.upsert' event handler, so errors could interfere with the Baileys event loop.",
+      "suggestion": "Wrap each handler invocation in try/catch. Await or .catch() any returned Promise. Log errors with context including platform, remoteJid, and message ID.",
+      "claude_md_rule": "error_handling.forbidden.silent_swallow"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch-io",
+      "title": "SlackChannel.connect() has no error handling for app.start()",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 61,
+      "line_end": 76,
+      "code_snippet": "async connect(): Promise<void> {\n  this.setStatus('connecting')\n  ...\n  await this.app.start()\n  this.setStatus('connected')\n}",
+      "description": "If app.start() rejects (network error, invalid token, socket timeout), the status remains 'connecting' forever -- it is never set to 'error' or 'disconnected'. The ChannelStatus type includes an 'error' state but it is never used. The caller gets the raw Bolt error with no channel context. Additionally, if createApp() throws synchronously, status is stuck at 'connecting' and the error lacks context about which channel failed.",
+      "suggestion": "Wrap the connect body in try/catch. On failure, call `this.setStatus('error')` before re-throwing a wrapped error: `throw new Error('Slack connect failed', { cause: error })`. Consider also cleaning up this.app on failure to avoid a partial-init state.",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "status-handler-unprotected",
+      "title": "setStatus() iterates status handlers without error isolation",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 46,
+      "line_end": 50,
+      "code_snippet": "private setStatus(status: ChannelStatus): void {\n  this._status = status\n  for (const handler of this.statusHandlers) {\n    handler(status)\n  }\n}",
+      "description": "Both SlackChannel (line 46-50) and WhatsAppChannel (line 55-59) iterate over user-supplied status change handlers without try/catch. A throwing handler aborts notification of remaining handlers AND can corrupt the channel's operational flow (e.g., if setStatus('connected') throws midway through handlers, the status IS set to 'connected' but the channel's connect() method may surface the user-handler error instead of completing normally). This is a callback-errors-swallowed pattern variant -- the error is not swallowed, but it's allowed to corrupt the operational state.",
+      "suggestion": "Wrap each handler call in try/catch: `for (const handler of this.statusHandlers) { try { handler(status) } catch (err) { console.error('Status handler error', { status, error: err }) } }`",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-006",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "error-handling",
+      "subcategory": "error-state-unused",
+      "title": "ChannelStatus 'error' state defined but never set",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 61,
+      "line_end": 76,
+      "code_snippet": "// types.ts: type ChannelStatus = 'disconnected' | 'connecting' | 'connected' | 'error'\n// connect() never calls setStatus('error')\n// disconnect() never calls setStatus('error')",
+      "description": "The ChannelStatus type includes 'error' as a valid state, but neither SlackChannel nor WhatsAppChannel ever transitions to it. When connect() or disconnect() fails, the status remains in 'connecting' or 'connected', which is misleading. Consumers watching status changes get no signal that the channel has entered an error state. This applies to both channel implementations.",
+      "suggestion": "In connect() and disconnect() catch blocks, call setStatus('error') before re-throwing. This gives status subscribers accurate state information and enables UI error indicators.",
+      "claude_md_rule": "error_handling.rules.handle_gracefully"
+    },
+    {
+      "id": "review-errors-007",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "missing-error-context",
+      "title": "Error messages lack operational context (channel ID, config)",
+      "file": "packages/channels-extra/src/whatsapp/index.ts",
+      "line": 92,
+      "line_end": 93,
+      "code_snippet": "throw new Error('WhatsApp channel is not connected')",
+      "description": "Error messages in both channels lack operational context. 'Slack channel is not connected' and 'WhatsApp channel is not connected' do not include: the target ID being sent to, the current status value, or any config identifiers. When multiple channels of the same platform exist (future), these errors are indistinguishable. The Slack connect error (line 68-70) is the sole exception -- it includes config.platform, but that is redundant since it is always 'slack'.",
+      "suggestion": "Include operational context in all thrown errors: `throw new Error('WhatsApp sendMessage failed: channel status is ${this._status}, target: ${target}')`. For connect errors, include authDir (WhatsApp) or a masked botToken prefix (Slack).",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-008",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "result-pattern-opportunity",
+      "title": "connectAll/disconnectAll capture errors but callers must check each",
+      "file": "packages/channels-extra/src/channel-registry.ts",
+      "line": 42,
+      "line_end": 59,
+      "code_snippet": "async connectAll(): Promise<Map<ChannelPlatform, ChannelOperationResult>> {\n  ...\n  catch (error) {\n    results.set(platform, { success: false, error: ... })\n  }\n}",
+      "description": "connectAll() and disconnectAll() use a Result-like pattern (ChannelOperationResult with success+error), which is good. However, the caller has no ergonomic way to know if ANY channel failed without iterating the entire map. A common pattern is to also throw an AggregateError if any failures occurred, or to provide a helper method. This is informational.",
+      "suggestion": "Consider adding a summary check: `const failures = [...results.entries()].filter(([_, r]) => !r.success); if (failures.length > 0) throw new AggregateError(failures.map(([p, r]) => r.error), 'Some channels failed to connect');` Or expose a helper: `hasFailures(results): boolean`."
+    }
+  ],
+  "positive_observations": [
+    "connectAll/disconnectAll use per-channel error isolation with try/catch and Result objects -- prevents one failing channel from aborting others",
+    "ChannelOperationResult captures the actual Error object, not just a boolean, enabling callers to inspect failure causes",
+    "Both channels validate preconditions before I/O (not-connected check in sendMessage, deps check in connect)",
+    "WhatsApp rate limiting is implemented as a guard clause with clear error messaging",
+    "Error coercion pattern (error instanceof Error ? error : new Error(String(error))) handles non-Error throws correctly"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}
