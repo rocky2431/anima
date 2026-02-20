@@ -1,0 +1,106 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260221-021800-feat-task-21-ui-panels-iter1-iter1",
+  "timestamp": "2026-02-21T02:25:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/stage-ui/src/types/memory.ts",
+      "packages/stage-ui/src/stores/modules/memory.ts",
+      "packages/stage-ui/src/stores/modules/todo.ts",
+      "packages/stage-ui/src/stores/modules/skills.ts",
+      "packages/stage-ui/src/stores/modules/activity.ts"
+    ],
+    "total_lines_analyzed": 319,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "illegal-state",
+      "title": "TodoUI allows illegal completed/completedAt combinations",
+      "file": "packages/stage-ui/src/types/memory.ts",
+      "line": 25,
+      "line_end": 31,
+      "code_snippet": "export interface TodoUI {\n  id: string\n  title: string\n  completed: boolean\n  createdAt: number\n  completedAt: number | null\n}",
+      "description": "Encapsulation: 4/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.5). TodoUI allows completed=true with completedAt=null and completed=false with completedAt=<timestamp>. This mirrors the backend Todo type's known illegal state. The toggleTodo() store function correctly maintains the invariant, but the type itself does not prevent invalid combinations. A discriminated union on completed status would make illegal states unrepresentable.",
+      "suggestion": "Replace with discriminated union: type TodoUI = { id: string; title: string; createdAt: number } & ({ completed: false; completedAt: null } | { completed: true; completedAt: number }). Alternatively, if the backend Todo type is the canonical shape and UI must mirror it, document this as a known type gap and add a runtime guard in setTodos()."
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "SkillUI.category and version are plain strings",
+      "file": "packages/stage-ui/src/types/memory.ts",
+      "line": 56,
+      "line_end": 65,
+      "code_snippet": "export interface SkillUI {\n  id: string\n  name: string\n  category: string\n  version: string\n  description: string\n  source: 'builtin' | 'user'\n  tags: string[]\n  active: boolean\n}",
+      "description": "Encapsulation: 4/10, Expression: 5/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.25). SkillUI.category is a plain string while the same file uses literal unions for MemoryCategory, TodoFilter, and SkillUI.source. The inconsistency suggests category should also be a literal union. The backend SkillMetadata has the same issue. SkillUI.version is also plain string where a semver-like branded type or at minimum a SkillVersion type alias would express intent.",
+      "suggestion": "Define a SkillCategory literal union (matching known categories from the skills engine) and use it for SkillUI.category. At minimum, add a type alias: type SkillCategory = string to mark the intent for future narrowing."
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "encapsulation-leak",
+      "title": "getSkillById returns mutable reference to store entry",
+      "file": "packages/stage-ui/src/stores/modules/skills.ts",
+      "line": 40,
+      "line_end": 42,
+      "code_snippet": "function getSkillById(id: string): SkillUI | undefined {\n    return skills.value.find(s => s.id === id)\n  }",
+      "description": "Encapsulation: 5/10, Expression: 6/10, Usefulness: 7/10, Enforcement: 5/10 (Aggregate: 5.75). getSkillById() returns a direct reference to the array element in the reactive store. External code can mutate the skill object without going through toggleSkill() or setSkills(), bypassing any future validation. This is the same mutable-reference leak pattern found in SkillRegistry (Task 10), CronService (Task 12), and ChannelRegistry (Task 16).",
+      "suggestion": "Return a spread copy: return skills.value.find(s => s.id === id) ? { ...skills.value.find(s => s.id === id)! } : undefined. Or use a Readonly<SkillUI> return type to signal immutability intent (Vue reactivity still works for reads)."
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "readonly-discipline",
+      "title": "All UI interfaces lack readonly modifiers",
+      "file": "packages/stage-ui/src/types/memory.ts",
+      "line": 6,
+      "line_end": 65,
+      "code_snippet": "export interface MemoryEntryUI {\n  id: string\n  content: string\n  importance: number\n  ...\n}",
+      "description": "Encapsulation: 4/10, Expression: 6/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.75). All 7 interfaces (MemoryEntryUI, TodoUI, ActivityEntryUI, DailySummaryUI, ActivityBreakdownEntryUI, SkillUI) use mutable fields. While Vue/Pinia reactivity requires mutable refs at the store level, the type definitions themselves could use readonly fields to express that consumers should not directly mutate entries. The stores already use immutable update patterns (spread copies in setMemories, setActivities, setSummary, toggleTodo).",
+      "suggestion": "Add readonly to all interface fields: export interface MemoryEntryUI { readonly id: string; readonly content: string; ... }. Pinia ref<T[]> wraps with UnwrapRef which preserves readonly intent while allowing reactive tracking. This is informational for UI-layer types in a walking skeleton."
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "Timestamp and duration fields use bare number throughout",
+      "file": "packages/stage-ui/src/types/memory.ts",
+      "line": 12,
+      "line_end": 39,
+      "code_snippet": "createdAt: number\n...\ntimestamp: number\n...\ndurationMs: number\n...\ntotalWorkDurationMs: number",
+      "description": "Encapsulation: 4/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.0). Multiple fields across interfaces use bare number for timestamps (createdAt, timestamp) and durations (durationMs, totalWorkDurationMs). The Ms suffix convention is a good start but a branded type like Milliseconds or UnixTimestampMs would prevent mixing units and catch assignment errors at compile time. This is a codebase-wide pattern (flagged in Tasks 7, 15, 18).",
+      "suggestion": "Define branded types: type UnixTimestampMs = number & { readonly __brand: 'UnixTimestampMs' }; type DurationMs = number & { readonly __brand: 'DurationMs' }. Use across the codebase. Low priority for walking skeleton -- informational."
+    }
+  ],
+  "positive_observations": [
+    "MemoryCategory is a proper 5-value literal union, improving over backend MemoryEntry.category which is plain string. Good type narrowing at UI boundary.",
+    "TodoFilter and SkillUI.source use literal unions consistently. MEMORY_CATEGORIES const array with as const enables iteration over category values.",
+    "Store mutation functions use immutable update patterns (spread copies in setMemories, setActivities, setSummary, array map in toggleTodo/toggleSkill). No in-place mutation.",
+    "addTodo validates empty title input before creating entry. Clean input guard.",
+    "Store modules follow consistent Pinia composition API pattern with clear separation: state refs, computed getters, mutation functions, resetState."
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

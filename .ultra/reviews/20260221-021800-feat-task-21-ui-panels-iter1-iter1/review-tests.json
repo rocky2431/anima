@@ -1,0 +1,145 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260221-021800-feat-task-21-ui-panels-iter1-iter1",
+  "timestamp": "2026-02-21T02:20:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/stage-ui/src/stores/modules/memory.test.ts",
+      "packages/stage-ui/src/stores/modules/todo.test.ts",
+      "packages/stage-ui/src/stores/modules/skills.test.ts",
+      "packages/stage-ui/src/stores/modules/activity.test.ts",
+      "packages/stage-ui/src/stores/modules/memory.ts",
+      "packages/stage-ui/src/stores/modules/todo.ts",
+      "packages/stage-ui/src/stores/modules/skills.ts",
+      "packages/stage-ui/src/stores/modules/activity.ts"
+    ],
+    "total_lines_analyzed": 918,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 5, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "boundary-condition",
+      "title": "No test for whitespace-only search query in memory store",
+      "file": "packages/stage-ui/src/stores/modules/memory.test.ts",
+      "line": 121,
+      "line_end": 162,
+      "code_snippet": "// memory.ts line 19:\nif (searchQuery.value.trim()) {\n  const query = searchQuery.value.toLowerCase()\n  result = result.filter(m => m.content.toLowerCase().includes(query))\n}",
+      "description": "The memory store's filteredMemories computed property uses .trim() to ignore whitespace-only search queries (memory.ts line 19), but no test verifies that setting searchQuery to whitespace-only (e.g., '   ') still returns all memories. This is a meaningful boundary condition for search input handling.",
+      "suggestion": "Add a test case: set searchQuery to '   ' (whitespace only) and verify filteredMemories returns all memories, confirming the trim() guard works correctly.",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "boundary-condition",
+      "title": "Todo clearCompleted untested for all-completed and none-completed",
+      "file": "packages/stage-ui/src/stores/modules/todo.test.ts",
+      "line": 109,
+      "line_end": 119,
+      "code_snippet": "describe('clearCompleted', () => {\n  it('should remove all completed todos', () => {\n    // Only tests the mixed case (some active, some completed)\n  })\n})",
+      "description": "The clearCompleted tests only cover the mixed case (some active, some completed). Two boundary conditions are missing: (1) clearing when ALL todos are completed should result in an empty list, and (2) clearing when NO todos are completed should leave the list unchanged. These are important edge cases for the clear operation.",
+      "suggestion": "Add two tests: (1) 'should clear all todos when all are completed' -- add todos, complete all, clearCompleted, assert empty. (2) 'should do nothing when no todos are completed' -- add active-only todos, clearCompleted, assert unchanged length.",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "boundary-condition",
+      "title": "Skills filteredSkills has no test for zero-match search result",
+      "file": "packages/stage-ui/src/stores/modules/skills.test.ts",
+      "line": 80,
+      "line_end": 118,
+      "code_snippet": "describe('filteredSkills', () => {\n  it('should filter by name (case-insensitive)', () => { ... })\n  it('should filter by description', () => { ... })\n  it('should filter by tags', () => { ... })\n})",
+      "description": "The filteredSkills tests verify that matching skills are returned, but no test checks the case where the search query matches zero skills. Verifying that a search with no matches returns an empty array is a standard boundary condition for filter/search functionality.",
+      "suggestion": "Add test: set skills to a list, set searchQuery to 'zzz_nonexistent', and assert filteredSkills returns an empty array.",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-coverage",
+      "title": "Activity store personalNote field never asserted in tests",
+      "file": "packages/stage-ui/src/stores/modules/activity.test.ts",
+      "line": 67,
+      "line_end": 82,
+      "code_snippet": "describe('setSummary', () => {\n  it('should set today summary', () => {\n    const summary = createSummary()\n    store.setSummary(summary)\n    expect(store.todaySummary?.date).toBe('2026-02-21')\n  })",
+      "description": "The DailySummaryUI type has a personalNote field, and the createSummary factory includes it, but no test ever asserts that personalNote is preserved after setSummary. Since setSummary does a shallow spread copy ({ ...summary }), this should be verified to confirm no field is lost during the copy.",
+      "suggestion": "In the 'should set today summary' test, add an assertion: expect(store.todaySummary?.personalNote).toBe('Productive day!') to verify the personalNote field survives the spread copy.",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "boundary-condition",
+      "title": "No test for filtering/operations on empty collections",
+      "file": "packages/stage-ui/src/stores/modules/memory.test.ts",
+      "line": 121,
+      "line_end": 162,
+      "code_snippet": "describe('filteredMemories', () => {\n  it('should return all memories when no filters', () => {\n    store.setMemories([createMemory(), createMemory()])\n    // Always populates memories before filtering\n  })",
+      "description": "Across all four stores, filter/computed tests always populate the collection first. No test verifies that filtering an empty collection works correctly (returns empty array, not undefined or error). This is a universal boundary condition: filteredMemories on empty memories, filteredTodos on empty todos, filteredSkills on empty skills, appBreakdown/highlights on null summary are partially covered (activity), but memory/todo/skills filter-on-empty is not.",
+      "suggestion": "Add a simple test per store: e.g., 'should return empty array when filtering with no items set'. Verify filteredMemories/filteredTodos/filteredSkills returns [] on a fresh store with a filter/search applied.",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P3",
+      "confidence": 95,
+      "category": "test-quality",
+      "subcategory": "unnecessary-mock",
+      "title": "Unnecessary vi.mock('vue-i18n') in all four test files",
+      "file": "packages/stage-ui/src/stores/modules/memory.test.ts",
+      "line": 10,
+      "line_end": 14,
+      "code_snippet": "vi.mock('vue-i18n', () => ({\n  useI18n: () => ({\n    t: (key: string) => key,\n  }),\n}))",
+      "description": "All four test files mock vue-i18n with a rationale comment, but none of the four source modules (memory.ts, todo.ts, skills.ts, activity.ts) import or use vue-i18n. The mock is unnecessary boilerplate likely copy-pasted from another test file (airi-card.ts does use vue-i18n). Unnecessary mocks add confusion about what dependencies the code actually has.",
+      "suggestion": "Remove the vi.mock('vue-i18n') block and its rationale comment from all four test files. Only mock vue-i18n in test files whose source modules actually import it.",
+      "claude_md_rule": "testing.forbidden_patterns"
+    },
+    {
+      "id": "review-tests-007",
+      "severity": "P3",
+      "confidence": 95,
+      "category": "test-quality",
+      "subcategory": "test-naming",
+      "title": "Misleading test name: 'called with null' but calls clearSelection()",
+      "file": "packages/stage-ui/src/stores/modules/memory.test.ts",
+      "line": 111,
+      "line_end": 118,
+      "code_snippet": "it('should clear selection when called with null', () => {\n  const store = useMemoryModuleStore()\n  const mem = createMemory({ id: 'sel' })\n  store.setMemories([mem])\n  store.selectMemory('sel')\n  store.clearSelection()\n  expect(store.selectedMemory).toBeNull()\n})",
+      "description": "The test is named 'should clear selection when called with null' but the test body calls store.clearSelection(), not selectMemory(null). The test is inside describe('selectMemory') block, making it doubly misleading. The selectMemory function signature takes a string, so passing null would be a type error. This test should either be renamed or moved to its own describe('clearSelection') block.",
+      "suggestion": "Rename to 'should clear selection via clearSelection()' and move it to a separate describe('clearSelection') block, or rename to match what it actually tests.",
+      "claude_md_rule": "testing.test_naming"
+    }
+  ],
+  "positive_observations": [
+    "All four Functional Core stores have corresponding test files with good structural coverage of actions, getters, and computed properties",
+    "Tests use real Pinia actions (stubActions: false) with createTestingPinia -- no mocking of store internals",
+    "Factory functions (createMemory, createTodo, createSkill, createSummary) with override support make tests readable and maintainable",
+    "Edge cases like nonexistent IDs and toggle round-trips are tested across stores",
+    "Test Double rationale comments are present for the vue-i18n mock (even though the mock itself is unnecessary for these particular files)",
+    "State reset tests verify all state fields return to initial values"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

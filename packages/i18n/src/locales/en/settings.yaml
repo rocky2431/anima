@@ -178,6 +178,47 @@ pages:
   memory:
     description: Where memories got stored, and organized
     title: Memory
+    count: '{count} memories'
+    search_placeholder: Search memories...
+    empty: No memories yet. Memories will appear as AIRI learns about you.
+    detail: Memory Detail
+    delete: Delete
+    importance: 'importance: {score}'
+    categories:
+      all: All
+      preference: Preference
+      event: Event
+      habit: Habit
+      goal: Goal
+      emotion: Emotion
+  todo:
+    title: Todos
+    description: Smart todos and task management
+    active_count: '{count} active'
+    completed_count: '{count} done'
+    add_placeholder: What needs to be done?
+    add: Add
+    clear_completed: Clear done
+    empty: No todos yet. Add one above or let AIRI suggest tasks.
+    filter:
+      all: All
+      active: Active
+      completed: Done
+  activity:
+    title: Activity
+    description: Today's activity timeline and work summary
+    today_summary: Today's Summary
+    total_work: total work time
+    highlights: Highlights
+    breakdown: App Breakdown
+    empty: No activity data yet. Activity will appear as you use your computer.
+  skills:
+    title: Skills
+    description: Manage character skills and capabilities
+    total: '{count} skills'
+    active_count: '{count} active'
+    search_placeholder: Search skills...
+    empty: No skills available.
   data:
     title: Data
     description: Manage stored AIRI data, exports, and resets

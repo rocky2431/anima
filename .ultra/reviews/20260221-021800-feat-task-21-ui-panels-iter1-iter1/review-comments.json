@@ -1,0 +1,123 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260221-021800-feat-task-21-ui-panels-iter1-iter1",
+  "timestamp": "2026-02-21T02:20:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/stage-ui/src/stores/modules/memory.ts",
+      "packages/stage-ui/src/stores/modules/todo.ts",
+      "packages/stage-ui/src/stores/modules/skills.ts",
+      "packages/stage-ui/src/stores/modules/activity.ts",
+      "packages/stage-ui/src/types/memory.ts",
+      "packages/stage-ui/src/components/scenarios/memory/MemoryManager.vue",
+      "packages/stage-ui/src/components/scenarios/todo/TodoPanel.vue",
+      "packages/stage-ui/src/components/scenarios/activity/ActivityTimeline.vue",
+      "packages/stage-ui/src/components/scenarios/skills/SkillsManager.vue"
+    ],
+    "total_lines_analyzed": 710,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 5, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "misleading-reference",
+      "title": "JSDoc claims to 'mirror' context-engine types without enforcement",
+      "file": "packages/stage-ui/src/types/memory.ts",
+      "line": 1,
+      "line_end": 4,
+      "code_snippet": "/**\n * UI-layer types for memory management panels.\n * Mirror the context-engine types for use in browser/renderer.\n */",
+      "description": "The JSDoc claims these types 'mirror the context-engine types', but there is no import, schema validation, or type-level link to the actual context-engine types. If context-engine types evolve, this file will silently diverge while the comment still claims they are mirrors. This will mislead future maintainers into assuming type parity that does not exist.",
+      "suggestion": "Either (a) import and re-export the context-engine types with Pick/Omit to enforce the mirror relationship, or (b) reword the comment to 'Standalone UI-layer types for memory management panels, inspired by context-engine domain types' to avoid implying a live mirror."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "No JSDoc on exported useMemoryModuleStore or its public methods",
+      "file": "packages/stage-ui/src/stores/modules/memory.ts",
+      "line": 6,
+      "line_end": 68,
+      "code_snippet": "export const useMemoryModuleStore = defineStore('memory-module', () => {\n  const memories = ref<MemoryEntryUI[]>([])\n  ...\n  function setMemories(entries: MemoryEntryUI[]): void {\n  function deleteMemory(id: string): void {",
+      "description": "The project convention (per CLAUDE.md and established codebase patterns) is JSDoc on all exported interfaces and functions. This store exports 7 public methods (setMemories, deleteMemory, selectMemory, clearSelection, resetState) and 4 reactive properties with zero documentation. A future maintainer will not know the intended contract (e.g., does deleteMemory also clear selection if the deleted item was selected?).",
+      "suggestion": "Add at minimum a store-level JSDoc describing purpose, and JSDoc on non-obvious methods like deleteMemory (which has a side-effect on selectedMemory) and selectMemory."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "No JSDoc on exported useTodoModuleStore or its public methods",
+      "file": "packages/stage-ui/src/stores/modules/todo.ts",
+      "line": 7,
+      "line_end": 84,
+      "code_snippet": "export const useTodoModuleStore = defineStore('todo-module', () => {\n  const todos = ref<TodoUI[]>([])\n  ...\n  function addTodo(title: string): void {\n  function toggleTodo(id: string): void {",
+      "description": "Same missing-JSDoc issue. The store has 6 public methods and 2 computed properties with no documentation. Methods like addTodo silently discard empty/whitespace-only input (a behavior worth documenting), and toggleTodo has a timestamp side-effect on completedAt.",
+      "suggestion": "Add JSDoc to the store and its public methods, especially addTodo (documents the trim + empty-reject behavior) and toggleTodo (documents the completedAt timestamp toggling)."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "No JSDoc on exported useSkillsModuleStore or its public methods",
+      "file": "packages/stage-ui/src/stores/modules/skills.ts",
+      "line": 6,
+      "line_end": 59,
+      "code_snippet": "export const useSkillsModuleStore = defineStore('skills-module', () => {\n  const skills = ref<SkillUI[]>([])\n  ...\n  function toggleSkill(id: string): void {\n  function getSkillById(id: string): SkillUI | undefined {",
+      "description": "Store exports 4 public methods and 2 computed properties with no JSDoc. The filteredSkills computed searches across name, description, and tags -- this multi-field search logic is non-obvious and worth documenting.",
+      "suggestion": "Add JSDoc, particularly on filteredSkills (documenting the multi-field search across name/description/tags) and toggleSkill."
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "No JSDoc on exported useActivityModuleStore or its public methods",
+      "file": "packages/stage-ui/src/stores/modules/activity.ts",
+      "line": 6,
+      "line_end": 43,
+      "code_snippet": "export const useActivityModuleStore = defineStore('activity-module', () => {\n  const activities = ref<ActivityEntryUI[]>([])\n  const todaySummary = ref<DailySummaryUI | null>(null)\n  ...\n  function setSummary(summary: DailySummaryUI | null): void {",
+      "description": "Store exports 3 public methods and 3 computed properties with no JSDoc. The activities ref is declared but never consumed by any computed property in this store, which would confuse a maintainer without documentation explaining its intended use.",
+      "suggestion": "Add JSDoc to the store explaining its role, and document why activities is stored separately from todaySummary (are they consumed differently by the UI?)."
+    },
+    {
+      "id": "review-comments-006",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Template section comments restate visually obvious structure",
+      "file": "packages/stage-ui/src/components/scenarios/memory/MemoryManager.vue",
+      "line": 34,
+      "line_end": 34,
+      "code_snippet": "<!-- Header with stats -->\n<!-- Search and filter -->\n<!-- Memory list -->\n<!-- Empty state -->\n<!-- Detail panel -->",
+      "description": "All four Vue components use HTML comments like '<!-- Header with stats -->', '<!-- Search and filter -->', '<!-- Memory list -->', etc. to mark template sections. While section markers in long Vue templates can aid navigation, most of these restate what is immediately visually obvious from the template structure (e.g., a v-for over filteredMemories is obviously the memory list). This pattern appears across all 4 components (17 comments total). The maintenance cost is low but so is the value.",
+      "suggestion": "This is a minor style observation. If the team prefers section markers for template navigation, keep them. Otherwise, consider removing the most obvious ones (e.g., '<!-- Empty state -->' above a v-else block) and keeping only those that mark non-obvious sections."
+    }
+  ],
+  "positive_observations": [
+    "Zero forbidden patterns (TODO/FIXME/HACK/XXX/PLACEHOLDER/TEMP) found across all 9 new files -- clean code discipline.",
+    "The types file (memory.ts) has a file-level JSDoc explaining its purpose, which is better than no documentation at all.",
+    "Store code is clean and self-documenting with good function names that describe their intent (deleteMemory, toggleTodo, clearCompleted).",
+    "Template HTML comments are consistent in style across all 4 Vue components, showing intentional convention."
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

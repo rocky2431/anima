@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { WIP } from '@proj-airi/stage-ui/components'
+import { MemoryManager } from '@proj-airi/stage-ui/components'
 </script>
 
 <template>
-  <WIP />
+  <MemoryManager />
 </template>
 
 <route lang="yaml">
@@ -12,7 +12,7 @@ meta:
   titleKey: settings.pages.memory.title
   subtitleKey: settings.title
   descriptionKey: settings.pages.memory.description
-  icon: i-solar:leaf-bold-duotone
+  icon: i-solar:brain-bold-duotone
   settingsEntry: true
   order: 5
   stageTransition:
