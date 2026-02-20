@@ -1,4 +1,5 @@
 import type { ActivityContext, ActivityEvent } from '../types'
+
 import { calculateContinuousWorkDuration } from './duration'
 
 /**

@@ -1,6 +1,7 @@
+import type { ActivityEvent } from '../types'
+
 import { describe, expect, it } from 'vitest'
 
-import type { ActivityEvent } from '../types'
 import { buildActivityContext } from '../activity/activity-context'
 
 function makeEvent(timestamp: number, overrides: Partial<ActivityEvent> = {}): ActivityEvent {

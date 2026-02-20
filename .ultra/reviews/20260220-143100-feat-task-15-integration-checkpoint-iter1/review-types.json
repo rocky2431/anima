@@ -1,0 +1,88 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260220-143100-feat-task-15-integration-checkpoint-iter1",
+  "timestamp": "2026-02-20T14:35:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts"
+    ],
+    "total_lines_analyzed": 510,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "Unsafe `as PersonaEmotion` cast on xstate snapshot value",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 90,
+      "line_end": 90,
+      "code_snippet": "const currentEmotion = deps.emotionActor.getSnapshot().value as PersonaEmotion",
+      "description": "Encapsulation: 6/10, Expression: 5/10, Usefulness: 7/10, Enforcement: 4/10 (Aggregate: 5.5). The xstate actor snapshot `.value` is typed as a broad string union by xstate internals. Casting it directly to `PersonaEmotion` bypasses type safety -- if the machine's state set diverges from PersonaEmotion, this cast silently produces an invalid value. This is the same pattern flagged P2 in Task 7's AnimaOrchestrator (TRIGGER_EMOTION_MAP). A runtime guard or typed machine output accessor would be safer.",
+      "suggestion": "Add a runtime guard function: `function isPersonaEmotion(v: unknown): v is PersonaEmotion { return ['idle','curious','caring','worried','sleepy','excited'].includes(v as string) }` and use it before passing the value, falling back to 'idle' if invalid."
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "hardcoded-domain-object",
+      "title": "Hardcoded trigger result object bypasses trigger system types",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 91,
+      "line_end": 96,
+      "code_snippet": "const triggerResult = {\n  triggered: true as const,\n  triggerId: 'T06',\n  triggerName: 'evening-summary',\n  suggestedEmotion: 'caring' as const,\n}",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.5). The trigger result is manually constructed as an anonymous object literal with `as const` assertions rather than using the TriggerResult discriminated union type from persona-engine. This means: (1) the object shape is not validated against TriggerResult at compile time beyond structural compatibility, (2) triggerId 'T06' and triggerName 'evening-summary' are string literals not linked to the trigger registry, and (3) if TriggerResult gains new required fields, this won't fail at compile time. The object should be typed explicitly as `TriggerResult` or constructed via a factory.",
+      "suggestion": "Import `TriggerResult` from persona-engine and annotate: `const triggerResult: TriggerResult = { triggered: true, triggerId: 'T06', triggerName: 'evening-summary', suggestedEmotion: 'caring' }`. Better still, look up the actual trigger from ALL_TRIGGERS by name to get the correct triggerId and suggestedEmotion from the single source of truth."
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "cronExpression parameter is unvalidated plain `string`",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 41,
+      "line_end": 41,
+      "code_snippet": "scheduleDaily: (cronExpression: string) => string",
+      "description": "Encapsulation: 6/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.5). The `cronExpression` parameter accepts any string with no type-level or runtime validation. An invalid cron expression (e.g., '* * *' or an empty string) would be passed directly to CronService.cron() where it may fail with an opaque error. This is consistent with the codebase pattern of primitive obsession for domain concepts, but at the Imperative Shell boundary where user/config input enters, validation is especially important.",
+      "suggestion": "At minimum, add a branded type `type CronExpression = string & { readonly __brand: 'CronExpression' }` with a constructor function that validates the expression format before branding. Alternatively, validate the cron string at the `scheduleDaily` call site before passing to CronService."
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "readonly-missing",
+      "title": "EveningPipelineDeps interface fields lack `readonly` modifier",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 15,
+      "line_end": 23,
+      "code_snippet": "export interface EveningPipelineDeps {\n  cronService: CronService\n  reportGenerator: ReportGenerator\n  memoryExtractor: MemoryExtractor\n  memoryOrchestrator: MemoryOrchestrator\n}",
+      "description": "Encapsulation: 6/10, Expression: 6/10, Usefulness: 7/10, Enforcement: 6/10 (Aggregate: 6.3). The EveningPipelineDeps interface has all mutable fields. While the factory function only reads these dependencies (they are captured as closure variables and never reassigned), the interface does not express this intent. Adding `readonly` would prevent accidental reassignment and communicate that deps are injected once. This is a consistent codebase pattern (AnimaOrchestratorDeps, AiOrchestratorConfig already flagged) so severity is P3 informational.",
+      "suggestion": "Add `readonly` to all fields: `readonly cronService: CronService`, etc. Or use `Readonly<EveningPipelineDeps>` in the factory function signature."
+    }
+  ],
+  "positive_observations": [
+    "EveningPipelineEvent is a well-designed discriminated union on the `type` field with specific typed `data` payloads for each variant (DailySummary, ExtractionResult, ProactiveResponse). This makes illegal event states unrepresentable.",
+    "EveningPipeline interface + createEveningPipeline factory function follows the established Imperative Shell pattern. Internal state (collectedActivities array, executeEveningPipeline function) is hidden as closure variables, exposing only recordActivity/trigger/scheduleDaily.",
+    "EveningPipelineConfig uses optional callback fields (onEvent/onError) with sensible defaults (no-op for onError, undefined check for onEvent). Clean configuration pattern.",
+    "Test doubles (StubLlmProvider, StubEmbeddingProvider) are properly scoped to external API boundaries with rationale comments, consistent with project testing conventions."
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}
