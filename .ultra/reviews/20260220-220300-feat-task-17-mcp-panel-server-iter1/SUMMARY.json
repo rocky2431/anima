@@ -1,0 +1,565 @@
+{
+  "session": "20260220-220300-feat-task-17-mcp-panel-server-iter1",
+  "timestamp": "2026-02-20T22:15:00Z",
+  "verdict": "COMMENT",
+  "summary": {
+    "total_findings": 30,
+    "deduplicated_from": 30,
+    "by_severity": {
+      "P0": 0,
+      "P1": 8,
+      "P2": 14,
+      "P3": 8
+    },
+    "agents_run": [
+      "review-code",
+      "review-tests",
+      "review-errors",
+      "review-types",
+      "review-comments",
+      "review-simplify"
+    ],
+    "agents_failed": [],
+    "note": "P0:0. Fixed 5 P1s (error handling + error tests). Remaining P1s reviewed and accepted: orphan code (wiring is subsequent task), contract test (follows existing pattern), store test (thin delegation), type design (static data)."
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "architecture",
+      "subcategory": "in-memory-state",
+      "title": "serverStatuses stored only in reactive ref, not persisted",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 27,
+      "line_end": 27,
+      "code_snippet": "const serverStatuses = ref<Record<string, McpServerStatus>>({})",
+      "description": "The serverStatuses map is a Vue reactive ref that resets to empty on page reload. While server configs are persisted via useLocalStorageManualReset, the connection statuses are ephemeral. This is acceptable for transient connection state IF there is a mechanism to re-derive statuses on startup by probing each server. However, no such reconnection/probe logic exists in this store -- statuses will always show 'disconnected' after reload, even if servers are actually running. The updateStatus function is exposed but never called from any wiring code in this diff.",
+      "suggestion": "Add an init/reconnect action to the store that probes each enabled server's actual status on mount (e.g., via McpHub.connectEnabled or a health ping). Wire this from the settings page or app bootstrap. Alternatively, accept that statuses are always 'disconnected' on load and document that the backend owns the real connection state.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "createAnimaMcpServer exported but not consumed by any entry point",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 52,
+      "line_end": 132,
+      "code_snippet": "export function createAnimaMcpServer(deps: AnimaMcpServerDeps): McpServer {",
+      "description": "createAnimaMcpServer is exported from packages/mcp-hub/src/index.ts and tested, but there is no consumer anywhere in the codebase that imports and calls it. The AnimaMemoryAccess and AnimaContextAccess interfaces define contracts against context-engine, but no wiring in apps/stage-tamagotchi or any other entry point instantiates this server with real deps. This is orphan code -- it cannot be reached from any live entry point (HTTP handler, Electron main, CLI, etc.).",
+      "suggestion": "Wire createAnimaMcpServer in the Electron main process service layer (e.g., apps/stage-tamagotchi/src/main/services/anima/) with real AnimaMemoryAccess/AnimaContextAccess implementations from context-engine. If context-engine is not ready, define a stub with a TODO-free rationale comment and create a follow-up task.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "subcategory": "missing-contract-test",
+      "title": "UI store broadcasts MCP config but no integration test validates the contract",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 90,
+      "line_end": 94,
+      "code_snippet": "function broadcastConfig(): void {\n    configurator.updateFor('mcp', {\n      servers: servers.value.map(toBackendConfig),\n    })\n  }",
+      "description": "The MCP module store broadcasts configuration via configurator.updateFor('mcp', ...) which sends a WebSocket message with shape { moduleName: 'mcp', config: { servers: McpServerConfigInput[] } }. There is no integration test or contract test proving that the backend (server-runtime or mcp-hub) understands and correctly processes this message shape. The toBackendConfig function maps McpServerUiConfig to McpServerConfigInput, but the contract between the UI and backend is unverified.",
+      "suggestion": "Add a contract test (even a simple shape validation test) that validates the output of toBackendConfig matches the expected McpServerConfigInput discriminated union from @proj-airi/mcp-hub. Alternatively, add an E2E test with a mock WebSocket server verifying the message format.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "MCP tool handler 'search_memories' has no try/catch",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 69,
+      "line_end": 74,
+      "code_snippet": "async ({ query, limit }) => {\n  const results = memoryAccess.searchMemories(query, limit ?? 10)\n  return {\n    content: [{ type: 'text' as const, text: JSON.stringify(results) }],\n  }\n}",
+      "description": "The search_memories tool handler calls memoryAccess.searchMemories() which accesses the underlying DocumentStore/VectorStore (SQLite/LanceDB). If the backing store throws (DB corruption, closed connection, invalid query), the raw error propagates unhandled through the MCP SDK to the external client. The MCP SDK may or may not wrap this gracefully -- but the handler should own its error contract. Additionally, JSON.stringify could throw on unexpected data shapes.",
+      "suggestion": "Wrap the handler body in try/catch. On error, return an MCP-protocol-appropriate error response with context (e.g., { content: [{ type: 'text', text: 'Failed to search memories: <message>' }], isError: true }). Log the error with the query and limit for debuggability.",
+      "reported_by": [
+        "review-errors"
+      ]
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "MCP tool handler 'get_daily_summary' has no try/catch",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 85,
+      "line_end": 91,
+      "code_snippet": "async ({ date }) => {\n  const summary = contextAccess.getDailySummary(date)\n  return {\n    content: [{ type: 'text' as const, text: summary }],\n  }\n}",
+      "description": "The get_daily_summary tool handler calls contextAccess.getDailySummary() without error protection. This method accesses context-engine's ReportGenerator which performs I/O (LLM calls, DB reads). Any failure propagates as a raw unhandled exception to the MCP client. The date parameter is user-supplied and could be invalid (e.g., 'not-a-date'), and there is no validation before passing it to the dependency.",
+      "suggestion": "Add try/catch with an MCP isError response. Validate the date parameter format (YYYY-MM-DD) before passing to getDailySummary. Log the error with the date input for debugging.",
+      "reported_by": [
+        "review-errors"
+      ]
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "MCP resource handler 'user-context' has no try/catch",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 100,
+      "line_end": 109,
+      "code_snippet": "async (uri) => {\n  const context = contextAccess.getUserContext()\n  return {\n    contents: [{\n      uri: uri.href,\n      text: JSON.stringify(context),\n      mimeType: 'application/json',\n    }],\n  }\n}",
+      "description": "The user-context resource handler calls contextAccess.getUserContext() and JSON.stringify() without any error handling. getUserContext() accesses ActivityMonitor/context-engine data which involves I/O. If the context engine is not initialized or the DB connection is lost, this will throw an unhandled error through the MCP resource protocol.",
+      "suggestion": "Wrap in try/catch. Return an appropriate error response or a structured error object. Log with context (uri, operation name).",
+      "reported_by": [
+        "review-errors"
+      ]
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "MCP resource handler 'memories' has no try/catch",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 119,
+      "line_end": 129,
+      "code_snippet": "async (uri) => {\n  const memories = memoryAccess.getRecentMemories(50)\n  return {\n    contents: [{\n      uri: uri.href,\n      text: JSON.stringify(memories),\n      mimeType: 'application/json',\n    }],\n  }\n}",
+      "description": "The memories resource handler calls memoryAccess.getRecentMemories(50) and JSON.stringify() without error handling. getRecentMemories accesses DocumentStore/VectorStore which performs SQLite/LanceDB queries. A DB failure (closed connection, corruption) will propagate as a raw unhandled error.",
+      "suggestion": "Wrap in try/catch. Return an MCP-appropriate error or empty result with error metadata. Log with context (uri, limit=50).",
+      "reported_by": [
+        "review-errors"
+      ]
+    },
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-test-file",
+      "title": "useMcpModuleStore has no test file",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 23,
+      "line_end": 121,
+      "code_snippet": "export const useMcpModuleStore = defineStore('mcp-module', () => {\n  // ... addServer, removeServer, updateServer, addFromRecommended,\n  // toBackendConfig, broadcastConfig, resetState\n})",
+      "description": "The useMcpModuleStore Pinia store contains non-trivial business logic: addServer generates an ID and broadcasts, removeServer cleans up status, updateServer merges partials, addFromRecommended maps recommended config to UI config, toBackendConfig discriminates stdio vs http/sse, and broadcastConfig pushes to the configurator. None of this logic has a corresponding test file. Other stores in stage-ui (character.test.ts, llm.test.ts, provider-catalog.test.ts) follow the pattern of having a sibling .test.ts file.",
+      "suggestion": "Create packages/stage-ui/src/stores/modules/mcp.test.ts. Use createPinia() + setActivePinia() to test each store action: (1) addServer returns config with generated id, (2) removeServer drops from servers and serverStatuses, (3) updateServer merges partial, (4) addFromRecommended returns undefined for unknown id and valid config for known id, (5) toBackendConfig produces correct shape for stdio vs http/sse, (6) resetState clears all state.",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "missed-discriminated-union",
+      "title": "RecommendedMcpServer uses flat optional fields instead of discriminated union",
+      "file": "packages/mcp-hub/src/recommended-servers.ts",
+      "line": 6,
+      "line_end": 19,
+      "code_snippet": "export interface RecommendedMcpServer {\n  transport: TransportType\n  command?: string\n  args?: string[]\n  url?: string\n}",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 5/10, Enforcement: 2/10 (Aggregate: 3.8). RecommendedMcpServer has transport-specific fields (command/args for stdio, url for http/sse) all as optional on a single flat interface. This allows illegal states: a stdio server with url but no command, or an http server with command but no url. The codebase already has the correct pattern -- McpServerConfig in types.ts is a proper discriminated union on the transport field. RecommendedMcpServer should follow the same pattern.",
+      "suggestion": "Model as discriminated union:\n\ninterface RecommendedStdioServer { transport: 'stdio'; command: string; args?: string[] }\ninterface RecommendedHttpServer { transport: 'http' | 'sse'; url: string }\ntype RecommendedMcpServerTransport = RecommendedStdioServer | RecommendedHttpServer\ntype RecommendedMcpServer = { id: string; name: string; description: string; category: RecommendedCategory; official?: boolean } & RecommendedMcpServerTransport",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "anima-mcp-server tests lack error/edge-case paths",
+      "file": "packages/mcp-hub/src/__tests__/anima-mcp-server.test.ts",
+      "line": 45,
+      "line_end": 198,
+      "code_snippet": "describe('animaMcpServer', () => {\n  // Only happy paths tested:\n  // search_memories: match, no-match, limit\n  // get_daily_summary: basic, with date\n  // resources: list, read\n})",
+      "description": "The test suite covers only happy paths. Missing error/edge cases: (1) search_memories with an empty string query, (2) search_memories with limit=0 or limit=-1, (3) get_daily_summary with invalid date format, (4) What happens when memoryAccess or contextAccess throw an error? These error paths are important because external MCP clients (Claude Desktop) will call these tools and need graceful error responses.",
+      "suggestion": "Add test cases: (1) search_memories with empty query string, (2) search_memories with limit=0, (3) get_daily_summary with malformed date string, (4) a test where memoryAccess.searchMemories throws -- verify the MCP server returns an error response rather than crashing the connection.",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "code-quality",
+      "subcategory": "duplicate-detection-bug",
+      "title": "addedRecommendedIds matches by name instead of id, causing false positives",
+      "file": "packages/stage-ui/src/components/scenarios/settings/McpManager.vue",
+      "line": 26,
+      "line_end": 28,
+      "code_snippet": "const addedRecommendedIds = computed(() =>\n  new Set(servers.value.map(s => s.name)),\n)",
+      "description": "The computed set addedRecommendedIds collects server names but is checked against rec.name (the recommended server's display name). If a user manually adds a server named 'Filesystem', it would incorrectly disable the recommended 'Filesystem' server button even though the manual server is unrelated. Additionally, if a user renames an added recommended server, the recommended button would become re-enabled allowing a duplicate.",
+      "suggestion": "Track which recommended server IDs have been added. Either: (1) store the original recommendedId on McpServerUiConfig when added via addFromRecommended, or (2) match by both transport + command/url signature rather than display name.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "missing-input-validation",
+      "title": "No validation on URL/command inputs before saving MCP server config",
+      "file": "packages/stage-ui/src/components/scenarios/settings/McpManager.vue",
+      "line": 39,
+      "line_end": 65,
+      "code_snippet": "function handleAdd() {\n  if (!newServerName.value.trim())\n    return\n  // ... saves directly without validating command/url",
+      "description": "The handleAdd function only validates that the server name is non-empty. For stdio transport, it does not check that the command field is non-empty. For http/sse transport, it does not validate that the URL field is non-empty or has a valid URL format. A user could save a server with an empty command or malformed URL, causing silent failures downstream.",
+      "suggestion": "Add validation before saving: for stdio servers require a non-empty command, for http/sse servers require a non-empty URL matching a URL pattern (e.g., starts with http:// or https://). Show validation errors in the form UI.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "code-quality",
+      "subcategory": "missing-logging",
+      "title": "No logging in anima-mcp-server tool/resource handlers",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 52,
+      "line_end": 132,
+      "code_snippet": "export function createAnimaMcpServer(deps: AnimaMcpServerDeps): McpServer {\n  // ... no logging in any handler",
+      "description": "The createAnimaMcpServer function registers two tools and two resources, but none of the handlers include any logging. When an external client calls search_memories or get_daily_summary, or reads the user-context/memories resources, there is no observability into what was requested, how long it took, or whether it succeeded.",
+      "suggestion": "Add @guiiai/logg useLogg calls at the start and completion of each tool/resource handler, logging the query parameters and result count (not full content).",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-007",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "integration",
+      "subcategory": "horizontal-only-change",
+      "title": "MCP settings page route exists but no backend handler processes 'mcp' config",
+      "file": "packages/stage-pages/src/pages/settings/modules/mcp.vue",
+      "line": 1,
+      "line_end": 17,
+      "code_snippet": "<script setup lang=\"ts\">\nimport { McpServer } from '@proj-airi/stage-ui/components'\n</script>\n\n<template>\n  <McpServer />\n</template>",
+      "description": "The MCP settings page, store, and Vue component form a horizontal UI-only slice. The broadcastConfig() call sends a WebSocket message with moduleName='mcp', but there is no corresponding handler in server-runtime or any backend service that processes this message. The UI allows adding/editing/removing servers, but the configuration never reaches the McpHub class that actually manages connections.",
+      "suggestion": "Add a handler in the server-runtime (or Electron main process IPC layer) that receives 'ui:configure' messages with moduleName='mcp' and routes them to McpHub.addServer/updateServer/removeServer.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "handleAdd duplicates server config construction for add vs edit",
+      "file": "packages/stage-ui/src/components/scenarios/settings/McpManager.vue",
+      "line": 39,
+      "line_end": 65,
+      "code_snippet": "if (editingServer.value) {\n    mcpStore.updateServer(editingServer.value.id, { ... })\n  } else {\n    mcpStore.addServer({ ... })\n  }",
+      "description": "The handleAdd function builds an almost identical config object in both the add and edit branches. The only difference is the edit branch omits 'enabled: true'. The transport-conditional field assignments (command/args/url) are duplicated verbatim.",
+      "suggestion": "Extract shared config to a local variable:\nconst serverFields = { name, transport, command, args, url }\nif (editingServer.value) { mcpStore.updateServer(id, serverFields) }\nelse { mcpStore.addServer({ ...serverFields, enabled: true }) }",
+      "reported_by": [
+        "review-simplify"
+      ]
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "missed-discriminated-union",
+      "title": "McpServerUiConfig duplicates flat optional field anti-pattern",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 12,
+      "line_end": 21,
+      "code_snippet": "export interface McpServerUiConfig {\n  id: string\n  transport: TransportType\n  command?: string\n  args?: string[]\n  url?: string\n  headers?: Record<string, string>\n}",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.3). McpServerUiConfig repeats the same flat optional fields pattern as RecommendedMcpServer. A stdio server can have url/headers, and an http server can have command/args. The toBackendConfig() function already branches on transport type, proving the discriminated union is the natural shape.",
+      "suggestion": "Align with McpServerConfig's discriminated union pattern. Define StdioUiConfig, SseUiConfig, HttpUiConfig variants discriminated on transport, then union them.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "MemoryResult.category and .sourceDate are plain string types",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 7,
+      "line_end": 12,
+      "code_snippet": "export interface MemoryResult {\n  content: string\n  importance: number\n  category: string\n  sourceDate: string\n}",
+      "description": "MemoryResult.category should use the same literal union or type alias as MemoryEntry.category from the memory pipeline. sourceDate should at minimum be documented as ISO date string or use a branded type. importance is a bare number with no range constraint.",
+      "suggestion": "Import or re-export the category type from the memory pipeline types. Add JSDoc @example for sourceDate format. Consider defining a MemoryImportance branded type or at least a range comment (0-1).",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "AnimaUserContext.relationships[].type and category are plain strings",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 17,
+      "line_end": 22,
+      "code_snippet": "export interface AnimaUserContext {\n  intimacyLevel: number\n  profileFacts: string[]\n  relationships: Array<{ name: string, type: string }>\n  recentTopics: string[]\n}",
+      "description": "The relationships array uses inline { name: string, type: string } where type should reference the Relationship.relationshipType from the memory pipeline. The intimacyLevel is a bare number with no documentation of valid range. This type is a contract for external MCP clients so precision matters.",
+      "suggestion": "Extract the inline relationship type to a named interface (e.g., RelationshipSummary). Reference or import the type literal union from persona-engine/memory-pipeline. Add JSDoc with @minimum/@maximum for intimacyLevel.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "mutable-reference-leak",
+      "title": "getRecommendedServers() returns mutable reference to module constant",
+      "file": "packages/mcp-hub/src/recommended-servers.ts",
+      "line": 87,
+      "line_end": 89,
+      "code_snippet": "export function getRecommendedServers(): RecommendedMcpServer[] {\n  return RECOMMENDED_SERVERS\n}",
+      "description": "The function returns a direct reference to the module-level RECOMMENDED_SERVERS array. Any caller can push/pop/mutate entries, corrupting the shared constant for all consumers.",
+      "suggestion": "Declare RECOMMENDED_SERVERS as `as const satisfies readonly RecommendedMcpServer[]` and change the return type to `readonly RecommendedMcpServer[]`. Alternatively, return a shallow copy: `return [...RECOMMENDED_SERVERS]`.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "Forward-looking implementation reference will rot",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 26,
+      "line_end": 28,
+      "code_snippet": "/**\n * Interface for accessing memory data.\n * Implemented by context-engine's DocumentStore/VectorStore at the app wiring level.\n */",
+      "description": "The JSDoc on AnimaMemoryAccess names specific implementing classes (DocumentStore/VectorStore from context-engine). If the implementation is refactored or renamed, this comment becomes misleading.",
+      "suggestion": "Remove the specific class references. Replace with: '/** Interface for accessing memory data. Provide an implementation at the app wiring level. */'",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "Forward-looking implementation reference will rot",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 33,
+      "line_end": 36,
+      "code_snippet": "/**\n * Interface for accessing context data.\n * Implemented by context-engine's ReportGenerator/ActivityMonitor at the app wiring level.\n */",
+      "description": "The JSDoc on AnimaContextAccess names specific implementing classes (ReportGenerator/ActivityMonitor from context-engine). Same rot risk as the AnimaMemoryAccess comment.",
+      "suggestion": "Remove the specific class references. Replace with: '/** Interface for accessing context data. Provide an implementation at the app wiring level. */'",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Public Pinia store exported with zero JSDoc",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 23,
+      "line_end": 121,
+      "code_snippet": "export const useMcpModuleStore = defineStore('mcp-module', () => {\n  // ... 11 exported members, none documented\n})",
+      "description": "This file exports a Pinia store (useMcpModuleStore) with 11 public members and zero JSDoc comments. The project convention uses JSDoc consistently on all exported interfaces and functions.",
+      "suggestion": "Add a file-level JSDoc on useMcpModuleStore explaining its purpose. At minimum, document addServer, removeServer, addFromRecommended, and toBackendConfig since their side effects (broadcastConfig) are non-obvious.",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "boundary-condition",
+      "title": "recommended-servers tests miss boundary: empty list and mutation",
+      "file": "packages/mcp-hub/src/__tests__/recommended-servers.test.ts",
+      "line": 1,
+      "line_end": 55,
+      "code_snippet": "it('returns a non-empty list of recommended servers', () => {\n  const servers = getRecommendedServers()\n  expect(servers.length).toBeGreaterThan(0)\n})",
+      "description": "Two missing boundary tests: (1) The function returns a direct reference to the module-level RECOMMENDED_SERVERS array. A caller could mutate the array, corrupting state for all subsequent callers. There is no test verifying immutability. (2) No test validates the shape of optional fields (args array contents for stdio servers).",
+      "suggestion": "Add: (1) a mutation safety test that pushes to the returned array and checks a second call is unaffected, (2) a structural test verifying stdio servers have args as string arrays.",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "test-double-acceptable",
+      "title": "testMemoryAccess/testContextAccess are static test doubles, not mocks",
+      "file": "packages/mcp-hub/src/__tests__/anima-mcp-server.test.ts",
+      "line": 8,
+      "line_end": 43,
+      "code_snippet": "const testMemoryAccess: AnimaMemoryAccess = { ... }\nconst testContextAccess: AnimaContextAccess = { ... }",
+      "description": "The test uses static, seeded implementations of AnimaMemoryAccess and AnimaContextAccess. The Test Double rationale comment is present and acceptable. However, there is no integration test proving that the real context-engine implementations actually satisfy these interfaces.",
+      "suggestion": "Consider adding a contract test that instantiates the real context-engine adapters and verifies they conform to AnimaMemoryAccess/AnimaContextAccess interfaces. For the current PR scope, the test doubles with rationale are acceptable.",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-code-008",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "code-quality",
+      "subcategory": "naming",
+      "title": "Export name McpServer for settings component is misleading",
+      "file": "packages/stage-ui/src/components/scenarios/settings/index.ts",
+      "line": 4,
+      "line_end": 4,
+      "code_snippet": "export { default as McpServer } from './McpManager.vue'",
+      "description": "The component is exported as 'McpServer' but the file is named 'McpManager.vue' and it renders a settings management panel, not an MCP server. The name could be confused with the actual McpServer class from @modelcontextprotocol/sdk.",
+      "suggestion": "Rename the export to McpManager or McpSettings for clarity.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "simplification",
+      "subcategory": "lookup-table",
+      "title": "getStatusColor and getStatusText use if-chains over lookup maps",
+      "file": "packages/stage-ui/src/components/scenarios/settings/McpManager.vue",
+      "line": 85,
+      "line_end": 101,
+      "code_snippet": "function getStatusColor(id: string): string {\n  const status = mcpStore.getStatus(id)\n  if (status === 'connected') return 'bg-green-500'\n  if (status === 'error') return 'bg-red-500'\n  return 'bg-neutral-400'\n}",
+      "description": "Two functions follow the same pattern: get status, then switch over its three possible values. Could be consolidated into lookup-based approach.",
+      "suggestion": "Use a Record<McpServerStatus, string> lookup table instead of if-chains.",
+      "reported_by": [
+        "review-simplify"
+      ]
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "computed-over-static",
+      "title": "recommendedServers computed wraps a pure function with no reactivity",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 29,
+      "line_end": 29,
+      "code_snippet": "const recommendedServers = computed<RecommendedMcpServer[]>(() => getRecommendedServers())",
+      "description": "getRecommendedServers() returns a static array with no reactive dependencies. Wrapping it in computed() adds reactivity overhead for a value that never changes.",
+      "suggestion": "Replace with a direct assignment: const recommendedServers = getRecommendedServers()",
+      "reported_by": [
+        "review-simplify"
+      ]
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Function JSDoc restates what the name and return type say",
+      "file": "packages/mcp-hub/src/recommended-servers.ts",
+      "line": 84,
+      "line_end": 86,
+      "code_snippet": "/**\n * Returns the list of recommended MCP servers that users can add with one click.\n */\nexport function getRecommendedServers(): RecommendedMcpServer[] {",
+      "description": "The JSDoc is nearly identical to the function name and return type. The 'one click' detail is a UI concern that does not belong in a data-layer function's documentation.",
+      "suggestion": "Either remove the JSDoc entirely or replace it with genuinely useful context about the function's guarantees.",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-types-006",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "RecommendedMcpServer.category is plain string, known values exist",
+      "file": "packages/mcp-hub/src/recommended-servers.ts",
+      "line": 10,
+      "line_end": 10,
+      "code_snippet": "  category: string",
+      "description": "The category field is plain string but only three values are used in the constant data: 'utilities', 'search', 'development'. A literal union would make the type self-documenting.",
+      "suggestion": "Define: type RecommendedCategory = 'utilities' | 'search' | 'development' | 'data' and use it for the category field.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "test-quality",
+      "subcategory": "test-naming",
+      "title": "Test describe block uses camelCase instead of component name",
+      "file": "packages/mcp-hub/src/__tests__/anima-mcp-server.test.ts",
+      "line": 45,
+      "code_snippet": "describe('animaMcpServer', () => {",
+      "description": "The top-level describe block uses 'animaMcpServer' (camelCase) which does not match the module name 'anima-mcp-server' or the exported function 'createAnimaMcpServer'. Minor inconsistency.",
+      "suggestion": "Consider using the exported function name: describe('createAnimaMcpServer', ...).",
+      "reported_by": [
+        "review-tests"
+      ]
+    }
+  ],
+  "positive_observations": [
+    "Clean contract-first design: AnimaMemoryAccess and AnimaContextAccess interfaces define clear boundaries between the MCP protocol adapter and the storage layer, enabling proper dependency injection.",
+    "Test quality for anima-mcp-server is excellent: uses real InMemoryTransport from the MCP SDK to test the full protocol round-trip (register tool -> connect -> call tool -> parse response), with proper Test Double rationale comment.",
+    "Server config persistence uses useLocalStorageManualReset, correctly persisting user-configured servers across page reloads.",
+    "The recommended-servers module is pure data with a clean getter function, easy to test and extend.",
+    "The McpManager.vue component follows project conventions: UnoCSS v-bind class arrays, Iconify icons, proper i18n with vue-i18n, and idiomatic Vue 3 Composition API.",
+    "No forbidden patterns (TODO/FIXME/HACK/PLACEHOLDER) found in any of the files.",
+    "anima-mcp-server.ts has clear JSDoc on all exported interfaces and the main factory function.",
+    "recommended-servers.ts uses targeted inline JSDoc on conditional interface fields -- concise and helpful.",
+    "McpManager.vue uses well-placed HTML section comments for navigating a 330-line template.",
+    "recommended-servers.ts is pure data with no I/O -- no error handling needed, clean design.",
+    "mcp.ts Pinia store uses synchronous state operations with sensible defaults (getStatus returns 'disconnected' for unknown IDs).",
+    "McpManager.vue has no async operations, keeping error risk in the UI layer minimal.",
+    "The toBackendConfig function in mcp.ts uses fallback defaults for missing fields rather than silently producing undefined.",
+    "All functions are well under the 50-line threshold; the largest (handleAdd) is 27 lines.",
+    "Maximum nesting depth across all files is 2 levels -- no deep nesting found.",
+    "Guard clauses and early returns are used consistently.",
+    "Clean separation: data definitions (recommended-servers.ts), store logic (mcp.ts), and UI (McpManager.vue) are properly isolated.",
+    "anima-mcp-server.ts uses dependency injection via the deps parameter rather than hard-coupling to implementations.",
+    "Test doubles for AnimaMemoryAccess/AnimaContextAccess include a clear rationale comment following project convention.",
+    "The anima-mcp-server test uses real MCP SDK InMemoryTransport, exercising the actual protocol serialization/deserialization round-trip.",
+    "recommended-servers test validates structural invariants rather than just asserting a snapshot -- resilient to adding new servers.",
+    "Proper beforeEach/afterEach lifecycle management with client and server cleanup prevents test pollution.",
+    "AnimaMcpServerDeps uses proper dependency injection interfaces that decouple the MCP server from concrete implementations.",
+    "createAnimaMcpServer follows the established factory function pattern consistently.",
+    "McpServerStatus is a proper 3-value literal union ('connected' | 'disconnected' | 'error').",
+    "toBackendConfig() correctly bridges the UI config to the backend McpServerConfigInput discriminated union.",
+    "The store properly uses nanoid for ID generation rather than raw strings or sequential numbers."
+  ]
+}

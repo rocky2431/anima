@@ -9,6 +9,7 @@ import { useDiscordStore } from '../stores/modules/discord'
 import { useFactorioStore } from '../stores/modules/gaming-factorio'
 import { useMinecraftStore } from '../stores/modules/gaming-minecraft'
 import { useHearingStore } from '../stores/modules/hearing'
+import { useMcpModuleStore } from '../stores/modules/mcp'
 import { useSpeechStore } from '../stores/modules/speech'
 import { useTwitterStore } from '../stores/modules/twitter'
 
@@ -35,6 +36,7 @@ export function useModulesList() {
   const twitterStore = useTwitterStore()
   const minecraftStore = useMinecraftStore()
   const factorioStore = useFactorioStore()
+  const mcpStore = useMcpModuleStore()
   const beatSyncState = ref<BeatSyncDetectorState>()
 
   const modulesList = computed<Module[]>(() => [
@@ -133,7 +135,7 @@ export function useModulesList() {
       description: t('settings.pages.modules.mcp-server.description'),
       icon: 'i-solar:server-bold-duotone',
       to: '/settings/modules/mcp',
-      configured: false,
+      configured: mcpStore.configured,
       category: 'essential',
     },
     {

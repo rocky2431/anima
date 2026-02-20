@@ -1,0 +1,90 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260220-220300-feat-task-17-mcp-panel-server-iter1",
+  "timestamp": "2026-02-20T22:10:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/anima-mcp-server.ts",
+      "packages/mcp-hub/src/recommended-servers.ts",
+      "packages/stage-ui/src/stores/modules/mcp.ts",
+      "packages/stage-ui/src/components/scenarios/settings/McpManager.vue"
+    ],
+    "total_lines_analyzed": 672,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "Forward-looking implementation reference will rot",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 26,
+      "line_end": 28,
+      "code_snippet": "/**\n * Interface for accessing memory data.\n * Implemented by context-engine's DocumentStore/VectorStore at the app wiring level.\n */",
+      "description": "The JSDoc on AnimaMemoryAccess names specific implementing classes (DocumentStore/VectorStore from context-engine). If the implementation is refactored or renamed, this comment becomes misleading. This is the 'Future: replaced by X' pattern that frequently rots in this codebase.",
+      "suggestion": "Remove the specific class references. Replace with: '/** Interface for accessing memory data. Provide an implementation at the app wiring level. */' or document the contract expectations (e.g., thread safety, pagination behavior) instead of naming concrete implementers."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "Forward-looking implementation reference will rot",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 33,
+      "line_end": 36,
+      "code_snippet": "/**\n * Interface for accessing context data.\n * Implemented by context-engine's ReportGenerator/ActivityMonitor at the app wiring level.\n */",
+      "description": "The JSDoc on AnimaContextAccess names specific implementing classes (ReportGenerator/ActivityMonitor from context-engine). Same rot risk as the AnimaMemoryAccess comment -- if those classes are renamed, split, or replaced, this comment silently becomes wrong.",
+      "suggestion": "Remove the specific class references. Replace with: '/** Interface for accessing context data. Provide an implementation at the app wiring level. */' or document what the implementation should guarantee (freshness, caching behavior, etc.)."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "missing-documentation",
+      "title": "Public Pinia store exported with zero JSDoc",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 23,
+      "line_end": 121,
+      "code_snippet": "export const useMcpModuleStore = defineStore('mcp-module', () => {\n  // ... 11 exported members, none documented\n})",
+      "description": "This file exports a Pinia store (useMcpModuleStore) with 11 public members (servers, serverStatuses, recommendedServers, connectedCount, configured, addServer, removeServer, updateServer, addFromRecommended, updateStatus, getStatus, saveSettings, resetState) and zero JSDoc comments. The project convention uses JSDoc consistently on all exported interfaces and functions. McpServerUiConfig (line 12) and McpServerStatus (line 10) are also exported without documentation.",
+      "suggestion": "Add a file-level JSDoc on useMcpModuleStore explaining its purpose (manages MCP server configuration in localStorage, broadcasts config changes to the backend). At minimum, document addServer, removeServer, addFromRecommended, and toBackendConfig since their side effects (broadcastConfig) are non-obvious from the signatures alone."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Function JSDoc restates what the name and return type say",
+      "file": "packages/mcp-hub/src/recommended-servers.ts",
+      "line": 84,
+      "line_end": 86,
+      "code_snippet": "/**\n * Returns the list of recommended MCP servers that users can add with one click.\n */\nexport function getRecommendedServers(): RecommendedMcpServer[] {",
+      "description": "The JSDoc 'Returns the list of recommended MCP servers that users can add with one click' is nearly identical to the function name getRecommendedServers and its return type RecommendedMcpServer[]. The 'one click' detail is a UI concern that does not belong in a data-layer function's documentation. The maintenance cost slightly outweighs the value.",
+      "suggestion": "Either remove the JSDoc entirely (the function is self-documenting) or replace it with genuinely useful context, such as: '/** Returns the built-in server catalog. Consumers should check availability before connecting. */'"
+    }
+  ],
+  "positive_observations": [
+    "No forbidden patterns (TODO/FIXME/HACK/PLACEHOLDER) found in any of the four files.",
+    "anima-mcp-server.ts has clear JSDoc on all exported interfaces and the main factory function.",
+    "recommended-servers.ts uses targeted inline JSDoc (/** For stdio transport */) on conditional interface fields -- concise and helpful.",
+    "McpManager.vue uses well-placed HTML section comments (<!-- Header with stats -->, <!-- Server list -->, etc.) for navigating a 330-line template."
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 7
+  }
+}
