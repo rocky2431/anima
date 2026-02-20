@@ -2,6 +2,7 @@ export { buildActivityContext } from './activity/activity-context'
 
 export { calculateContinuousWorkDuration } from './activity/duration'
 
+export { FolderMonitor } from './capture/folder-monitor'
 export { areSimilar, computePHash, hammingDistance } from './capture/phash'
 export { ScreenshotCapture } from './capture/screenshot'
 
@@ -17,8 +18,10 @@ export { SmartTip } from './consumption/smart-tip'
 export type { SmartTipOptions } from './consumption/smart-tip'
 export { cosineSimilarity, SmartTodo } from './consumption/smart-todo'
 export type { SmartTodoOptions } from './consumption/smart-todo'
+export { DocumentProcessor } from './processing/document-processor'
 export { ScreenshotProcessor } from './processing/screenshot-processor'
 export type { ScreenshotUnderstanding } from './processing/screenshot-processor'
+export { chunkText } from './processing/text-chunker'
 export { DocumentStore } from './storage/document-store'
 export { MemoryExtractor } from './storage/memory-extractor'
 export type { MemoryExtractorOptions } from './storage/memory-extractor'
@@ -41,6 +44,9 @@ export type {
   ActivityEvent,
   ActivityState,
   DailySummary,
+  DocumentExtractionResult,
+  DocumentProcessorOptions,
+  DocumentType,
   EmbeddingProvider,
   ExtractedImportantDate,
   ExtractedMemoryItem,
@@ -48,6 +54,8 @@ export type {
   ExtractedRelationship,
   ExtractionInput,
   ExtractionResult,
+  FileChangeEvent,
+  FolderMonitorOptions,
   LlmProvider,
   MemoryRecallResult,
   PersonaConfig,
@@ -57,6 +65,8 @@ export type {
   ScreenshotResult,
   SmartTipResult,
   SmartTodoResult,
+  TextChunk,
+  TextChunkerOptions,
   TodoSuggestion,
   VlmProvider,
   VlmResult,

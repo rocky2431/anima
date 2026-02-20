@@ -261,3 +261,68 @@ export interface MemoryRecallResult {
   relevance: number
   sourceDate: string
 }
+
+// --- Document Processing Types ---
+
+/** Supported document types for text extraction. */
+export type DocumentType = 'pdf' | 'docx' | 'xlsx' | 'txt'
+
+/** Result of document text extraction. */
+export interface DocumentExtractionResult {
+  /** Extracted text content */
+  readonly text: string
+  /** Source file path */
+  readonly filePath: string
+  /** Detected document type */
+  readonly documentType: DocumentType
+  /** Number of pages (PDF) or sheets (Excel) or 1 for text/docx */
+  readonly pageCount: number
+}
+
+/** A text chunk produced by the chunker. */
+export interface TextChunk {
+  /** The chunk text content */
+  readonly content: string
+  /** Zero-based index of this chunk in the sequence */
+  readonly index: number
+  /** Character offset from the start of the original text */
+  readonly startOffset: number
+  /** Character offset end (exclusive) in the original text */
+  readonly endOffset: number
+}
+
+/** Options for text chunking. */
+export interface TextChunkerOptions {
+  /** Maximum characters per chunk. Must be positive. Default: 1000 */
+  chunkSize?: number
+  /** Overlap characters between consecutive chunks. Must be non-negative and less than chunkSize. Default: 200 */
+  overlapSize?: number
+}
+
+/** File change event from folder monitoring. */
+export interface FileChangeEvent {
+  /** Absolute file path */
+  readonly filePath: string
+  /** Type of change */
+  readonly type: 'create' | 'update' | 'delete'
+}
+
+/** Options for DocumentProcessor. */
+export interface DocumentProcessorOptions {
+  /** Maximum file size in bytes. Files exceeding this limit are rejected. Default: 100 MB */
+  maxFileSizeBytes?: number
+  /** Allowed root directories. If set, files outside these directories are rejected (path traversal protection). */
+  allowedRoots?: readonly string[]
+}
+
+/** Options for FolderMonitor. */
+export interface FolderMonitorOptions {
+  /** Directories to watch */
+  readonly watchPaths: readonly string[]
+  /** File extensions to include (e.g., ['.pdf', '.docx']). If empty or omitted, watches all files. */
+  readonly extensions?: readonly string[]
+  /** Callback when a watched file changes */
+  onChange: (event: FileChangeEvent) => void
+  /** Callback on watcher errors */
+  onError: (error: Error) => void
+}
