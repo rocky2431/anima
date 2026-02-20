@@ -236,6 +236,26 @@ pages:
           title: VRM
           description: Configure 3D VRM models and settings
         scene: Scene
+  mcp:
+    server_count: '{count} server(s)'
+    connected_count: '{count} connected'
+    add_server: Add Server
+    edit_server: Edit Server
+    empty: No MCP servers configured
+    recommended: Recommended Servers
+    status:
+      connected: Connected
+      disconnected: Disconnected
+      error: Error
+    form:
+      name: Server Name
+      name_placeholder: My MCP Server
+      command: Command
+      args: Arguments
+      url: Server URL
+      cancel: Cancel
+      save: Save
+      add: Add
   modules:
     beat_sync:
       description: Vibe with beats from the audio source

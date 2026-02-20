@@ -1,0 +1,95 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260220-220300-feat-task-17-mcp-panel-server-iter1",
+  "timestamp": "2026-02-20T22:10:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/anima-mcp-server.ts",
+      "packages/mcp-hub/src/recommended-servers.ts",
+      "packages/stage-ui/src/stores/modules/mcp.ts",
+      "packages/stage-ui/src/components/scenarios/settings/McpManager.vue"
+    ],
+    "total_lines_analyzed": 553,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 4, "P2": 0, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "MCP tool handler 'search_memories' has no try/catch",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 69,
+      "line_end": 74,
+      "code_snippet": "async ({ query, limit }) => {\n  const results = memoryAccess.searchMemories(query, limit ?? 10)\n  return {\n    content: [{ type: 'text' as const, text: JSON.stringify(results) }],\n  }\n}",
+      "description": "The search_memories tool handler calls memoryAccess.searchMemories() which accesses the underlying DocumentStore/VectorStore (SQLite/LanceDB). If the backing store throws (DB corruption, closed connection, invalid query), the raw error propagates unhandled through the MCP SDK to the external client. The MCP SDK may or may not wrap this gracefully -- but the handler should own its error contract. Additionally, JSON.stringify could throw on unexpected data shapes.",
+      "suggestion": "Wrap the handler body in try/catch. On error, return an MCP-protocol-appropriate error response with context (e.g., { content: [{ type: 'text', text: 'Failed to search memories: <message>' }], isError: true }). Log the error with the query and limit for debuggability.",
+      "claude_md_rule": "error_handling.required"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "MCP tool handler 'get_daily_summary' has no try/catch",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 85,
+      "line_end": 91,
+      "code_snippet": "async ({ date }) => {\n  const summary = contextAccess.getDailySummary(date)\n  return {\n    content: [{ type: 'text' as const, text: summary }],\n  }\n}",
+      "description": "The get_daily_summary tool handler calls contextAccess.getDailySummary() without error protection. This method accesses context-engine's ReportGenerator which performs I/O (LLM calls, DB reads). Any failure propagates as a raw unhandled exception to the MCP client. The date parameter is user-supplied and could be invalid (e.g., 'not-a-date'), and there is no validation before passing it to the dependency.",
+      "suggestion": "Add try/catch with an MCP isError response. Validate the date parameter format (YYYY-MM-DD) before passing to getDailySummary. Log the error with the date input for debugging.",
+      "claude_md_rule": "error_handling.required"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "MCP resource handler 'user-context' has no try/catch",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 100,
+      "line_end": 109,
+      "code_snippet": "async (uri) => {\n  const context = contextAccess.getUserContext()\n  return {\n    contents: [{\n      uri: uri.href,\n      text: JSON.stringify(context),\n      mimeType: 'application/json',\n    }],\n  }\n}",
+      "description": "The user-context resource handler calls contextAccess.getUserContext() and JSON.stringify() without any error handling. getUserContext() accesses ActivityMonitor/context-engine data which involves I/O. If the context engine is not initialized or the DB connection is lost, this will throw an unhandled error through the MCP resource protocol.",
+      "suggestion": "Wrap in try/catch. Return an appropriate error response or a structured error object. Log with context (uri, operation name).",
+      "claude_md_rule": "error_handling.required"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "MCP resource handler 'memories' has no try/catch",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 119,
+      "line_end": 129,
+      "code_snippet": "async (uri) => {\n  const memories = memoryAccess.getRecentMemories(50)\n  return {\n    contents: [{\n      uri: uri.href,\n      text: JSON.stringify(memories),\n      mimeType: 'application/json',\n    }],\n  }\n}",
+      "description": "The memories resource handler calls memoryAccess.getRecentMemories(50) and JSON.stringify() without error handling. getRecentMemories accesses DocumentStore/VectorStore which performs SQLite/LanceDB queries. A DB failure (closed connection, corruption) will propagate as a raw unhandled error.",
+      "suggestion": "Wrap in try/catch. Return an MCP-appropriate error or empty result with error metadata. Log with context (uri, limit=50).",
+      "claude_md_rule": "error_handling.required"
+    }
+  ],
+  "positive_observations": [
+    "recommended-servers.ts is pure data with no I/O -- no error handling needed, clean design",
+    "mcp.ts Pinia store uses synchronous state operations with sensible defaults (getStatus returns 'disconnected' for unknown IDs)",
+    "McpManager.vue has no async operations, keeping error risk in the UI layer minimal",
+    "anima-mcp-server.ts cleanly separates concerns via AnimaMemoryAccess and AnimaContextAccess interfaces, making error handling easy to add at the boundary",
+    "The toBackendConfig function in mcp.ts uses fallback defaults (empty string) for missing fields rather than silently producing undefined"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

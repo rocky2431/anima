@@ -1,0 +1,111 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260220-220300-feat-task-17-mcp-panel-server-iter1",
+  "timestamp": "2026-02-20T22:10:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/__tests__/anima-mcp-server.test.ts",
+      "packages/mcp-hub/src/__tests__/recommended-servers.test.ts",
+      "packages/mcp-hub/src/anima-mcp-server.ts",
+      "packages/mcp-hub/src/recommended-servers.ts",
+      "packages/stage-ui/src/stores/modules/mcp.ts",
+      "packages/stage-ui/src/components/scenarios/settings/McpManager.vue"
+    ],
+    "total_lines_analyzed": 925,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 2, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-test-file",
+      "title": "useMcpModuleStore has no test file",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 23,
+      "line_end": 121,
+      "code_snippet": "export const useMcpModuleStore = defineStore('mcp-module', () => {\n  // ... addServer, removeServer, updateServer, addFromRecommended,\n  // toBackendConfig, broadcastConfig, resetState\n})",
+      "description": "The useMcpModuleStore Pinia store contains non-trivial business logic: addServer generates an ID and broadcasts, removeServer cleans up status, updateServer merges partials, addFromRecommended maps recommended config to UI config, toBackendConfig discriminates stdio vs http/sse, and broadcastConfig pushes to the configurator. None of this logic has a corresponding test file. Other stores in stage-ui (character.test.ts, llm.test.ts, provider-catalog.test.ts) follow the pattern of having a sibling .test.ts file. The store functions are pure enough (Functional Core within a Pinia wrapper) that they can be tested with a lightweight Pinia test setup without mocks.",
+      "suggestion": "Create packages/stage-ui/src/stores/modules/mcp.test.ts. Use createPinia() + setActivePinia() to test each store action: (1) addServer returns config with generated id, (2) removeServer drops from servers and serverStatuses, (3) updateServer merges partial, (4) addFromRecommended returns undefined for unknown id and valid config for known id, (5) toBackendConfig produces correct shape for stdio vs http/sse, (6) resetState clears all state. The configurator dependency can use the real useConfiguratorByModsChannelServer if the store module initializes it, or a Test Double with rationale comment if it crosses a package boundary.",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "anima-mcp-server tests lack error/edge-case paths",
+      "file": "packages/mcp-hub/src/__tests__/anima-mcp-server.test.ts",
+      "line": 45,
+      "line_end": 198,
+      "code_snippet": "describe('animaMcpServer', () => {\n  // Only happy paths tested:\n  // search_memories: match, no-match, limit\n  // get_daily_summary: basic, with date\n  // resources: list, read\n})",
+      "description": "The test suite covers only happy paths. Missing error/edge cases: (1) search_memories with an empty string query -- should it return all or empty? (2) search_memories with limit=0 or limit=-1 -- boundary conditions. (3) get_daily_summary with invalid date format (not YYYY-MM-DD) -- the production code passes the string straight through to contextAccess.getDailySummary() with no validation. (4) What happens when memoryAccess or contextAccess throw an error? The MCP server has no error handling around the dependency calls (lines 69-74, 85-87 in anima-mcp-server.ts). An exception from a dependency will propagate unhandled through the MCP protocol layer. These error paths are important because external MCP clients (Claude Desktop) will call these tools and need graceful error responses.",
+      "suggestion": "Add test cases: (1) search_memories with empty query string, (2) search_memories with limit=0, (3) get_daily_summary with malformed date string, (4) a test where memoryAccess.searchMemories throws -- verify the MCP server returns an error response rather than crashing the connection. For (4), create a second test block with a failing testMemoryAccess that throws, verify the client gets a proper error content type. This would also motivate adding try/catch error handling in the tool handlers in anima-mcp-server.ts.",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "boundary-condition",
+      "title": "recommended-servers tests miss boundary: empty list and mutation",
+      "file": "packages/mcp-hub/src/__tests__/recommended-servers.test.ts",
+      "line": 1,
+      "line_end": 55,
+      "code_snippet": "it('returns a non-empty list of recommended servers', () => {\n  const servers = getRecommendedServers()\n  expect(servers.length).toBeGreaterThan(0)\n})",
+      "description": "Two missing boundary tests: (1) The function returns a direct reference to the RECOMMENDED_SERVERS array (line 88 of recommended-servers.ts: `return RECOMMENDED_SERVERS`). A caller could mutate the array (push/pop/splice), corrupting state for all subsequent callers. There is no test verifying immutability -- calling getRecommendedServers() twice should return equal but independent arrays, or the implementation should return a frozen/copied array. (2) No test validates the shape of optional fields (args array contents for stdio servers). The test checks command is truthy but not that args is an array of strings.",
+      "suggestion": "Add: (1) `it('returns a new array each call or is not mutated by callers', () => { const a = getRecommendedServers(); a.push({...}); const b = getRecommendedServers(); expect(b.length).toBe(originalLength); })` -- if this fails, fix recommended-servers.ts to return `[...RECOMMENDED_SERVERS]` or `Object.freeze()`. (2) `it('stdio servers have args as string arrays', () => { for (const s of stdioServers) { expect(Array.isArray(s.args)).toBe(true); s.args!.forEach(a => expect(typeof a).toBe('string')); } })`",
+      "claude_md_rule": "testing.boundary_conditions"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "test-double-acceptable",
+      "title": "testMemoryAccess/testContextAccess are static test doubles, not mocks",
+      "file": "packages/mcp-hub/src/__tests__/anima-mcp-server.test.ts",
+      "line": 8,
+      "line_end": 43,
+      "code_snippet": "// Test Double rationale: AnimaMemoryAccess and AnimaContextAccess are dependency-injected\n// interfaces at the imperative shell boundary...\nconst testMemoryAccess: AnimaMemoryAccess = { ... }\nconst testContextAccess: AnimaContextAccess = { ... }",
+      "description": "The test file uses static, seeded implementations of AnimaMemoryAccess and AnimaContextAccess rather than vi.fn() mocks. These are dependency-injected interfaces at the imperative shell boundary, and the test correctly includes a Test Double rationale comment explaining why. This is acceptable per the project testing rules (External APIs / Test Double with rationale). However, there is no integration test proving that the real context-engine implementations (DocumentStore/VectorStore/ReportGenerator) actually satisfy these interfaces in practice. This means the contract between mcp-hub and context-engine is untested at the boundary.",
+      "suggestion": "This is a minor gap for now since context-engine integration likely belongs in the app-level wiring tests (stage-tamagotchi or stage-web). Consider adding a contract test in packages/mcp-hub or the app that instantiates the real context-engine adapters and verifies they conform to AnimaMemoryAccess/AnimaContextAccess interfaces. For the current PR scope, the test doubles with rationale are acceptable.",
+      "claude_md_rule": "testing.test_double_rationale"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "test-quality",
+      "subcategory": "test-naming",
+      "title": "Test describe block uses camelCase instead of component name",
+      "file": "packages/mcp-hub/src/__tests__/anima-mcp-server.test.ts",
+      "line": 45,
+      "code_snippet": "describe('animaMcpServer', () => {",
+      "description": "The top-level describe block uses 'animaMcpServer' (camelCase) which does not match the module name 'anima-mcp-server' or the exported function 'createAnimaMcpServer'. The recommended-servers test uses 'recommendedServers' (also camelCase). This is a minor inconsistency -- some existing tests in the project use the function name (e.g., 'mcpHub') while others use descriptive names. Not a functional issue but could improve clarity.",
+      "suggestion": "Consider using the exported function name: describe('createAnimaMcpServer', ...) to make it clear which public API surface is being tested. Low priority.",
+      "claude_md_rule": "code_conventions"
+    }
+  ],
+  "positive_observations": [
+    "Test doubles for AnimaMemoryAccess/AnimaContextAccess include a clear rationale comment explaining why they are acceptable, following the project convention for external dependency boundaries",
+    "The anima-mcp-server test uses real MCP SDK InMemoryTransport (not mocked transport), exercising the actual MCP protocol serialization/deserialization round-trip between client and server",
+    "recommended-servers test validates structural invariants (unique IDs, transport-specific field presence, URL format) rather than just asserting a snapshot -- this is resilient to adding new servers",
+    "Proper beforeEach/afterEach lifecycle management with client and server cleanup prevents test pollution",
+    "The test architecture follows the existing mcp-hub test patterns (real echo-mcp-server fixture, real SQLite in tmpdir) for the parts that need real infrastructure"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

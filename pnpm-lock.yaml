@@ -2024,6 +2024,9 @@ importers:
       nanoid:
         specifier: 'catalog:'
         version: 5.1.6
+      zod:
+        specifier: 'catalog:'
+        version: 4.3.5
     devDependencies:
       '@types/better-sqlite3':
         specifier: 'catalog:'
@@ -2483,6 +2486,9 @@ importers:
       '@proj-airi/i18n':
         specifier: workspace:^
         version: link:../i18n
+      '@proj-airi/mcp-hub':
+        specifier: workspace:^
+        version: link:../mcp-hub
       '@proj-airi/model-driver-lipsync':
         specifier: workspace:^
         version: link:../model-driver-lipsync

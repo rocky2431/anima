@@ -1,0 +1,125 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260220-220300-feat-task-17-mcp-panel-server-iter1",
+  "timestamp": "2026-02-20T22:10:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/anima-mcp-server.ts",
+      "packages/mcp-hub/src/recommended-servers.ts",
+      "packages/mcp-hub/src/index.ts",
+      "packages/stage-ui/src/stores/modules/mcp.ts"
+    ],
+    "total_lines_analyzed": 372,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 4, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "missed-discriminated-union",
+      "title": "RecommendedMcpServer uses flat optional fields instead of discriminated union",
+      "file": "packages/mcp-hub/src/recommended-servers.ts",
+      "line": 6,
+      "line_end": 19,
+      "code_snippet": "export interface RecommendedMcpServer {\n  transport: TransportType\n  command?: string\n  args?: string[]\n  url?: string\n}",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 5/10, Enforcement: 2/10 (Aggregate: 3.8). RecommendedMcpServer has transport-specific fields (command/args for stdio, url for http/sse) all as optional on a single flat interface. This allows illegal states: a stdio server with url but no command, or an http server with command but no url. The codebase already has the correct pattern -- McpServerConfig in types.ts is a proper discriminated union on the transport field. RecommendedMcpServer should follow the same pattern.",
+      "suggestion": "Model as discriminated union:\n\ninterface RecommendedStdioServer { transport: 'stdio'; command: string; args?: string[] }\ninterface RecommendedHttpServer { transport: 'http' | 'sse'; url: string }\ntype RecommendedMcpServerTransport = RecommendedStdioServer | RecommendedHttpServer\ntype RecommendedMcpServer = { id: string; name: string; description: string; category: RecommendedCategory; official?: boolean } & RecommendedMcpServerTransport",
+      "claude_md_rule": "architecture.make_illegal_states_unrepresentable"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "missed-discriminated-union",
+      "title": "McpServerUiConfig duplicates flat optional field anti-pattern",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 12,
+      "line_end": 21,
+      "code_snippet": "export interface McpServerUiConfig {\n  id: string\n  transport: TransportType\n  command?: string\n  args?: string[]\n  url?: string\n  headers?: Record<string, string>\n}",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.3). McpServerUiConfig repeats the same flat optional fields pattern as RecommendedMcpServer. A stdio server can have url/headers, and an http server can have command/args. The toBackendConfig() function at line 82-88 already branches on transport type, proving the discriminated union is the natural shape. Without the union, toBackendConfig must use fallback values (command ?? '', url ?? '') which mask configuration errors.",
+      "suggestion": "Align with McpServerConfig's discriminated union pattern. Define StdioUiConfig, SseUiConfig, HttpUiConfig variants discriminated on transport, then union them. This makes toBackendConfig() a type-safe exhaustive switch and removes the need for ?? '' fallbacks.",
+      "claude_md_rule": "architecture.make_illegal_states_unrepresentable"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "MemoryResult.category and .sourceDate are plain string types",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 7,
+      "line_end": 12,
+      "code_snippet": "export interface MemoryResult {\n  content: string\n  importance: number\n  category: string\n  sourceDate: string\n}",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 4/10, Enforcement: 2/10 (Aggregate: 3.5). MemoryResult.category should use the same literal union or type alias as MemoryEntry.category from the memory pipeline (documented as having known values: 'fact', 'preference', 'relationship', 'event', etc.). sourceDate should at minimum be documented as ISO date string or use a branded type. importance is a bare number with no range constraint. These are domain concepts being represented as raw primitives.",
+      "suggestion": "Import or re-export the category type from the memory pipeline types. Add JSDoc @example for sourceDate format at minimum. Consider defining a MemoryImportance branded type or at least a range comment (0-1).",
+      "claude_md_rule": "type-design.primitive_obsession"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "AnimaUserContext.relationships[].type and category are plain strings",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 17,
+      "line_end": 22,
+      "code_snippet": "export interface AnimaUserContext {\n  intimacyLevel: number\n  profileFacts: string[]\n  relationships: Array<{ name: string, type: string }>\n  recentTopics: string[]\n}",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 6/10, Enforcement: 2/10 (Aggregate: 4.3). The relationships array uses inline { name: string, type: string } where type should reference the Relationship.relationshipType from the memory pipeline (which itself was flagged as plain string but has documented values). The intimacyLevel is a bare number with no documentation of valid range (0-100? 0-1?). This type is a contract for external MCP clients so precision matters.",
+      "suggestion": "Extract the inline relationship type to a named interface (e.g., RelationshipSummary). Reference or import the type literal union from persona-engine/memory-pipeline. Add JSDoc with @minimum/@maximum for intimacyLevel.",
+      "claude_md_rule": "type-design.primitive_obsession"
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "mutable-reference-leak",
+      "title": "getRecommendedServers() returns mutable reference to module constant",
+      "file": "packages/mcp-hub/src/recommended-servers.ts",
+      "line": 87,
+      "line_end": 89,
+      "code_snippet": "export function getRecommendedServers(): RecommendedMcpServer[] {\n  return RECOMMENDED_SERVERS\n}",
+      "description": "Encapsulation: 3/10, Expression: 5/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.0). The function returns a direct reference to the module-level RECOMMENDED_SERVERS array. Any caller can push/pop/mutate entries, corrupting the shared constant for all consumers. The RECOMMENDED_SERVERS array is not declared as readonly and its type is mutable McpServerUiConfig[]. This is the same mutable-reference-leak pattern seen in SkillRegistry.getById(), CronService.get()/list(), and ChannelRegistry.getByPlatform().",
+      "suggestion": "Declare RECOMMENDED_SERVERS as `as const satisfies readonly RecommendedMcpServer[]` and change the return type to `readonly RecommendedMcpServer[]`. Alternatively, return a shallow copy: `return [...RECOMMENDED_SERVERS]`.",
+      "claude_md_rule": "type-design.encapsulation"
+    },
+    {
+      "id": "review-types-006",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "RecommendedMcpServer.category is plain string, known values exist",
+      "file": "packages/mcp-hub/src/recommended-servers.ts",
+      "line": 10,
+      "line_end": 10,
+      "code_snippet": "  category: string",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.3). The category field is plain string but only three values are used in the constant data: 'utilities', 'search', 'development'. A literal union would make the type self-documenting and enable exhaustive category filtering in UI components.",
+      "suggestion": "Define: type RecommendedCategory = 'utilities' | 'search' | 'development' | 'data' and use it for the category field. This enables type-safe category-based filtering in the UI store.",
+      "claude_md_rule": "type-design.primitive_obsession"
+    }
+  ],
+  "positive_observations": [
+    "AnimaMcpServerDeps uses proper dependency injection interfaces (AnimaMemoryAccess, AnimaContextAccess) that decouple the MCP server from concrete implementations -- good Imperative Shell boundary design",
+    "createAnimaMcpServer follows the established factory function pattern (like createAnimaOrchestrator, createEveningPipeline) consistently",
+    "McpServerStatus is a proper 3-value literal union ('connected' | 'disconnected' | 'error') -- good pattern",
+    "toBackendConfig() correctly bridges the UI config to the backend McpServerConfigInput discriminated union, showing awareness of the type gap",
+    "The store properly uses nanoid for ID generation rather than raw strings or sequential numbers"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

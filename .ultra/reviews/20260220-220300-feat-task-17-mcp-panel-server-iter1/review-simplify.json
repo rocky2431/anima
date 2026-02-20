@@ -1,0 +1,78 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260220-220300-feat-task-17-mcp-panel-server-iter1",
+  "timestamp": "2026-02-20T22:05:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/mcp-hub/src/anima-mcp-server.ts",
+      "packages/mcp-hub/src/recommended-servers.ts",
+      "packages/stage-ui/src/stores/modules/mcp.ts",
+      "packages/stage-ui/src/components/scenarios/settings/McpManager.vue",
+      "packages/stage-ui/src/composables/use-modules-list.ts"
+    ],
+    "total_lines_analyzed": 854,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 1, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "handleAdd duplicates server config construction for add vs edit",
+      "file": "packages/stage-ui/src/components/scenarios/settings/McpManager.vue",
+      "line": 39,
+      "line_end": 65,
+      "code_snippet": "if (editingServer.value) {\n    mcpStore.updateServer(editingServer.value.id, {\n      name: newServerName.value,\n      transport: newServerTransport.value,\n      command: newServerTransport.value === 'stdio' ? newServerCommand.value : undefined,\n      ...\n    })\n  } else {\n    mcpStore.addServer({\n      name: newServerName.value,\n      transport: newServerTransport.value,\n      enabled: true,\n      command: newServerTransport.value === 'stdio' ? newServerCommand.value : undefined,\n      ...\n    })\n  }",
+      "description": "The handleAdd function builds an almost identical config object in both the add and edit branches. The only difference is the edit branch omits 'enabled: true'. The transport-conditional field assignments (command/args/url) are duplicated verbatim, which means any future field changes need to be applied in two places.",
+      "suggestion": "BEFORE:\nif (editingServer.value) {\n  mcpStore.updateServer(editingServer.value.id, {\n    name: newServerName.value,\n    transport: newServerTransport.value,\n    command: newServerTransport.value === 'stdio' ? newServerCommand.value : undefined,\n    args: newServerTransport.value === 'stdio' ? newServerArgs.value.split(' ').filter(Boolean) : undefined,\n    url: newServerTransport.value !== 'stdio' ? newServerUrl.value : undefined,\n  })\n} else {\n  mcpStore.addServer({\n    name: newServerName.value,\n    transport: newServerTransport.value,\n    enabled: true,\n    command: newServerTransport.value === 'stdio' ? newServerCommand.value : undefined,\n    args: newServerTransport.value === 'stdio' ? newServerArgs.value.split(' ').filter(Boolean) : undefined,\n    url: newServerTransport.value !== 'stdio' ? newServerUrl.value : undefined,\n  })\n}\n\nAFTER:\nconst serverFields = {\n  name: newServerName.value,\n  transport: newServerTransport.value,\n  command: newServerTransport.value === 'stdio' ? newServerCommand.value : undefined,\n  args: newServerTransport.value === 'stdio' ? newServerArgs.value.split(' ').filter(Boolean) : undefined,\n  url: newServerTransport.value !== 'stdio' ? newServerUrl.value : undefined,\n}\n\nif (editingServer.value) {\n  mcpStore.updateServer(editingServer.value.id, serverFields)\n} else {\n  mcpStore.addServer({ ...serverFields, enabled: true })\n}\n\nWHY: Eliminates near-duplicate config construction. Future transport-conditional field changes only need updating in one place."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "simplification",
+      "subcategory": "lookup-table",
+      "title": "getStatusColor and getStatusText use if-chains over lookup maps",
+      "file": "packages/stage-ui/src/components/scenarios/settings/McpManager.vue",
+      "line": 85,
+      "line_end": 101,
+      "code_snippet": "function getStatusColor(id: string): string {\n  const status = mcpStore.getStatus(id)\n  if (status === 'connected') return 'bg-green-500'\n  if (status === 'error') return 'bg-red-500'\n  return 'bg-neutral-400'\n}\n\nfunction getStatusText(id: string): string {\n  const status = mcpStore.getStatus(id)\n  if (status === 'connected') return t('...connected')\n  if (status === 'error') return t('...error')\n  return t('...disconnected')\n}",
+      "description": "Two functions follow the same pattern: get status, then switch over its three possible values. While each function individually is simple (cyclomatic complexity 3), the duplication of the status-retrieval and branching pattern could be consolidated into a single lookup-based approach. However, the i18n calls for text make a pure lookup slightly awkward, so this is a minor suggestion.",
+      "suggestion": "BEFORE:\nfunction getStatusColor(id: string): string {\n  const status = mcpStore.getStatus(id)\n  if (status === 'connected') return 'bg-green-500'\n  if (status === 'error') return 'bg-red-500'\n  return 'bg-neutral-400'\n}\n\nAFTER:\nconst STATUS_COLORS: Record<McpServerStatus, string> = {\n  connected: 'bg-green-500',\n  error: 'bg-red-500',\n  disconnected: 'bg-neutral-400',\n}\n\nfunction getStatusColor(id: string): string {\n  return STATUS_COLORS[mcpStore.getStatus(id)]\n}\n\nWHY: Lookup table makes the mapping explicit and eliminates branching. Adding a new status value becomes a single line addition rather than a new if-clause."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "computed-over-static",
+      "title": "recommendedServers computed wraps a pure function with no reactivity",
+      "file": "packages/stage-ui/src/stores/modules/mcp.ts",
+      "line": 29,
+      "line_end": 29,
+      "code_snippet": "const recommendedServers = computed<RecommendedMcpServer[]>(() => getRecommendedServers())",
+      "description": "getRecommendedServers() returns a static array with no reactive dependencies. Wrapping it in computed() adds reactivity overhead for a value that never changes. A plain const assignment would be simpler and more honest about the data's nature.",
+      "suggestion": "BEFORE:\nconst recommendedServers = computed<RecommendedMcpServer[]>(() => getRecommendedServers())\n\nAFTER:\nconst recommendedServers = getRecommendedServers()\n\nWHY: The underlying data is static (a hardcoded array). Using computed implies the value might change reactively, which is misleading. A direct assignment is simpler and avoids unnecessary computed overhead. Note: if the store exposes it for storeToRefs, wrapping in ref() is acceptable, but computed is unnecessary."
+    }
+  ],
+  "positive_observations": [
+    "All functions are well under the 50-line threshold; the largest (handleAdd) is 27 lines",
+    "Maximum nesting depth across all files is 2 levels -- no deep nesting found",
+    "Guard clauses and early returns are used consistently (e.g., addFromRecommended, handleAdd validation)",
+    "Clean separation: data definitions (recommended-servers.ts), store logic (mcp.ts), and UI (McpManager.vue) are properly isolated",
+    "The anima-mcp-server.ts uses dependency injection via the deps parameter rather than hard-coupling to implementations"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

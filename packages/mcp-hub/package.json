@@ -39,7 +39,8 @@
     "@ai-sdk/mcp": "catalog:",
     "@modelcontextprotocol/sdk": "catalog:",
     "better-sqlite3": "catalog:",
-    "nanoid": "catalog:"
+    "nanoid": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/better-sqlite3": "catalog:",
