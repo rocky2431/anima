@@ -5,6 +5,7 @@ export default defineConfig({
     projects: [
       'apps/server',
       'apps/stage-tamagotchi',
+      'packages/channels-extra',
       'packages/context-engine',
       'packages/cron-service',
       'packages/mcp-hub',

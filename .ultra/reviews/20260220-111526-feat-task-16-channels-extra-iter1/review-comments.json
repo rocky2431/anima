@@ -1,0 +1,95 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260220-111526-feat-task-16-channels-extra-iter1",
+  "timestamp": "2026-02-20T11:20:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/types.ts",
+      "packages/channels-extra/src/channel-registry.ts",
+      "packages/channels-extra/src/slack/index.ts",
+      "packages/channels-extra/src/whatsapp/index.ts",
+      "packages/channels-extra/src/__tests__/slack/slack-channel.test.ts",
+      "packages/channels-extra/src/__tests__/whatsapp/whatsapp-channel.test.ts"
+    ],
+    "total_lines_analyzed": 809,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 4, "P3": 0 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "No JSDoc on any exported type in types.ts",
+      "file": "packages/channels-extra/src/types.ts",
+      "line": 1,
+      "line_end": 52,
+      "code_snippet": "export type ChannelStatus = 'disconnected' | 'connecting' | 'connected' | 'error'\nexport interface Channel {\n  readonly platform: ChannelPlatform\n  connect(): Promise<void>\n  ...\n}",
+      "description": "The types.ts file exports 9 public types (ChannelStatus, ChannelPlatform, MessageContent, IncomingMessage, MessageHandler, Channel, WhatsAppConfig, SlackConfig, ChannelConfig, ChannelRegistryEntry) with zero JSDoc documentation. This is the contract file consumed by all channel implementations and the registry. Project convention (confirmed in CLAUDE.md agent memory) is JSDoc on all exported interfaces and functions. The Channel interface in particular has methods like sendMessage(target, content) where 'target' semantics vary by platform (Slack channel ID vs WhatsApp JID) -- this needs documentation.",
+      "suggestion": "Add JSDoc to each exported interface and type alias. At minimum, document Channel (the core contract), IncomingMessage (the canonical message shape), WhatsAppConfig/SlackConfig (config fields like authDir, rateLimitPerMinute), and the target parameter semantics on Channel.sendMessage.",
+      "claude_md_rule": "code_conventions.jsdoc"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "No JSDoc on ChannelRegistry class or its public methods",
+      "file": "packages/channels-extra/src/channel-registry.ts",
+      "line": 8,
+      "line_end": 89,
+      "code_snippet": "export class ChannelRegistry {\n  private entries = new Map<ChannelPlatform, ChannelRegistryEntry>()\n  register(channel: Channel, config: ChannelConfig): void {\n  connectAll(): Promise<Map<ChannelPlatform, ChannelOperationResult>> {\n  onAnyMessage(handler: MessageHandler): () => void {",
+      "description": "ChannelRegistry is the central orchestrator for all channel instances. It has 7 public members (register, unregister, getByPlatform, listAll, connectAll, disconnectAll, onAnyMessage) and the exported ChannelOperationResult interface -- all without any JSDoc. Key behaviors like 'register throws if platform already registered' and 'connectAll returns per-platform success/failure results' are non-obvious from signatures alone and deserve documentation.",
+      "suggestion": "Add JSDoc to the class declaration explaining its role as the central channel orchestrator, and to each public method. Especially document: (1) register() throws on duplicate platform, (2) connectAll()/disconnectAll() return per-platform results and do not throw, (3) onAnyMessage() returns an unsubscribe function.",
+      "claude_md_rule": "code_conventions.jsdoc"
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "No JSDoc on SlackChannel class or its public API",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 28,
+      "line_end": 129,
+      "code_snippet": "export class SlackChannel implements Channel {\n  readonly platform = 'slack' as const\n  constructor(config: SlackConfig, deps?: SlackChannelDeps) {\n  async connect(): Promise<void> {\n  async sendMessage(target: string, content: MessageContent): Promise<void> {",
+      "description": "SlackChannel is an exported public class implementing the Channel interface for the Slack platform. It has no JSDoc on the class, constructor, or any method. The dependency injection pattern via SlackChannelDeps (optional constructor parameter) is non-obvious and needs documentation explaining when/why deps would be provided (testing vs production usage with @slack/bolt).",
+      "suggestion": "Add JSDoc to the class explaining it wraps @slack/bolt. Document the constructor's deps parameter: 'Pass SlackChannelDeps for testing; omit for production where bolt App is created internally.' Document that sendMessage target is a Slack channel ID (e.g., 'C12345').",
+      "claude_md_rule": "code_conventions.jsdoc"
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "No JSDoc on WhatsAppChannel class or its public API",
+      "file": "packages/channels-extra/src/whatsapp/index.ts",
+      "line": 36,
+      "line_end": 151,
+      "code_snippet": "export class WhatsAppChannel implements Channel {\n  readonly platform = 'whatsapp' as const\n  constructor(config: WhatsAppConfig, deps?: WhatsAppChannelDeps) {\n  async sendMessage(target: string, content: MessageContent): Promise<void> {\n  private enforceRateLimit(): void {",
+      "description": "WhatsAppChannel is an exported public class implementing Channel for WhatsApp via @whiskeysockets/baileys. No JSDoc on the class, constructor, or methods. The rate limiting behavior (enforceRateLimit is called on every sendMessage, throws when limit exceeded) is a critical contract that callers need to know about. The target parameter for sendMessage expects a WhatsApp JID format (e.g., '12345678901@s.whatsapp.net') which is platform-specific and not discoverable from the type signature alone.",
+      "suggestion": "Add JSDoc to the class explaining it wraps @whiskeysockets/baileys. Document: (1) constructor deps parameter for DI/testing, (2) sendMessage target expects WhatsApp JID format, (3) sendMessage throws when rate limit (configured via rateLimitPerMinute) is exceeded, (4) enforceRateLimit uses a sliding window of 60 seconds.",
+      "claude_md_rule": "code_conventions.jsdoc"
+    }
+  ],
+  "positive_observations": [
+    "Test Double rationale comments in both test files follow the CLAUDE.md convention exactly, providing clear justification for why external services cannot use real infrastructure",
+    "Zero forbidden patterns (TODO/FIXME/HACK/PLACEHOLDER/TEMP) found across all 6 files",
+    "Code is clean and self-documenting at the implementation level -- method names and parameter names are descriptive"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

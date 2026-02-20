@@ -1,0 +1,151 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260220-111526-feat-task-16-channels-extra-iter1",
+  "timestamp": "2026-02-20T11:20:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/types.ts",
+      "packages/channels-extra/src/channel-registry.ts",
+      "packages/channels-extra/src/slack/index.ts",
+      "packages/channels-extra/src/whatsapp/index.ts",
+      "packages/channels-extra/src/index.ts"
+    ],
+    "total_lines_analyzed": 441,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 8,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 4, "P3": 2 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "mutable-reference-leak",
+      "title": "getByPlatform() leaks mutable ChannelRegistryEntry reference",
+      "file": "packages/channels-extra/src/channel-registry.ts",
+      "line": 34,
+      "line_end": 36,
+      "code_snippet": "getByPlatform(platform: ChannelPlatform): ChannelRegistryEntry | undefined {\n    return this.entries.get(platform)\n  }",
+      "description": "Encapsulation: 7/10, Expression: 6/10, Usefulness: 6/10, Enforcement: 5/10 (Aggregate: 6.0). getByPlatform() returns the internal Map entry directly, allowing callers to mutate the channel, config, and registeredAt fields. This is the same mutable-reference-leak pattern previously flagged as P1 in SkillRegistry (Task 10) and CronService (Task 12). listAll() similarly returns entries with mutable references, though it at least shallow-copies the array.",
+      "suggestion": "Return a frozen snapshot or a readonly-typed copy: `getByPlatform(platform: ChannelPlatform): Readonly<ChannelRegistryEntry> | undefined`. Better yet, make ChannelRegistryEntry fields readonly in the interface definition and return a spread copy: `return entry ? { ...entry } : undefined`.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "config-platform-mismatch",
+      "title": "register() does not validate channel.platform matches config.platform",
+      "file": "packages/channels-extra/src/channel-registry.ts",
+      "line": 12,
+      "line_end": 28,
+      "code_snippet": "register(channel: Channel, config: ChannelConfig): void {\n    if (this.entries.has(channel.platform)) {\n      throw new Error(`Channel for platform \"${channel.platform}\" is already registered`)\n    }\n    this.entries.set(channel.platform, { channel, config, registeredAt: new Date() })",
+      "description": "Encapsulation: 7/10, Expression: 5/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 5.0). ChannelConfig is a discriminated union on `platform`, and Channel has readonly `platform`. But register() accepts any Channel + any ChannelConfig combination without verifying they agree on the platform discriminant. A caller could register a WhatsAppChannel with a SlackConfig. The type system cannot prevent this because the parameters are independent -- this is a missing constructor/factory invariant.",
+      "suggestion": "Add a runtime guard at the top of register(): `if (channel.platform !== config.platform) { throw new Error('Channel platform does not match config platform') }`. Alternatively, make register() generic: `register<P extends ChannelPlatform>(channel: Channel & { platform: P }, config: ChannelConfig & { platform: P })`.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "Unsafe `as BaileysUpsertEvent` cast on unknown event data",
+      "file": "packages/channels-extra/src/whatsapp/index.ts",
+      "line": 111,
+      "line_end": 112,
+      "code_snippet": "this.socket.ev.on('messages.upsert', (data: unknown) => {\n      const event = data as BaileysUpsertEvent",
+      "description": "Encapsulation: 7/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.75). The socket event handler receives `unknown` data and immediately casts it to `BaileysUpsertEvent` without validation. If the Baileys library changes its event shape or emits malformed data, this cast will silently produce incorrect types. The code then accesses nested properties (msg.key.id, msg.message.conversation) which would throw at runtime on shape mismatch.",
+      "suggestion": "Add a runtime type guard before accessing fields: validate that `data` is an object with a `messages` array and `type` string. A minimal guard: `function isBaileysUpsertEvent(data: unknown): data is BaileysUpsertEvent { return typeof data === 'object' && data !== null && 'messages' in data && Array.isArray((data as any).messages) }`."
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "Unsafe `as SlackMessage` cast on Bolt message event",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 108,
+      "line_end": 109,
+      "code_snippet": "this.app.message(async ({ message }) => {\n      const slackMsg = message as SlackMessage",
+      "description": "Encapsulation: 7/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.75). The Bolt message handler casts the incoming message to SlackMessage without validation. Bolt's message event can contain various subtypes (message_changed, message_deleted, bot_message, etc.) that do not conform to SlackMessage shape. The `text`, `user`, and `channel` fields may be undefined on certain subtypes, causing runtime errors.",
+      "suggestion": "Add a type guard to validate the message shape before processing: check that `text`, `user`, `channel`, and `ts` are present strings. At minimum: `if (!('text' in message) || !('user' in message) || !('ts' in message)) return`."
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "missing-readonly",
+      "title": "IncomingMessage and ChannelRegistryEntry lack readonly modifiers",
+      "file": "packages/channels-extra/src/types.ts",
+      "line": 9,
+      "line_end": 18,
+      "code_snippet": "export interface IncomingMessage {\n  id: string\n  platform: ChannelPlatform\n  channelId: string\n  senderId: string\n  senderName?: string\n  text: string\n  timestamp: Date\n  raw?: unknown\n}",
+      "description": "Encapsulation: 5/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 5/10 (Aggregate: 5.25). IncomingMessage represents an immutable event -- once received, its fields should never change. All fields are mutable, allowing handlers to accidentally modify message properties as they propagate through the handler chain (ChannelRegistry fans out to globalHandlers). Similarly, ChannelRegistryEntry (line 47-51) has mutable fields. This is a recurring codebase pattern but particularly important here because messages fan out to multiple handlers.",
+      "suggestion": "Add `readonly` to all IncomingMessage fields: `readonly id: string`, `readonly platform: ChannelPlatform`, etc. For ChannelRegistryEntry, at minimum mark `config` and `registeredAt` as readonly. Consider `Readonly<IncomingMessage>` at handler boundaries."
+    },
+    {
+      "id": "review-types-006",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "missing-constructor-validation",
+      "title": "SlackChannel/WhatsAppChannel constructors accept config without validation",
+      "file": "packages/channels-extra/src/slack/index.ts",
+      "line": 37,
+      "line_end": 40,
+      "code_snippet": "constructor(config: SlackConfig, deps?: SlackChannelDeps) {\n    this.config = config\n    this.deps = deps ?? null\n  }",
+      "description": "Encapsulation: 6/10, Expression: 5/10, Usefulness: 5/10, Enforcement: 2/10 (Aggregate: 4.5). Both channel constructors accept config objects without validating critical fields. SlackConfig's botToken and appToken could be empty strings. WhatsAppConfig's authDir could be empty. These are external inputs (from user configuration) that should be validated at construction time. No Valibot schema validation is applied (consistent codebase pattern but still worth flagging for Imperative Shell boundary).",
+      "suggestion": "Add constructor validation: `if (!config.botToken?.trim()) throw new Error('SlackConfig.botToken is required')`. Better yet, define Valibot schemas for WhatsAppConfig and SlackConfig and validate at construction: `const validated = v.parse(SlackConfigSchema, config)`. This follows the project's stated validation standard.",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-types-007",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "result-type-design",
+      "title": "ChannelOperationResult uses boolean+optional error instead of discriminated union",
+      "file": "packages/channels-extra/src/channel-registry.ts",
+      "line": 3,
+      "line_end": 6,
+      "code_snippet": "export interface ChannelOperationResult {\n  success: boolean\n  error?: Error\n}",
+      "description": "Encapsulation: N/A, Expression: 4/10, Usefulness: 5/10, Enforcement: N/A (Aggregate: 4.5 for expression). This type allows the illegal state `{ success: true, error: new Error('...') }` and `{ success: false, error: undefined }`. A discriminated union would make these impossible. This is the boolean-flag-plus-optional-field anti-pattern previously fixed in persona-engine's TriggerResult.",
+      "suggestion": "Use a discriminated union: `type ChannelOperationResult = { success: true } | { success: false; error: Error }`. This makes illegal states unrepresentable and enables TypeScript narrowing on the `success` discriminant."
+    },
+    {
+      "id": "review-types-008",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "IncomingMessage.id is plain string across both platforms",
+      "file": "packages/channels-extra/src/types.ts",
+      "line": 10,
+      "code_snippet": "  id: string",
+      "description": "Encapsulation: N/A, Expression: 4/10, Usefulness: 4/10, Enforcement: N/A (Aggregate: 4.0 for expression). IncomingMessage.id is typed as plain `string` but carries platform-specific semantics: Slack uses the `ts` timestamp string (e.g., '1234567890.123456'), WhatsApp uses Baileys' key.id. A branded type like `MessageId` or at minimum documenting the format would prevent accidental comparison across platforms and improve domain clarity. Same applies to `channelId` and `senderId`.",
+      "suggestion": "Consider a branded type: `type MessageId = string & { readonly __brand: 'MessageId' }` or at minimum add JSDoc documenting the platform-specific format. This is low severity for a walking skeleton but worth tracking for when cross-platform message correlation becomes needed."
+    }
+  ],
+  "positive_observations": [
+    "ChannelConfig (WhatsAppConfig | SlackConfig) is a proper discriminated union on the `platform` field -- good pattern for type-safe config handling",
+    "ChannelStatus and ChannelPlatform use literal unions instead of string enums -- consistent with codebase conventions",
+    "Channel interface exposes readonly platform and status with methods for mutation -- good encapsulation at the interface level",
+    "SlackChannel and WhatsAppChannel use private fields with getter-based status access and a private setStatus() method -- state mutation is controlled",
+    "WhatsAppChannel includes rate limiting as domain behavior within the type -- not purely anemic",
+    "Dependency injection via constructor deps parameter enables testability without relying on module-level mocks"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}
