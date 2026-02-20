@@ -18,10 +18,19 @@ export { SmartTip } from './consumption/smart-tip'
 export type { SmartTipOptions } from './consumption/smart-tip'
 export { cosineSimilarity, SmartTodo } from './consumption/smart-todo'
 export type { SmartTodoOptions } from './consumption/smart-todo'
+export { computeImportance, ContextMerger, deduplicateStrings, mergeKeywords, selectTopSources } from './processing/context-merger'
+export type { ContextMergerOptions } from './processing/context-merger'
 export { DocumentProcessor } from './processing/document-processor'
+export { EntityExtractor } from './processing/entity-extractor'
 export { ScreenshotProcessor } from './processing/screenshot-processor'
 export type { ScreenshotUnderstanding } from './processing/screenshot-processor'
 export { chunkText } from './processing/text-chunker'
+export type {
+  ActivityType,
+  ContextSource,
+  ExtractedEntities,
+  MergedContext,
+} from './processing/types'
 export { DocumentStore } from './storage/document-store'
 export { MemoryExtractor } from './storage/memory-extractor'
 export type { MemoryExtractorOptions } from './storage/memory-extractor'
