@@ -191,6 +191,30 @@
       "p1": 9,
       "total": 28,
       "parent": null
+    },
+    {
+      "id": "20260221-005723-feat-task-20-email-feishu-dingtalk-channels-iter1-iter1",
+      "branch": "feat/task-20-email-feishu-dingtalk-channels-iter1",
+      "iteration": 1,
+      "mode": "all",
+      "timestamp": "2026-02-21T00:57:23Z",
+      "verdict": "REQUEST_CHANGES",
+      "p0": 1,
+      "p1": 13,
+      "total": 42,
+      "parent": null
+    },
+    {
+      "id": "20260221-011000-feat-task-20-email-feishu-dingtalk-channels-iter1-iter2",
+      "branch": "feat/task-20-email-feishu-dingtalk-channels-iter1",
+      "iteration": 2,
+      "mode": "recheck",
+      "timestamp": "2026-02-21T01:20:00Z",
+      "verdict": "APPROVE",
+      "p0": 0,
+      "p1": 0,
+      "total": 5,
+      "parent": "20260221-005723-feat-task-20-email-feishu-dingtalk-channels-iter1-iter1"
     }
   ]
 }
