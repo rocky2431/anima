@@ -1,0 +1,94 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260220-143100-feat-task-15-integration-checkpoint-iter1",
+  "timestamp": "2026-02-20T14:35:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts"
+    ],
+    "total_lines_analyzed": 509,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 2, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "error-path-missing",
+      "title": "Error path via onError callback is never tested",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts",
+      "line": 1,
+      "line_end": 380,
+      "code_snippet": "const handleError = config?.onError ?? (() => {})\n// ... in cron handler:\ncatch (cause) {\n  handleError(new Error('Evening pipeline cron handler failed', { cause }))\n}",
+      "description": "The production code (evening-pipeline.ts lines 106-110) catches errors in the cron handler and forwards them to the onError callback. This error path is never tested. There is no test that verifies: (1) what happens when reportGenerator.generate() throws, (2) what happens when memoryExtractor.extract() throws, (3) what happens when memoryOrchestrator.persistExtractionResults() throws, or (4) that the onError callback receives the correct wrapped Error with cause. The cron handler silently swallows errors via the default no-op handleError, meaning a broken pipeline would go unnoticed in production. This is a critical behavioral gap for an orchestration module.",
+      "suggestion": "Add a test that constructs a StubLlmProvider that throws, triggers the pipeline via cron, and asserts onError is called with an Error containing the correct message 'Evening pipeline cron handler failed' and the original cause. Example:\n\nit('calls onError when reportGenerator throws during cron execution', async () => {\n  const failingLlm = new StubLlmProvider();\n  failingLlm.generateStructured = async () => { throw new Error('LLM API timeout') };\n  const errors: Error[] = [];\n  const deps = { ...baseDeps, reportGenerator: new ReportGenerator({ llm: failingLlm, persona: TEST_PERSONA }) };\n  const pipeline = createEveningPipeline(deps, { onError: (e) => errors.push(e) });\n  pipeline.recordActivity(SAMPLE_ACTIVITIES[0]);\n  // trigger via cron.at and wait\n  expect(errors.length).toBe(1);\n  expect(errors[0].message).toBe('Evening pipeline cron handler failed');\n  expect(errors[0].cause).toBeInstanceOf(Error);\n});",
+      "claude_md_rule": "testing.coverage.critical_paths"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "method-untested",
+      "title": "scheduleDaily() method is never tested",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts",
+      "line": 1,
+      "line_end": 380,
+      "code_snippet": "scheduleDaily(cronExpression: string): string {\n  return deps.cronService.cron(cronExpression, {\n    handler: EVENING_HANDLER_NAME,\n    name: 'Evening Summary',\n  })\n}",
+      "description": "The EveningPipeline interface exposes three public methods: recordActivity, trigger, and scheduleDaily. The scheduleDaily method (evening-pipeline.ts lines 122-127) delegates to cronService.cron() with the correct handler name and is a key part of the public contract. No test calls scheduleDaily or verifies: (1) it returns a valid schedule ID, (2) it correctly wires the 'evening-summary' handler, or (3) that a cron expression like '0 21 * * *' actually triggers the pipeline handler. While the first test uses cronService.at() for one-time scheduling, cronService.cron() for recurring schedules is a different code path that is completely untested.",
+      "suggestion": "Add a test that calls pipeline.scheduleDaily('* * * * * *') (every second for test speed), waits briefly, and verifies the full pipeline handler fires. Assert the returned schedule ID is a non-empty string. Example:\n\nit('scheduleDaily wires cron to the evening pipeline handler', async () => {\n  const events: EveningPipelineEvent[] = [];\n  const pipeline = createEveningPipeline(deps, { onEvent: (e) => events.push(e) });\n  pipeline.recordActivity(SAMPLE_ACTIVITIES[0]);\n  const scheduleId = pipeline.scheduleDaily('* * * * * *');\n  expect(typeof scheduleId).toBe('string');\n  expect(scheduleId.length).toBeGreaterThan(0);\n  await new Promise(r => setTimeout(r, 2000));\n  expect(events.length).toBeGreaterThanOrEqual(3);\n});",
+      "claude_md_rule": "testing.coverage.critical_paths"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "test-design",
+      "title": "First test does not exercise createEveningPipeline at all",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts",
+      "line": 179,
+      "line_end": 206,
+      "code_snippet": "cronService.registerHandler('evening-summary', async () => {\n  handlerCalled = true\n  generatedReport = await reportGenerator.generate(SAMPLE_ACTIVITIES)\n})",
+      "description": "The first test 'triggers evening-summary handler via CronService and produces a report' (lines 179-206) manually registers its own handler and manually calls reportGenerator.generate(). It never calls createEveningPipeline(). This test proves that CronService and ReportGenerator work individually, but it does not test the pipeline's integration wiring. Furthermore, if createEveningPipeline were called in the same test, it would register a handler with the same name 'evening-summary', creating a conflict. The test is misleadingly named as it implies it tests the evening pipeline but actually tests lower-level components in isolation. The full pipeline test (line 285) covers this path correctly, making this test partially redundant while missing the actual integration.",
+      "suggestion": "Refactor this test to actually use createEveningPipeline and verify that the cron-triggered execution fires the pipeline's internal handler. Alternatively, rename it to clarify it tests CronService + ReportGenerator integration (not the EveningPipeline). A better test:\n\nit('fires evening pipeline handler when cron triggers', async () => {\n  const events: EveningPipelineEvent[] = [];\n  const pipeline = createEveningPipeline(deps, { onEvent: (e) => events.push(e) });\n  pipeline.recordActivity(SAMPLE_ACTIVITIES[0]);\n  cronService.fireHandler('evening-summary'); // or use cronService.at()\n  await new Promise(r => setTimeout(r, 2000));\n  expect(events.find(e => e.type === 'report-generated')).toBeDefined();\n});",
+      "claude_md_rule": "integration.integration_proof"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "boundary-missing",
+      "title": "trigger() error propagation not tested (no onError, throw reaches caller)",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts",
+      "line": 1,
+      "line_end": 380,
+      "code_snippet": "async trigger(): Promise<void> {\n  await executeEveningPipeline()\n}",
+      "description": "The trigger() method (evening-pipeline.ts line 118-120) calls executeEveningPipeline() directly without a try/catch, unlike the cron handler path which wraps errors in onError. This means errors from trigger() propagate as unhandled rejections to the caller. No test verifies this behavior: that trigger() rejects with the original error (not wrapped), allowing the caller to handle it. This is a behavioral difference between cron-triggered and manual-triggered execution that should be documented and tested.",
+      "suggestion": "Add a test that verifies trigger() rejects with the original error when an internal step fails:\n\nit('trigger() propagates errors directly to caller', async () => {\n  const failingLlm = new StubLlmProvider();\n  failingLlm.generateStructured = async () => { throw new Error('LLM down') };\n  const deps = { ...baseDeps, reportGenerator: new ReportGenerator({ llm: failingLlm, persona: TEST_PERSONA }) };\n  const pipeline = createEveningPipeline(deps);\n  await expect(pipeline.trigger()).rejects.toThrow('LLM down');\n});",
+      "claude_md_rule": "testing.coverage.error_paths"
+    }
+  ],
+  "positive_observations": [
+    "Real dependencies used throughout: DocumentStore with real SQLite DB in temp dirs, VectorStore with real filesystem, CronService with real SQLite, MemoryOrchestrator/Extractor/ReportGenerator with real instantiation -- no mock violations for repositories or domain objects",
+    "Test doubles for LLM and Embedding APIs are properly documented with '// Test Double rationale:' comments, correctly scoped to external services only",
+    "Full end-to-end integration test (line 285) exercises the complete pipeline path: collect activities -> report -> extract -> persist -> persona response -> vector recall, using createEveningPipeline factory with real wiring",
+    "Temp directory cleanup in afterEach prevents test pollution across runs",
+    "Empty activity boundary case is explicitly tested (line 350), verifying graceful handling of zero-activity days",
+    "Vector recall persistence is verified across logical 'day boundaries' (test at line 269), proving persist-then-recall round-trip works"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

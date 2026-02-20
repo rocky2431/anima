@@ -1,6 +1,7 @@
+import type { ActivityEvent } from '../types'
+
 import { describe, expect, it } from 'vitest'
 
-import type { ActivityEvent } from '../types'
 import { calculateContinuousWorkDuration } from '../activity/duration'
 
 const FIVE_MIN = 5 * 60 * 1000

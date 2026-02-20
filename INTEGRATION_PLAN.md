@@ -289,22 +289,22 @@ AI SDK 6 的 `@ai-sdk/mcp` 直接解决了 MCP 多服务器连接问题，省去
 ```typescript
 interface PersonaTemplate {
   identity: {
-    name: string               // 角色名
-    archetype: string          // "温暖学姐" | "酷酷研究员" | "活泼搭档"
-    coreValues: string[]       // ["真诚", "好奇", "守护"]
-    backstory: string          // 背景故事 (200字)
+    name: string // 角色名
+    archetype: string // "温暖学姐" | "酷酷研究员" | "活泼搭档"
+    coreValues: string[] // ["真诚", "好奇", "守护"]
+    backstory: string // 背景故事 (200字)
   }
   personality: {
-    warmth: number        // 0-100 温暖度
-    curiosity: number     // 0-100 好奇心
-    humor: number         // 0-100 幽默感
+    warmth: number // 0-100 温暖度
+    curiosity: number // 0-100 好奇心
+    humor: number // 0-100 幽默感
     assertiveness: number // 0-100 主见性
-    sensitivity: number   // 0-100 敏感度
+    sensitivity: number // 0-100 敏感度
   }
   speechStyle: {
     formality: 'casual' | 'balanced' | 'formal'
-    catchPhrases: string[]       // 口头禅
-    avoidPatterns: string[]      // 禁忌表达: ["作为AI我...", "我没有感情..."]
+    catchPhrases: string[] // 口头禅
+    avoidPatterns: string[] // 禁忌表达: ["作为AI我...", "我没有感情..."]
   }
 }
 ```
@@ -377,14 +377,14 @@ interface PersonaTemplate {
 ```typescript
 // persona-engine → Anima emotion bridge
 const PERSONA_TO_ANIMA_EMOTION: Record<PersonaState, EmotionPayload | EmotionPayload[]> = {
-  idle:    { name: Emotion.Neutral, intensity: 1.0 },
+  idle: { name: Emotion.Neutral, intensity: 1.0 },
   curious: { name: Emotion.Curious, intensity: 1.0 },
-  caring:  { name: Emotion.Happy, intensity: 0.4 },
+  caring: { name: Emotion.Happy, intensity: 0.4 },
   worried: { name: Emotion.Sad, intensity: 0.6 },
-  sleepy:  { name: Emotion.Neutral, intensity: 0.3 },  // 低强度 + 半闭眼
+  sleepy: { name: Emotion.Neutral, intensity: 0.3 }, // 低强度 + 半闭眼
   excited: [
-    { name: Emotion.Surprise, intensity: 0.8 },        // 先惊喜
-    { name: Emotion.Happy, intensity: 1.0 },            // 再开心
+    { name: Emotion.Surprise, intensity: 0.8 }, // 先惊喜
+    { name: Emotion.Happy, intensity: 1.0 }, // 再开心
   ],
 }
 ```
@@ -743,12 +743,12 @@ anima/
 // 在主进程 index.ts 中注册
 const mcpHub = injeca.provide('modules:mcp-hub', {
   dependsOn: { serverChannel },
-  build: () => setupMcpHub(config)             // MCP 注册表 + Client 管理
+  build: () => setupMcpHub(config) // MCP 注册表 + Client 管理
 })
 
 const skillsEngine = injeca.provide('modules:skills-engine', {
   dependsOn: { mcpHub },
-  build: () => setupSkillsEngine(config)       // Skills 加载器 + MCP 依赖检查
+  build: () => setupSkillsEngine(config) // Skills 加载器 + MCP 依赖检查
 })
 
 const contextEngine = injeca.provide('modules:context-engine', {
@@ -758,7 +758,7 @@ const contextEngine = injeca.provide('modules:context-engine', {
 
 const personaEngine = injeca.provide('modules:persona-engine', {
   dependsOn: { contextEngine, skillsEngine, serverChannel },
-  build: () => setupPersonaEngine(config)      // Skills 注入人设上下文
+  build: () => setupPersonaEngine(config) // Skills 注入人设上下文
 })
 
 const channelsExtra = injeca.provide('modules:channels-extra', {
@@ -778,7 +778,7 @@ const desktopShell = injeca.provide('modules:desktop-shell', {
 
 const animaMcpServer = injeca.provide('modules:anima-mcp-server', {
   dependsOn: { contextEngine, personaEngine, mcpHub },
-  build: () => setupAnimaMcpServer(config)      // Anima 自身暴露为 MCP Server
+  build: () => setupAnimaMcpServer(config) // Anima 自身暴露为 MCP Server
 })
 ```
 
@@ -811,17 +811,17 @@ interface McpServerConfig {
   id: string
   name: string
   transport: 'stdio' | 'sse' | 'streamable-http'
-  command?: string          // stdio: 命令 (如 "uvx mcp-server-git")
-  args?: string[]           // stdio: 参数
-  url?: string              // HTTP/SSE: 远程 URL
+  command?: string // stdio: 命令 (如 "uvx mcp-server-git")
+  args?: string[] // stdio: 参数
+  url?: string // HTTP/SSE: 远程 URL
   env?: Record<string, string>
-  autoConnect: boolean      // 启动时自动连接
+  autoConnect: boolean // 启动时自动连接
   enabled: boolean
 }
 
 class McpRegistry {
   private clients: Map<string, McpClient> = new Map()
-  private configs: McpServerConfig[]       // 持久化到 SQLite
+  private configs: McpServerConfig[] // 持久化到 SQLite
 
   // 连接所有已启用的 Server
   async connectAll(): Promise<void>
@@ -861,23 +861,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 const server = new McpServer({ name: 'anima-companion', version: '1.0.0' })
 
 // Resources: 暴露上下文数据
-server.resource('user-context', 'anima://context/current',
-  async () => ({ contents: [{ uri: 'anima://context/current', text: currentActivitySummary }] })
-)
-server.resource('memories', 'anima://memories/search/{query}',
-  async (uri, { query }) => ({ contents: await searchMemories(query) })
-)
+server.resource('user-context', 'anima://context/current', async () => ({ contents: [{ uri: 'anima://context/current', text: currentActivitySummary }] }))
+server.resource('memories', 'anima://memories/search/{query}', async (uri, { query }) => ({ contents: await searchMemories(query) }))
 
 // Tools: 暴露 Anima 能力
-server.tool('search_memories', { query: z.string() },
-  async ({ query }) => ({ content: [{ type: 'text', text: await memorySearch(query) }] })
-)
-server.tool('get_daily_summary', { date: z.string().optional() },
-  async ({ date }) => ({ content: [{ type: 'text', text: await getDailySummary(date) }] })
-)
-server.tool('send_message', { channel: z.string(), content: z.string() },
-  async ({ channel, content }) => ({ content: [{ type: 'text', text: await sendToChannel(channel, content) }] })
-)
+server.tool('search_memories', { query: z.string() }, async ({ query }) => ({ content: [{ type: 'text', text: await memorySearch(query) }] }))
+server.tool('get_daily_summary', { date: z.string().optional() }, async ({ date }) => ({ content: [{ type: 'text', text: await getDailySummary(date) }] }))
+server.tool('send_message', { channel: z.string(), content: z.string() }, async ({ channel, content }) => ({ content: [{ type: 'text', text: await sendToChannel(channel, content) }] }))
 ```
 
 **价值**: 用户在 Claude Desktop 里说"帮我查一下今天做了什么"，Claude 通过 MCP 调用 Anima 的记忆搜索。
@@ -1157,17 +1147,17 @@ See [REFERENCE.md](references/REFERENCE.md) for API details.
 // 遵循 agentskills.io 标准规范
 
 interface SkillFrontmatter {
-  name: string             // 必须: 匹配目录名
-  description: string      // 必须: 触发描述
-  license?: string
-  compatibility?: string
-  metadata?: Record<string, string>
+  'name': string // 必须: 匹配目录名
+  'description': string // 必须: 触发描述
+  'license'?: string
+  'compatibility'?: string
+  'metadata'?: Record<string, string>
   'allowed-tools'?: string
 }
 
 class SkillsEngine {
-  private builtinDir: string    // 内置 skills (随 app 发布)
-  private userDir: string       // ~/...anima/skills/ (用户自定义)
+  private builtinDir: string // 内置 skills (随 app 发布)
+  private userDir: string // ~/...anima/skills/ (用户自定义)
 
   // Layer 1: 启动时加载所有 metadata → 注入 system prompt
   getSkillsSummary(): string
@@ -1354,7 +1344,7 @@ interface PrivacySettings {
     trackFileOperations: boolean
   }
   audioCapture: {
-    onlyWhenTriggered: true     // 只有按语音键才录音
+    onlyWhenTriggered: true // 只有按语音键才录音
     noBackgroundListening: true // 禁止后台监听
   }
 }

@@ -1,0 +1,139 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260220-143100-feat-task-15-integration-checkpoint-iter1",
+  "timestamp": "2026-02-20T14:35:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 510,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 4, "P2": 3, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "architecture",
+      "subcategory": "unbounded-in-memory-state",
+      "title": "collectedActivities grows without bound and never clears",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 58,
+      "line_end": 58,
+      "code_snippet": "const collectedActivities: ProcessedContext[] = []",
+      "description": "The collectedActivities array is appended to via recordActivity() but is never cleared after executeEveningPipeline() runs. Over days of continuous operation this array will grow without limit, leaking memory. Additionally, the next evening run will re-process all historical activities rather than only today's. This is both a memory leak and a correctness bug: reports will include stale data from previous days.",
+      "suggestion": "Clear the array after snapshotting it in executeEveningPipeline(). For example, after line 64 (const report = ...), add `collectedActivities.length = 0` or splice the array. This ensures each nightly run processes only that day's activities and prevents unbounded growth.",
+      "claude_md_rule": "forbidden_patterns.arch.business_state_in_memory"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "createEveningPipeline has no caller outside its own test file",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 54,
+      "line_end": 57,
+      "code_snippet": "export function createEveningPipeline(\n  deps: EveningPipelineDeps,\n  config?: EveningPipelineConfig,\n): EveningPipeline {",
+      "description": "Grep shows createEveningPipeline is only imported in evening-pipeline.test.ts. It is not wired into setup-orchestrator.ts, any injeca DI registration, IPC handler, or any other entry point. The function is exported but unreachable from any live code path. The existing setup-orchestrator.ts creates an AnimaOrchestrator but does not integrate the evening pipeline.",
+      "suggestion": "Wire createEveningPipeline into setup-orchestrator.ts (or a dedicated setup-evening-pipeline.ts). It needs to receive its dependencies from the existing injeca service container and connect to the running AnimaOrchestrator so that recordActivity() is called with real ProcessedContext from the screenshot pipeline, and scheduleDaily() is called during app startup.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "code-quality",
+      "subcategory": "missing-logging",
+      "title": "Evening pipeline has zero logging instrumentation",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 1,
+      "line_end": 129,
+      "code_snippet": "// No import of @guiiai/logg anywhere in the file",
+      "description": "The file does not import or use @guiiai/logg (the project's standard logging library). A long-running nightly pipeline that orchestrates 5 phases (report generation, memory extraction, persistence, persona response) across 3 packages has zero observability. The only error handling delegates to config.onError which defaults to a no-op (() => {}). When this pipeline fails in production there will be no logs to diagnose the failure.",
+      "suggestion": "Add `import { useLogg } from '@guiiai/logg'` and `const log = useLogg('evening-pipeline').useGlobalConfig()`. Log at INFO level for each phase completion (report generated, memories extracted, persistence complete, persona response generated). Log at ERROR level in the catch block. This matches the pattern in setup-orchestrator.ts.",
+      "claude_md_rule": "logging.forbidden_console_log"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "unused-dependency",
+      "title": "intimacy and persona deps are injected but never used",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 15,
+      "line_end": 23,
+      "code_snippet": "export interface EveningPipelineDeps {\n  cronService: CronService\n  reportGenerator: ReportGenerator\n  memoryExtractor: MemoryExtractor\n  memoryOrchestrator: MemoryOrchestrator\n  emotionActor: EmotionActor\n  intimacy: IntimacyState\n  persona: PersonaConfig\n}",
+      "description": "The deps.intimacy and deps.persona fields are declared in EveningPipelineDeps and required by callers, but they are never referenced inside createEveningPipeline() or executeEveningPipeline(). The intimacy state could modulate the persona response tone, and the persona config could drive report personalization, but currently they are dead weight. This forces callers to provide values that are ignored, creating a misleading API contract.",
+      "suggestion": "Either (a) remove intimacy and persona from EveningPipelineDeps if they are not needed yet, or (b) use them in the pipeline -- e.g., pass intimacy.getLevel() to generateResponse() for tone modulation, or pass persona to the reportGenerator/extractor. Do not leave unused required dependencies in the interface.",
+      "claude_md_rule": "code_quality.no_todo_placeholder"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "unsafe-type-cast",
+      "title": "Unsafe `as PersonaEmotion` cast on state machine snapshot",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 90,
+      "line_end": 90,
+      "code_snippet": "const currentEmotion = deps.emotionActor.getSnapshot().value as PersonaEmotion",
+      "description": "The xstate snapshot value is cast to PersonaEmotion without validation. If the emotion actor state machine has nested states or the type definition diverges from PersonaEmotion, this cast silently passes an invalid value. The test file also uses `as string` and `as any` casts (lines 251, 260) for the same data, confirming the type is not naturally compatible.",
+      "suggestion": "Create a helper function like `getPersonaEmotion(actor: EmotionActor): PersonaEmotion` that maps the snapshot value to a validated PersonaEmotion, with a fallback to a default emotion (e.g., 'idle') if the value is unrecognized. This is safer than a bare `as` cast.",
+      "claude_md_rule": "architecture.unsafe_as_casts"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "hardcoded-trigger-values",
+      "title": "Hardcoded trigger ID and emotion in pipeline execution",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 91,
+      "line_end": 96,
+      "code_snippet": "const triggerResult = {\n  triggered: true as const,\n  triggerId: 'T06',\n  triggerName: 'evening-summary',\n  suggestedEmotion: 'caring' as const,\n}",
+      "description": "The trigger ID 'T06', trigger name 'evening-summary', and suggested emotion 'caring' are hardcoded inline. These values are part of the persona-engine's trigger system and should ideally come from the trigger definitions rather than being duplicated here. If the trigger ID or name changes in persona-engine, this code will silently produce mismatched results.",
+      "suggestion": "Import the trigger constant from persona-engine (e.g., `EVENING_SUMMARY_TRIGGER` or look up by name from the trigger registry) rather than hardcoding the object. At minimum, extract to a named constant at module scope with a comment referencing where the canonical definition lives.",
+      "claude_md_rule": "forbidden_patterns.code.hardcoded_config"
+    },
+    {
+      "id": "review-code-007",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "silent-default-error-handler",
+      "title": "Default error handler is a silent no-op",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 60,
+      "line_end": 60,
+      "code_snippet": "const handleError = config?.onError ?? (() => {})",
+      "description": "When no onError callback is provided, errors from the cron handler are silently swallowed. The cron handler wraps executeEveningPipeline() in try/catch and calls handleError() (line 107-109), but since handleError defaults to a no-op, any failure during nightly execution vanishes without a trace. Combined with the lack of logging (review-code-003), this means pipeline failures are completely invisible.",
+      "suggestion": "Change the default to throw or at minimum log: `const handleError = config?.onError ?? ((err: Error) => { log.withError(err).error('Evening pipeline failed (no error handler configured)') })`. This ensures failures are at least logged even if the caller forgets to provide an onError handler."
+    }
+  ],
+  "positive_observations": [
+    "Clean dependency injection via the EveningPipelineDeps interface follows the Imperative Shell pattern well",
+    "The test file uses real SQLite (DocumentStore), real LanceDB (VectorStore), and real CronService (with temp dirs) rather than in-memory mocks -- matching the project's testing standards",
+    "StubLlmProvider and StubEmbeddingProvider have clear Test Double rationale comments explaining why they stub external APIs",
+    "The full E2E test (line 285) traces through all 5 phases: cron -> collect -> report -> extract -> persist -> persona -> recall, proving the data flow works end-to-end",
+    "Empty activity day test (line 350) validates graceful handling of edge cases",
+    "Factory function pattern (createEveningPipeline) returns a clean interface, keeping internal state encapsulated"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

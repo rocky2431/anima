@@ -926,6 +926,9 @@ importers:
       '@proj-airi/context-engine':
         specifier: workspace:^
         version: link:../../packages/context-engine
+      '@proj-airi/cron-service':
+        specifier: workspace:^
+        version: link:../../packages/cron-service
       '@proj-airi/drizzle-duckdb-wasm':
         specifier: 'catalog:'
         version: 0.4.29(drizzle-orm@0.45.1(@electric-sql/pglite@0.3.15)(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0)(@types/better-sqlite3@7.6.13)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.9)(pg@8.17.2)(postgres@3.4.8))

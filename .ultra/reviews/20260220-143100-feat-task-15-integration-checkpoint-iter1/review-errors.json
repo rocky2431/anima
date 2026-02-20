@@ -1,0 +1,107 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260220-143100-feat-task-15-integration-checkpoint-iter1",
+  "timestamp": "2026-02-20T14:35:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts"
+    ],
+    "total_lines_analyzed": 509,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 4, "P2": 1 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "silent-swallow",
+      "title": "Default no-op onError silently swallows cron handler errors",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 60,
+      "line_end": 60,
+      "code_snippet": "const handleError = config?.onError ?? (() => {})",
+      "description": "When config.onError is not provided, handleError defaults to a no-op function. The cron handler catch block (lines 106-110) creates a wrapped Error and passes it to handleError -- which discards it entirely. This is functionally equivalent to `catch (e) {}`. The entire evening pipeline can fail repeatedly in production without any observable signal. This is the same onError-optional pattern documented in ScreenshotPipeline and ActivityMonitor, but worse because it uses a concrete no-op rather than optional chaining, making the silent discard intentional.",
+      "suggestion": "Default to console.error or re-throw: `const handleError = config?.onError ?? ((err: Error) => { console.error('[EveningPipeline] Unhandled error:', err) })`. Better yet, make onError required so callers must consciously decide how to handle failures.",
+      "claude_md_rule": "error_handling.forbidden.catch_silent_swallow"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "trigger() exposes raw I/O errors without context wrapping",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 118,
+      "line_end": 120,
+      "code_snippet": "async trigger(): Promise<void> {\n  await executeEveningPipeline()\n}",
+      "description": "The public trigger() method calls executeEveningPipeline() without try/catch. Unlike the cron handler path (lines 103-110) which wraps errors with context, trigger() lets raw errors from reportGenerator.generate(), memoryExtractor.extract(), memoryOrchestrator.persistExtractionResults(), or generateResponse() propagate with no context about which phase of the 5-phase pipeline failed. Callers receive an opaque error from a nested dependency with no indication it came from the evening pipeline.",
+      "suggestion": "Wrap in try/catch with phase context: `try { await executeEveningPipeline() } catch (cause) { throw new Error('Evening pipeline manual trigger failed', { cause }) }`. Or better, add per-phase error wrapping inside executeEveningPipeline itself so both callers benefit.",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-per-phase-handling",
+      "title": "executeEveningPipeline has no per-phase error isolation",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 62,
+      "line_end": 99,
+      "code_snippet": "async function executeEveningPipeline(): Promise<void> {\n  const report = await deps.reportGenerator.generate([...])\n  ...\n  const extracted = await deps.memoryExtractor.extract(...)\n  ...\n  await deps.memoryOrchestrator.persistExtractionResults(extracted)\n  ...\n}",
+      "description": "The 5-phase pipeline (report -> build input -> extract -> persist -> persona response) runs with zero error handling. If phase 3 (extract) fails, phases 4-5 are skipped but phases 1-2 have already emitted events -- leaving the system in a partially-completed state with no indication of which phase failed. When caught by the cron handler, the error message is just 'Evening pipeline cron handler failed' with no phase information. This makes debugging production failures extremely difficult since the pipeline involves 3 different external dependencies (reportGenerator, memoryExtractor, memoryOrchestrator).",
+      "suggestion": "Wrap each phase in its own try/catch that adds phase context: `try { report = await deps.reportGenerator.generate(...) } catch (cause) { throw new Error('Evening pipeline failed at phase 1: report generation', { cause }) }`. Alternatively, consider whether phases 4-5 should still execute if phase 3 fails (partial completion strategy).",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "generic-error-message",
+      "title": "Error message lacks operational context (activity count, phase)",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 108,
+      "line_end": 108,
+      "code_snippet": "new Error('Evening pipeline cron handler failed', { cause })",
+      "description": "The error message 'Evening pipeline cron handler failed' provides zero operational context. It does not include: how many activities were collected (collectedActivities.length), which phase of the 5-phase pipeline failed, the cron expression that triggered it, or any timestamps. This is the same context-gap pattern seen across the codebase (ScreenshotPipeline, ActivityMonitor, MemoryExtractor). In production, this message alone is insufficient to diagnose why the evening pipeline failed.",
+      "suggestion": "Include operational context: `new Error(`Evening pipeline cron handler failed (${collectedActivities.length} activities, phases 1-5)`, { cause })`. Even better, if per-phase wrapping is added (see review-errors-003), this outer message naturally inherits phase context from the cause chain.",
+      "claude_md_rule": "error_handling.forbidden.generic_error_message"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "error-handling",
+      "subcategory": "unprotected-callback",
+      "title": "onEvent callback not wrapped in try/catch -- throws mislead error origin",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 65,
+      "line_end": 98,
+      "code_snippet": "emitEvent?.({ type: 'report-generated', data: report })\n...\nemitEvent?.({ type: 'memories-extracted', data: extracted })\n...\nemitEvent?.({ type: 'persona-response', data: response })",
+      "description": "The emitEvent callback (lines 65, 84, 98) is called inside executeEveningPipeline without try/catch protection. If the caller's onEvent handler throws, the error will be caught by the cron handler's catch block and reported as 'Evening pipeline cron handler failed' -- misleading because the pipeline itself succeeded. The error would also abort remaining phases (e.g., if onEvent throws after report-generated, memory extraction and persistence never happen). This is the same 'callback errors swallowed' pattern seen in ScreenshotPipeline and ActivityMonitor.",
+      "suggestion": "Wrap each emitEvent call: `try { emitEvent?.({ type: 'report-generated', data: report }) } catch (e) { handleError(new Error('onEvent callback failed for report-generated', { cause: e })) }`. This isolates callback failures from pipeline execution."
+    }
+  ],
+  "positive_observations": [
+    "Good use of new Error(msg, { cause }) wrapping pattern in the cron handler catch block -- maintains error chain",
+    "Clean dependency injection via EveningPipelineDeps interface -- all I/O dependencies are explicit and injectable",
+    "CronService handler registration separates scheduling concerns from pipeline logic",
+    "Test file uses real DocumentStore, VectorStore, and CronService with tmpDir -- proper integration testing per CLAUDE.md rules",
+    "Test doubles for LLM and embedding providers are justified with explicit rationale comments"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260220-143100-feat-task-15-integration-checkpoint-iter1",
+  "timestamp": "2026-02-20T14:35:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts"
+    ],
+    "total_lines_analyzed": 509,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 1, "P3": 3 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "Near-duplicate EveningPipelineDeps construction in two test cases",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts",
+      "line": 289,
+      "line_end": 297,
+      "code_snippet": "const deps: EveningPipelineDeps = {\n  cronService,\n  reportGenerator: new ReportGenerator({ llm, persona: TEST_PERSONA }),\n  memoryExtractor: new MemoryExtractor({ llm: new StubLlmProvider(EXTRACTION_FIXTURE), embedding, persona: TEST_PERSONA }),\n  memoryOrchestrator: orchestrator,\n  emotionActor: createEmotionActor(),\n  intimacy: createIntimacyState(50),\n  persona: TEST_PERSONA,\n}",
+      "description": "The EveningPipelineDeps object is constructed almost identically at lines 289-297 and 357-365. Both blocks share cronService, memoryOrchestrator, emotionActor, intimacy, and persona values. Only the LLM responses differ. This 9-line block is duplicated twice, totaling ~18 lines of near-duplicate setup.",
+      "suggestion": "BEFORE:\n// (repeated in two tests)\nconst deps: EveningPipelineDeps = {\n  cronService,\n  reportGenerator: new ReportGenerator({ llm, persona: TEST_PERSONA }),\n  memoryExtractor: new MemoryExtractor({ ... }),\n  memoryOrchestrator: orchestrator,\n  emotionActor: createEmotionActor(),\n  intimacy: createIntimacyState(50),\n  persona: TEST_PERSONA,\n}\n\nAFTER:\nfunction buildPipelineDeps(overrides: { reportLlm: StubLlmProvider, extractorLlm: StubLlmProvider }): EveningPipelineDeps {\n  return {\n    cronService,\n    reportGenerator: new ReportGenerator({ llm: overrides.reportLlm, persona: TEST_PERSONA }),\n    memoryExtractor: new MemoryExtractor({ llm: overrides.extractorLlm, embedding, persona: TEST_PERSONA }),\n    memoryOrchestrator: orchestrator,\n    emotionActor: createEmotionActor(),\n    intimacy: createIntimacyState(50),\n    persona: TEST_PERSONA,\n  }\n}\n\nWHY: Extracts the repeated 9-line deps block into a helper that accepts only the varying parts (LLM providers). Reduces noise in each test case and makes the 'what varies' dimension obvious. Note: the CLAUDE.md guideline 'three similar lines > premature abstraction' applies to very short repetitions; a 9-line repeated block with 7 fields crosses the threshold where a helper improves clarity."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "simplification",
+      "subcategory": "long-inline-literal",
+      "title": "Inline object literals on very long lines reduce readability",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts",
+      "line": 360,
+      "line_end": 360,
+      "code_snippet": "memoryExtractor: new MemoryExtractor({ llm: new StubLlmProvider({ memories: [], profileFacts: [], relationships: [], importantDates: [] }), embedding, persona: TEST_PERSONA }),",
+      "description": "Line 360 is approximately 170 characters long with deeply nested inline object construction. The empty extraction fixture { memories: [], profileFacts: [], relationships: [], importantDates: [] } is also used on line 352 as a separate argument. Extracting it into a named constant improves readability and documents intent.",
+      "suggestion": "BEFORE:\nnew StubLlmProvider({ memories: [], profileFacts: [], relationships: [], importantDates: [] })\n\nAFTER:\nconst EMPTY_EXTRACTION: ExtractionResult = {\n  memories: [],\n  profileFacts: [],\n  relationships: [],\n  importantDates: [],\n}\n// then:\nnew StubLlmProvider(EMPTY_EXTRACTION)\n\nWHY: Named constant documents the intent ('empty extraction result'), eliminates the duplicated inline object on lines 352 and 360, and keeps lines well under 120 characters."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "magic-number",
+      "title": "Magic number 50 in createIntimacyState(50) lacks context",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.test.ts",
+      "line": 295,
+      "line_end": 295,
+      "code_snippet": "intimacy: createIntimacyState(50),",
+      "description": "The value 50 is passed to createIntimacyState without explanation. It appears twice (lines 295 and 363). A reader unfamiliar with the intimacy scale cannot tell whether 50 means 'neutral', 'midpoint', 'default', or something else.",
+      "suggestion": "BEFORE:\nintimacy: createIntimacyState(50),\n\nAFTER:\nconst DEFAULT_INTIMACY_LEVEL = 50\n// ...\nintimacy: createIntimacyState(DEFAULT_INTIMACY_LEVEL),\n\nWHY: Named constant makes the intent clear (default/midpoint) and is consistent with the project's preference for named constants over magic numbers."
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "simplification",
+      "subcategory": "function-length",
+      "title": "createEveningPipeline outer function spans 76 lines",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/evening-pipeline.ts",
+      "line": 54,
+      "line_end": 129,
+      "code_snippet": "export function createEveningPipeline(\n  deps: EveningPipelineDeps,\n  config?: EveningPipelineConfig,\n): EveningPipeline {\n  // ... 76 lines total",
+      "description": "The createEveningPipeline factory function is 76 lines total including the inner executeEveningPipeline (38 lines), the cron handler registration, and the returned API object. While the inner function is well-sized and the code is clearly structured with phase comments, the outer function exceeds the 50-line guideline. This is a minor observation -- the structure is already clean and each phase is well-commented.",
+      "suggestion": "No code change recommended at this time. The function is well-structured with clear phase comments and a contained inner function. If future phases are added, consider extracting executeEveningPipeline to a module-level function to keep the factory under 50 lines.\n\nWHY: The current structure is readable. This is an informational note for when the function grows further, not a request for immediate refactoring."
+    }
+  ],
+  "positive_observations": [
+    "The production code has very low cyclomatic complexity (estimated 2) with a clean linear pipeline of 5 phases, each clearly commented",
+    "The closure-based factory pattern (createEveningPipeline) follows the project's established functional core / imperative shell architecture",
+    "The inner executeEveningPipeline function is well under 50 lines at 38 lines, with no nesting beyond level 1",
+    "Dependencies are passed via a typed interface (EveningPipelineDeps) rather than positional parameters, improving readability despite 7 dependencies",
+    "Test doubles are properly justified with rationale comments and only used for external APIs (LLM, Embedding), while real stores (DocumentStore, VectorStore) use actual implementations with temp directories",
+    "Error handling in the cron registration wraps with a causal Error, preserving the original error chain"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

@@ -1,6 +1,7 @@
+import type { ScreenshotProvider } from '../types'
+
 import { describe, expect, it } from 'vitest'
 
-import type { ScreenshotProvider } from '../types'
 import { ScreenshotCapture } from '../capture/screenshot'
 
 // Test Double rationale: Electron desktopCapturer API is not available

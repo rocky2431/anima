@@ -177,7 +177,7 @@
       "type": "architecture",
       "priority": "P1",
       "complexity": 3,
-      "status": "pending",
+      "status": "completed",
       "dependencies": ["13", "14"],
       "estimated_days": 1,
       "context_file": "contexts/task-15.md",
@@ -294,8 +294,8 @@
   ],
   "stats": {
     "total": 24,
-    "completed": 12,
+    "completed": 13,
     "in_progress": 0,
-    "pending": 12
+    "pending": 11
   }
 }
