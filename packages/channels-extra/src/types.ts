@@ -1,6 +1,6 @@
 export type ChannelStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 
-export type ChannelPlatform = 'whatsapp' | 'slack'
+export type ChannelPlatform = 'whatsapp' | 'slack' | 'email' | 'feishu' | 'dingtalk'
 
 export interface MessageContent {
   text: string
@@ -42,7 +42,38 @@ export interface SlackConfig {
   socketMode?: boolean
 }
 
-export type ChannelConfig = WhatsAppConfig | SlackConfig
+export interface EmailConfig {
+  platform: 'email'
+  imap: {
+    host: string
+    port: number
+    secure: boolean
+    auth: { user: string, pass: string }
+  }
+  smtp: {
+    host: string
+    port: number
+    secure: boolean
+    auth: { user: string, pass: string }
+  }
+  fromAddress: string
+  mailbox?: string
+}
+
+export interface FeishuConfig {
+  platform: 'feishu'
+  appId: string
+  appSecret: string
+  receiveIdType?: 'chat_id' | 'open_id' | 'user_id'
+}
+
+export interface DingTalkConfig {
+  platform: 'dingtalk'
+  clientId: string
+  clientSecret: string
+}
+
+export type ChannelConfig = WhatsAppConfig | SlackConfig | EmailConfig | FeishuConfig | DingTalkConfig
 
 export interface ChannelRegistryEntry {
   channel: Channel
