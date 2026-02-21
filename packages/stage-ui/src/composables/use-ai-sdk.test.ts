@@ -84,7 +84,7 @@ describe('convertXsaiToolsToAiSdk', () => {
     const result = convertXsaiToolsToAiSdk([resolved])
     const tool = result.echo_tool
 
-    const output = await tool.execute({ message: 'hello world' }, {
+    const output = await tool.execute!({ message: 'hello world' }, {
       toolCallId: 'test-id',
       messages: [],
     })
