@@ -516,6 +516,12 @@ pages:
     mcp-server:
       description: Connect and manage MCP server and tools
       title: MCP Server
+    desktop-shell:
+      description: Active window tracking, clipboard, and global shortcuts
+      title: Desktop Shell
+    channels:
+      description: Slack, WhatsApp, Email, Feishu, DingTalk messaging
+      title: Channels
   providers:
     explained:
       chat: Text generation model providers. e.g. OpenRouter, OpenAI, Ollama.

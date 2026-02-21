@@ -4,7 +4,9 @@ import { getBeatSyncState, listenBeatSyncStateChange } from '@proj-airi/stage-sh
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useChannelsStore } from '../stores/modules/channels'
 import { useConsciousnessStore } from '../stores/modules/consciousness'
+import { useDesktopShellStore } from '../stores/modules/desktop-shell'
 import { useDiscordStore } from '../stores/modules/discord'
 import { useFactorioStore } from '../stores/modules/gaming-factorio'
 import { useMinecraftStore } from '../stores/modules/gaming-minecraft'
@@ -39,6 +41,8 @@ export function useModulesList() {
   const factorioStore = useFactorioStore()
   const mcpStore = useMcpModuleStore()
   const visionStore = useVisionStore()
+  const desktopShellStore = useDesktopShellStore()
+  const channelsStore = useChannelsStore()
   const beatSyncState = ref<BeatSyncDetectorState>()
 
   const modulesList = computed<Module[]>(() => [
@@ -141,6 +145,15 @@ export function useModulesList() {
       category: 'essential',
     },
     {
+      id: 'desktop-shell',
+      name: t('settings.pages.modules.desktop-shell.title'),
+      description: t('settings.pages.modules.desktop-shell.description'),
+      icon: 'i-solar:monitor-bold-duotone',
+      to: '/settings/modules/desktop-shell',
+      configured: desktopShellStore.configured,
+      category: 'essential',
+    },
+    {
       id: 'beat-sync',
       name: t('settings.pages.modules.beat_sync.title'),
       description: t('settings.pages.modules.beat_sync.description'),
@@ -148,6 +161,15 @@ export function useModulesList() {
       to: '/settings/modules/beat-sync',
       configured: beatSyncState.value?.isActive ?? false,
       category: 'essential',
+    },
+    {
+      id: 'channels',
+      name: t('settings.pages.modules.channels.title'),
+      description: t('settings.pages.modules.channels.description'),
+      icon: 'i-solar:chat-round-dots-bold-duotone',
+      to: '/settings/modules/channels',
+      configured: channelsStore.configured,
+      category: 'messaging',
     },
   ])
 
