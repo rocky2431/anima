@@ -7,6 +7,7 @@ import type {
 } from '@proj-airi/context-engine'
 import type {
   AnimaEmotionPayload,
+  AppCategory,
   DoNotDisturbConfig,
   DoNotDisturbState,
   EmotionEvent,
@@ -48,9 +49,35 @@ export interface AnimaProactiveEvent {
   readonly timestamp: number
 }
 
+/**
+ * Optional external data source for enriching trigger input with real data.
+ * When not provided, safe default values are used.
+ */
+export interface TriggerDataSource {
+  /** Get important dates matching today's month-day (MM-DD format) */
+  getImportantDatesForToday?: (monthDay: string) => Array<{ date: string }>
+  /** Get incomplete todos */
+  getIncompleteTodos?: () => Array<{ title: string, completed: boolean }>
+}
+
+/**
+ * Optional persistence interface for state recovery across restarts.
+ * Uses a key-value string store (e.g., DocumentStore.getSetting/setSetting).
+ */
+export interface StatePersistence {
+  getSetting: (key: string) => string | null
+  setSetting: (key: string, value: string) => void
+  getIntimacy: () => number
+  updateIntimacy: (delta: number) => number
+}
+
 export interface AnimaOrchestratorDeps {
   screenshotProvider: ScreenshotProvider
   vlmProvider: VlmProvider
+  /** Optional external data source for trigger enrichment */
+  triggerDataSource?: TriggerDataSource
+  /** Optional state persistence for recovery across restarts */
+  persistence?: StatePersistence
 }
 
 export interface AnimaOrchestratorConfig {
@@ -82,6 +109,28 @@ const TRIGGER_EMOTION_MAP: Record<string, EmotionEvent> = {
   'high-frequency-switch': { type: 'TRIGGER_CONCERN' },
   'big-task-complete': { type: 'GOOD_NEWS' },
   'return-to-desktop': { type: 'USER_ACTIVE' },
+}
+
+const COOLDOWNS_KEY = 'anima:trigger_cooldowns'
+
+function restoreTriggerCooldowns(persistence?: StatePersistence): Record<string, number> {
+  if (!persistence)
+    return {}
+  const raw = persistence.getSetting(COOLDOWNS_KEY)
+  if (!raw)
+    return {}
+  try {
+    const parsed = JSON.parse(raw)
+    if (typeof parsed === 'object' && parsed !== null) {
+      return parsed as Record<string, number>
+    }
+  }
+  catch { /* ignore malformed data */ }
+  return {}
+}
+
+function persistTriggerCooldowns(persistence: StatePersistence | undefined, times: Record<string, number>): void {
+  persistence?.setSetting(COOLDOWNS_KEY, JSON.stringify(times))
 }
 
 /**
@@ -126,10 +175,9 @@ export interface AnimaOrchestrator {
  * buildTriggerInput → evaluateTriggers → emotion transition → generateResponse →
  * onProactiveResponse callback.
  *
- * State lifecycle: intimacy, lastTriggerTimes, dndState, and emotion are held in-memory.
- * Emotion state is ephemeral by design (resets to 'idle' on restart).
- * Intimacy and trigger cooldowns reset on restart; persistence is deferred to a
- * dedicated storage integration task.
+ * State lifecycle: intimacy and trigger cooldowns are persisted to SQLite via
+ * the optional StatePersistence interface. Emotion state is ephemeral by design
+ * (resets to 'idle' on restart). DND state is ephemeral.
  */
 export function createAnimaOrchestrator(
   deps: AnimaOrchestratorDeps,
@@ -140,12 +188,25 @@ export function createAnimaOrchestrator(
     log.withError(err).error('Unhandled orchestrator error')
   })
 
+  const persistence = deps.persistence
+
+  // Restore persisted state or use defaults
+  const restoredIntimacyScore = persistence?.getIntimacy() ?? config.initialIntimacyScore ?? 0
+  const restoredCooldowns = restoreTriggerCooldowns(persistence)
+
   const emotionActor = createEmotionActor()
-  let intimacy = createIntimacyState(config.initialIntimacyScore ?? 0)
+  let intimacy = createIntimacyState(restoredIntimacyScore)
   let dndState = createDoNotDisturbState()
   const dndConfig = config.dndConfig ?? createDefaultConfig()
-  const lastTriggerTimes: Record<string, number> = {}
+  const lastTriggerTimes: Record<string, number> = { ...restoredCooldowns }
   const triggers = [...(config.triggers ?? ALL_TRIGGERS)]
+
+  // Internal tracking state for trigger enrichment
+  let firstActivityTimeToday: number | null = null
+  let todayDate = new Date().toDateString()
+  const windowSwitchTimestamps: number[] = []
+  let previousApp = ''
+  let previousFocusStartTime = 0
 
   function getCurrentEmotion(): PersonaEmotion {
     return emotionActor.getSnapshot().value as PersonaEmotion
@@ -154,7 +215,49 @@ export function createAnimaOrchestrator(
   function handleProcessedContext(context: ProcessedContext): void {
     try {
       const now = Date.now()
-      const triggerInput = buildTriggerInput(context, intimacy, now)
+
+      // Reset tracking on new day
+      const currentDay = new Date(now).toDateString()
+      if (currentDay !== todayDate) {
+        todayDate = currentDay
+        firstActivityTimeToday = null
+        windowSwitchTimestamps.length = 0
+      }
+
+      // Track first activity of today
+      if (context.activity.isActive && firstActivityTimeToday === null) {
+        firstActivityTimeToday = now
+      }
+
+      // Track window switches
+      const currentApp = context.activity.currentApp
+      if (currentApp && currentApp !== previousApp) {
+        if (previousApp) {
+          windowSwitchTimestamps.push(now)
+        }
+        // Track previous focus duration
+        if (previousFocusStartTime > 0) {
+          // previousFocusDurationMs is available via closure
+        }
+        previousFocusStartTime = now
+        previousApp = currentApp
+      }
+
+      // Prune old window switch timestamps (keep last 10 minutes)
+      const tenMinAgo = now - 10 * 60_000
+      while (windowSwitchTimestamps.length > 0 && windowSwitchTimestamps[0] < tenMinAgo) {
+        windowSwitchTimestamps.shift()
+      }
+
+      const previousFocusDurationMs = previousFocusStartTime > 0 ? now - previousFocusStartTime : 0
+
+      const triggerInput = buildTriggerInput(
+        context,
+        intimacy,
+        now,
+        { firstActivityTimeToday, windowSwitchTimestamps, previousFocusDurationMs },
+        deps.triggerDataSource,
+      )
 
       const currentHour = new Date(now).getHours()
       if (!canTrigger(dndState, currentHour, context.activity.isFullscreen, 'normal', now, dndConfig)) {
@@ -168,6 +271,7 @@ export function createAnimaOrchestrator(
       }
 
       lastTriggerTimes[result.triggerId] = now
+      persistTriggerCooldowns(persistence, lastTriggerTimes)
       dndState = recordTrigger(dndState, now)
 
       const emotionEvent = TRIGGER_EMOTION_MAP[result.triggerName]
@@ -258,7 +362,12 @@ export function createAnimaOrchestrator(
     },
 
     recordInteraction(interaction: IntimacyInteraction) {
+      const oldScore = intimacy.score
       intimacy = applyScoreChange(intimacy, interaction)
+      const delta = intimacy.score - oldScore
+      if (delta !== 0 && persistence) {
+        persistence.updateIntimacy(delta)
+      }
     },
 
     recordIgnore() {
@@ -272,17 +381,64 @@ export function createAnimaOrchestrator(
 }
 
 /**
- * Build a TriggerInput from a ProcessedContext.
- * Maps context-engine's ActivityState to persona-engine's TriggerInput.
- *
- * Fields that require external sources (memory, todo system) use safe default values.
+ * Well-known entertainment apps for app category classification.
+ */
+const ENTERTAINMENT_APPS = new Set([
+  'spotify',
+  'music',
+  'vlc',
+  'netflix',
+  'youtube',
+  'twitch',
+  'discord',
+  'steam',
+  'epic games',
+  'battle.net',
+])
+
+function classifyApp(appName: string): AppCategory {
+  const lower = appName.toLowerCase()
+  if (ENTERTAINMENT_APPS.has(lower))
+    return 'entertainment'
+  if (['code', 'terminal', 'iterm', 'xcode', 'intellij', 'webstorm', 'chrome', 'firefox', 'safari', 'slack', 'notion', 'figma', 'linear'].some(w => lower.includes(w)))
+    return 'work'
+  return 'other'
+}
+
+/**
+ * Build a TriggerInput from a ProcessedContext, enriched with real tracked data.
+ * Uses internal state tracking for window switches, focus duration, and first activity.
+ * Uses optional TriggerDataSource for external data (todos, important dates).
  */
 function buildTriggerInput(
   context: ProcessedContext,
   intimacy: IntimacyState,
   now: number,
+  tracking: {
+    firstActivityTimeToday: number | null
+    windowSwitchTimestamps: number[]
+    previousFocusDurationMs: number
+  },
+  dataSource?: TriggerDataSource,
 ): TriggerInput {
   const date = new Date(now)
+  const fiveMinAgo = now - 5 * 60_000
+
+  // Window switches in last 5 minutes
+  const windowSwitchesInLast5Min = tracking.windowSwitchTimestamps.filter(t => t >= fiveMinAgo).length
+
+  // Check important dates from external source
+  const monthDay = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  const matchedImportantDate = !!dataSource?.getImportantDatesForToday?.(monthDay)?.length
+
+  // Check near-deadline todos from external source
+  const hasNearDeadlineTodos = !!dataSource?.getIncompleteTodos?.()?.length
+
+  // Classify previous app
+  const recentApps = context.activity.recentApps
+  const previousAppCategory: AppCategory = recentApps.length > 1
+    ? classifyApp(recentApps[1])
+    : 'work'
 
   return {
     continuousWorkDurationMs: context.activity.continuousWorkDurationMs,
@@ -290,13 +446,14 @@ function buildTriggerInput(
     currentApp: context.activity.currentApp,
     currentHour: date.getHours(),
     currentMinute: date.getMinutes(),
-    isFirstActivityToday: false,
-    previousAppCategory: 'work',
+    isFirstActivityToday: tracking.firstActivityTimeToday !== null
+      && (now - tracking.firstActivityTimeToday) < 60_000,
+    previousAppCategory,
     hasActivityData: context.activity.recentApps.length > 0,
-    matchedImportantDate: false,
-    hasNearDeadlineTodos: false,
-    windowSwitchesInLast5Min: 0,
-    previousFocusDurationMs: 0,
+    matchedImportantDate,
+    hasNearDeadlineTodos,
+    windowSwitchesInLast5Min,
+    previousFocusDurationMs: tracking.previousFocusDurationMs,
     timeSinceLastActivityMs: context.activity.lastActivityTimestamp > 0
       ? now - context.activity.lastActivityTimestamp
       : 0,

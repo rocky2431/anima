@@ -38,7 +38,7 @@ const settings = computed({
 })
 
 const language = computed({
-  get: () => settings.value?.language || 'en-US',
+  get: () => settings.value?.language || navigator.language || 'en-US',
   set: (value) => {
     if (!providers.value[providerId])
       providers.value[providerId] = {}

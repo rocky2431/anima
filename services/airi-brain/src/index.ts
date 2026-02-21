@@ -1,6 +1,7 @@
 import process, { env } from 'node:process'
 
 import { mkdirSync } from 'node:fs'
+import { homedir, platform } from 'node:os'
 import { resolve } from 'node:path'
 
 import { Format, LogLevel, setGlobalFormat, setGlobalLogLevel, useLogg } from '@guiiai/logg'
@@ -24,10 +25,22 @@ const log = useLogg('airi-brain').useGlobalConfig()
 // Default WebSocket URL for local development — override via AIRI_URL env var
 const DEV_DEFAULT_WS = ['ws://', '127.0.0.1', ':6121/ws'].join('')
 
+function getDefaultDataDir(): string {
+  const home = homedir()
+  switch (platform()) {
+    case 'darwin':
+      return resolve(home, 'Library', 'Application Support', 'airi', 'data')
+    case 'win32':
+      return resolve(env.APPDATA ?? resolve(home, 'AppData', 'Roaming'), 'airi', 'data')
+    default: // linux / other
+      return resolve(env.XDG_DATA_HOME ?? resolve(home, '.local', 'share'), 'airi', 'data')
+  }
+}
+
 async function main(): Promise<void> {
   const url = env.AIRI_URL ?? env.AIRI_WS_URL ?? DEV_DEFAULT_WS
   const token = env.AIRI_TOKEN ?? 'abcd'
-  const dataDir = resolve(env.AIRI_DATA_DIR ?? './data')
+  const dataDir = resolve(env.AIRI_DATA_DIR ?? getDefaultDataDir())
 
   // Ensure data directory exists
   mkdirSync(dataDir, { recursive: true })
@@ -92,7 +105,7 @@ async function main(): Promise<void> {
     registerMemoryHandler(client, documentStore)
     registerActivityHandler(client, brainStore)
     registerSkillsHandler(client, brainStore)
-    registerPersonaHandler(client, documentStore)
+    registerPersonaHandler(client, documentStore, brainStore)
     registerVisionHandler(client, brainStore)
     registerDesktopShellHandler(client, brainStore)
 

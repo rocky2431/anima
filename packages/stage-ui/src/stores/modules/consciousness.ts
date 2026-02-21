@@ -12,7 +12,7 @@ export const useConsciousnessStore = defineStore('consciousness', () => {
   const activeProvider = useLocalStorageManualReset<string>('settings/consciousness/active-provider', '')
   const activeModel = useLocalStorageManualReset<string>('settings/consciousness/active-model', '')
   const activeCustomModelName = useLocalStorageManualReset<string>('settings/consciousness/active-custom-model', '')
-  const useAiSdk = useLocalStorageManualReset<boolean>('settings/consciousness/use-ai-sdk', false)
+  const useAiSdk = useLocalStorageManualReset<boolean>('settings/consciousness/use-ai-sdk', true)
   const expandedDescriptions = refManualReset<Record<string, boolean>>(() => ({}))
   const modelSearchQuery = refManualReset<string>('')
 

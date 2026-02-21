@@ -106,6 +106,9 @@ async function handleSend() {
     return
   }
 
+  // Cancel any pending auto-send to prevent duplicate messages
+  clearPendingAutoSend()
+
   const textToSend = messageInput.value
   messageInput.value = ''
 

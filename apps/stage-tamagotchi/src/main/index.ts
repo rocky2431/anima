@@ -15,6 +15,8 @@ import { emitAppBeforeQuit, emitAppReady, emitAppWindowAllClosed } from './libs/
 import { setElectronMainDirname } from './libs/electron/location'
 import { setupServerChannelHandlers } from './services/airi/channel-server'
 import { setupPluginHost } from './services/airi/plugins'
+import { setupAiServices } from './services/anima/setup-ai-services'
+import { setupBridge } from './services/anima/setup-bridge'
 import { setupChannels } from './services/anima/setup-channels'
 import { setupDesktopShell } from './services/anima/setup-desktop-shell'
 import { setupAnimaOrchestrator } from './services/anima/setup-orchestrator'
@@ -83,6 +85,23 @@ app.whenReady().then(async () => {
     build: ({ dependsOn }) => setupDesktopShell(dependsOn),
   })
   const channels = injeca.provide('modules:channels', () => setupChannels())
+  const aiServices = injeca.provide('modules:ai-services', () => setupAiServices())
+  // Bridge is set up after both animaOrchestrator and aiServices resolve.
+  // Uses injeca.invoke (not provide) since it doesn't produce a named dependency.
+  const bridge = injeca.provide('modules:anima-bridge', {
+    dependsOn: { animaOrchestrator, aiServices },
+    build: (resolved: any) => setupBridge(
+      {
+        animaOrchestrator: resolved.dependsOn.animaOrchestrator,
+        aiOrchestrator: resolved.dependsOn.aiServices.aiOrchestrator,
+      },
+      {
+        onEnrichedResponse: (event) => {
+          log.info('Enriched proactive response', { triggerId: event.triggerId, isAiGenerated: event.isAiGenerated })
+        },
+      },
+    ),
+  })
   const autoUpdater = injeca.provide('services:auto-updater', () => setupAutoUpdater())
   const widgetsManager = injeca.provide('windows:widgets', () => setupWidgetsWindowManager())
   const noticeWindow = injeca.provide('windows:notice', () => setupNoticeWindowManager())
@@ -121,7 +140,7 @@ app.whenReady().then(async () => {
   })
 
   injeca.invoke({
-    dependsOn: { mainWindow, tray, serverChannel, pluginHost, animaOrchestrator, desktopShell, channels },
+    dependsOn: { mainWindow, tray, serverChannel, pluginHost, animaOrchestrator, desktopShell, channels, aiServices, bridge },
     callback: noop,
   })
 

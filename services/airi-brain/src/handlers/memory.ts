@@ -34,7 +34,10 @@ export function registerMemoryHandler(client: Client, store: DocumentStore): voi
       type: 'memory:search:result',
       data: {
         query,
-        results: results.map(m => ({ ...m, score: 0.8 })),
+        results: results.map((m, index) => ({
+          ...m,
+          score: Number((1 - (index / (results.length + 1))).toFixed(4)),
+        })),
       },
     })
   })

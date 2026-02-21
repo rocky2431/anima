@@ -1,6 +1,8 @@
 import type { DocumentStore } from '@proj-airi/context-engine'
-import type { EmotionActor, EmotionState, PersonaEmotion } from '@proj-airi/persona-engine'
+import type { AppCategory, EmotionActor, EmotionState, IntimacyStage, PersonaEmotion, TriggerInput } from '@proj-airi/persona-engine'
 import type { Client } from '@proj-airi/server-sdk'
+
+import type { BrainStore } from '../store'
 
 import { useLogg } from '@guiiai/logg'
 import {
@@ -47,7 +49,111 @@ function pushIntimacyState(client: Client, score: number): void {
   })
 }
 
-export function registerPersonaHandler(client: Client, store: DocumentStore): void {
+/**
+ * Well-known entertainment apps used to classify previousAppCategory.
+ */
+const ENTERTAINMENT_APPS = new Set([
+  'spotify',
+  'music',
+  'vlc',
+  'netflix',
+  'youtube',
+  'twitch',
+  'discord',
+  'steam',
+  'epic games',
+  'battle.net',
+])
+
+function classifyApp(appName: string): AppCategory {
+  const lower = appName.toLowerCase()
+  if (ENTERTAINMENT_APPS.has(lower))
+    return 'entertainment'
+  // Heuristic: common dev/work tools
+  if (['code', 'terminal', 'iterm', 'xcode', 'intellij', 'webstorm', 'chrome', 'firefox', 'safari', 'slack', 'notion', 'figma', 'linear'].some(w => lower.includes(w)))
+    return 'work'
+  return 'other'
+}
+
+/**
+ * Build a real TriggerInput from persisted activity data.
+ */
+function buildTriggerInput(
+  currentHour: number,
+  currentMinute: number,
+  intimacyStage: IntimacyStage,
+  now: number,
+  brainStore: BrainStore,
+  documentStore: DocumentStore,
+): TriggerInput {
+  const today = new Date().toISOString().slice(0, 10)
+  const recentEvents = brainStore.getActivityEvents({ limit: 50 })
+  const todayEvents = brainStore.getActivityEvents({ date: today, limit: 50 })
+
+  // Current app: most recent event's appName
+  const currentApp = recentEvents.length > 0 ? recentEvents[0].appName : ''
+
+  // Previous app category: second-most-recent event (if any)
+  const previousAppCategory: AppCategory = recentEvents.length > 1
+    ? classifyApp(recentEvents[1].appName)
+    : 'work'
+
+  // Continuous work duration: sum of consecutive recent work-classified events
+  let continuousWorkDurationMs = 0
+  for (const evt of recentEvents) {
+    if (classifyApp(evt.appName) !== 'work')
+      break
+    continuousWorkDurationMs += evt.durationMs > 0 ? evt.durationMs : 10_000
+  }
+
+  // Is first activity today: no events recorded for today before this one
+  const isFirstActivityToday = todayEvents.length <= 1
+
+  // Window switches in last 5 minutes
+  const fiveMinAgo = now - 5 * 60_000
+  const windowSwitchesInLast5Min = recentEvents.filter(e => e.timestamp >= fiveMinAgo).length
+
+  // Previous focus duration: duration of the second-most-recent event
+  const previousFocusDurationMs = recentEvents.length > 1
+    ? (recentEvents[1].durationMs > 0 ? recentEvents[1].durationMs : 0)
+    : 0
+
+  // Has activity data
+  const hasActivityData = recentEvents.length > 0
+
+  // Time since last activity
+  const timeSinceLastActivityMs = recentEvents.length > 0
+    ? now - recentEvents[0].timestamp
+    : 0
+
+  // Check important dates for today (MM-DD format)
+  const monthDay = today.slice(5) // "MM-DD"
+  const matchedImportantDate = documentStore.getImportantDatesForToday(monthDay).length > 0
+
+  // Check near-deadline todos: incomplete todos created more than 1 day ago
+  // (rough heuristic since Todo has no deadline field -- any incomplete todo is "near")
+  const todos = documentStore.getTodos()
+  const hasNearDeadlineTodos = todos.some(t => !t.completed)
+
+  return {
+    currentHour,
+    currentMinute,
+    currentApp,
+    previousAppCategory,
+    continuousWorkDurationMs,
+    isFirstActivityToday,
+    isFullscreen: false, // Cannot detect from server side; default false
+    hasActivityData,
+    matchedImportantDate,
+    hasNearDeadlineTodos,
+    windowSwitchesInLast5Min,
+    previousFocusDurationMs,
+    timeSinceLastActivityMs,
+    intimacyStage,
+  }
+}
+
+export function registerPersonaHandler(client: Client, store: DocumentStore, brainStore: BrainStore): void {
   // Create xstate emotion actor
   emotionActor = createEmotionActor()
 
@@ -77,23 +183,18 @@ export function registerPersonaHandler(client: Client, store: DocumentStore): vo
     const currentScore = store.getIntimacy()
     const stage = getStageForScore(currentScore)
 
+    // Build real trigger context from persisted activity data
+    const triggerInput = buildTriggerInput(
+      currentHour,
+      currentMinute,
+      stage,
+      now,
+      brainStore,
+      store,
+    )
+
     const result = evaluateTriggers(
-      {
-        currentHour,
-        currentMinute,
-        currentApp: '',
-        previousAppCategory: 'work',
-        continuousWorkDurationMs: 0,
-        isFirstActivityToday: false,
-        isFullscreen: false,
-        hasActivityData: false,
-        matchedImportantDate: false,
-        hasNearDeadlineTodos: false,
-        windowSwitchesInLast5Min: 0,
-        previousFocusDurationMs: 0,
-        timeSinceLastActivityMs: 0,
-        intimacyStage: stage,
-      },
+      triggerInput,
       [...ALL_TRIGGERS],
       lastTriggerTimes,
       now,

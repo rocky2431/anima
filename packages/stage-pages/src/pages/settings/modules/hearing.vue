@@ -33,6 +33,39 @@ const providersStore = useProvidersStore()
 const { configuredTranscriptionProvidersMetadata } = storeToRefs(providersStore)
 
 const { trackProviderClick } = useAnalytics()
+
+// Language settings for Web Speech API
+const webSpeechLanguageOptions = [
+  { label: '中文（简体）', value: 'zh-CN' },
+  { label: '中文（繁體）', value: 'zh-TW' },
+  { label: 'English (US)', value: 'en-US' },
+  { label: 'English (UK)', value: 'en-GB' },
+  { label: '日本語', value: 'ja-JP' },
+  { label: '한국어', value: 'ko-KR' },
+  { label: 'Español', value: 'es-ES' },
+  { label: 'Français', value: 'fr-FR' },
+  { label: 'Deutsch', value: 'de-DE' },
+  { label: 'Português', value: 'pt-BR' },
+  { label: 'Italiano', value: 'it-IT' },
+  { label: 'Русский', value: 'ru-RU' },
+]
+
+const isWebSpeechAPI = computed(() => activeTranscriptionProvider.value === 'browser-web-speech-api')
+
+const providerConfigs = storeToRefs(providersStore).providers
+
+const webSpeechLanguage = computed({
+  get: () => {
+    const config = providersStore.getProviderConfig('browser-web-speech-api')
+    return (config?.language as string) || navigator.language || 'zh-CN'
+  },
+  set: (value) => {
+    if (!providerConfigs.value['browser-web-speech-api'])
+      providerConfigs.value['browser-web-speech-api'] = {}
+    providerConfigs.value['browser-web-speech-api'].language = value
+  },
+})
+
 const { stopStream, startStream } = useSettingsAudioDevice()
 const { audioInputs, selectedAudioInput, stream } = storeToRefs(useSettingsAudioDevice())
 const { startRecord, stopRecord, onStopRecord } = useAudioRecorder(stream)
@@ -568,6 +601,17 @@ onUnmounted(() => {
               </RouterLink>
             </div>
           </div>
+        </div>
+
+        <!-- Language selection for Web Speech API -->
+        <div v-if="isWebSpeechAPI" class="border-t border-neutral-200 pt-4 dark:border-neutral-700">
+          <FieldSelect
+            v-model="webSpeechLanguage"
+            label="Recognition Language"
+            description="Web Speech API requires a language hint. Select the language you will speak."
+            :options="webSpeechLanguageOptions"
+            layout="vertical"
+          />
         </div>
 
         <!-- Model selection section -->

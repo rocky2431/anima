@@ -1,0 +1,79 @@
+import type { AiOrchestrator } from './ai-orchestrator'
+
+import { resolve } from 'node:path'
+
+import { useLogg } from '@guiiai/logg'
+import { CronService } from '@proj-airi/cron-service'
+import { McpHub } from '@proj-airi/mcp-hub'
+import { app } from 'electron'
+
+import { createAiOrchestrator } from './ai-orchestrator'
+
+const log = useLogg('ai-services').useGlobalConfig()
+
+export interface AiServicesHandle {
+  cronService: CronService
+  mcpHub: McpHub
+  aiOrchestrator: AiOrchestrator
+  stop: () => Promise<void>
+}
+
+/**
+ * Initialize AI-layer services: CronService, McpHub, and AiOrchestrator.
+ *
+ * These were previously "orphan" modules — fully implemented and tested,
+ * but never instantiated or wired into the running process.
+ */
+export async function setupAiServices(): Promise<AiServicesHandle> {
+  const dataDir = resolve(app.getPath('userData'), 'data')
+
+  const cronDbPath = resolve(dataDir, 'cron.db')
+  const mcpDbPath = resolve(dataDir, 'mcp-hub.db')
+  const builtinSkillsDir = resolve(dataDir, 'skills', 'builtin')
+  const userSkillsDir = resolve(dataDir, 'skills', 'user')
+
+  // --- CronService ---
+  const cronService = new CronService(cronDbPath)
+  cronService.start()
+  log.log('CronService started', { dbPath: cronDbPath })
+
+  // --- McpHub ---
+  const mcpHub = new McpHub(mcpDbPath)
+  log.log('McpHub initialized', { dbPath: mcpDbPath })
+
+  // --- AiOrchestrator ---
+  const aiOrchestrator = createAiOrchestrator({
+    mcpDbPath,
+    builtinSkillsDir,
+    userSkillsDir,
+  })
+
+  const initResult = await aiOrchestrator.initialize()
+  log.withFields({
+    mcpConnected: initResult.mcpConnected.length,
+    mcpFailed: initResult.mcpFailed.length,
+    skillsLoaded: initResult.skillsLoaded,
+  }).log('AiOrchestrator initialized')
+
+  return {
+    cronService,
+    mcpHub,
+    aiOrchestrator,
+    async stop() {
+      try {
+        cronService.close()
+        log.log('CronService stopped')
+      }
+      catch (err) {
+        log.withError(err).error('CronService shutdown error')
+      }
+      try {
+        await aiOrchestrator.shutdown()
+        log.log('AiOrchestrator shut down')
+      }
+      catch (err) {
+        log.withError(err).error('AiOrchestrator shutdown error')
+      }
+    },
+  }
+}

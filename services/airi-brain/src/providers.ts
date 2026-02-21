@@ -1,3 +1,5 @@
+import type { GenerateTextOptions } from '@xsai/generate-text'
+
 import { env } from 'node:process'
 
 import { useLogg } from '@guiiai/logg'
@@ -18,14 +20,37 @@ export interface EmbeddingConfig {
   model: string
 }
 
+/**
+ * A callable model handle that carries the apiKey/baseURL/model
+ * so callers only need to supply messages and optional overrides.
+ */
+export interface LlmModelHandle {
+  config: LlmConfig
+  /**
+   * Build a partial GenerateTextOptions pre-filled with credentials.
+   * Caller merges in `messages` (and optional overrides) then passes
+   * the result to `generateText()`.
+   */
+  requestDefaults: () => Pick<GenerateTextOptions, 'apiKey' | 'baseURL' | 'model'>
+}
+
+export interface EmbeddingModelHandle {
+  config: EmbeddingConfig
+  requestDefaults: () => { apiKey: string, baseURL: string, model: string }
+}
+
 export interface BrainProviders {
-  llm: LlmConfig | null
-  embedding: EmbeddingConfig | null
+  llm: LlmModelHandle | null
+  embedding: EmbeddingModelHandle | null
+  /** Raw config accessors kept for backward-compat (same objects) */
+  llmConfig: LlmConfig | null
+  embeddingConfig: EmbeddingConfig | null
 }
 
 /**
- * Read LLM/Embedding configuration from environment variables.
- * Returns null for unconfigured providers (missing required env vars).
+ * Read LLM/Embedding configuration from environment variables and
+ * create model handles that can be used directly with xsAI's
+ * `generateText()` / `embed()`.
  *
  * Required env vars for LLM: AIRI_LLM_PROVIDER, AIRI_LLM_API_KEY, AIRI_LLM_MODEL, AIRI_LLM_BASE_URL
  * Required env vars for Embedding: AIRI_EMBEDDING_PROVIDER, AIRI_EMBEDDING_API_KEY, AIRI_EMBEDDING_MODEL, AIRI_EMBEDDING_BASE_URL
@@ -42,13 +67,23 @@ export function createBrainProviders(): BrainProviders {
   const embeddingModel = env.AIRI_EMBEDDING_MODEL ?? ''
   const embeddingBaseURL = env.AIRI_EMBEDDING_BASE_URL ?? ''
 
-  let llm: LlmConfig | null = null
+  let llm: LlmModelHandle | null = null
+  let llmConfig: LlmConfig | null = null
   if (llmProvider && llmApiKey && llmModel && llmBaseURL) {
-    llm = {
+    llmConfig = {
       provider: llmProvider,
       apiKey: llmApiKey,
       baseURL: llmBaseURL,
       model: llmModel,
+    }
+    const cfg = llmConfig
+    llm = {
+      config: cfg,
+      requestDefaults: () => ({
+        apiKey: cfg.apiKey,
+        baseURL: cfg.baseURL,
+        model: cfg.model,
+      }),
     }
     log.info('LLM provider configured', { provider: llmProvider, model: llmModel })
   }
@@ -56,16 +91,26 @@ export function createBrainProviders(): BrainProviders {
     log.info('LLM provider not configured (set AIRI_LLM_PROVIDER, AIRI_LLM_API_KEY, AIRI_LLM_MODEL, AIRI_LLM_BASE_URL)')
   }
 
-  let embedding: EmbeddingConfig | null = null
+  let embedding: EmbeddingModelHandle | null = null
+  let embeddingConfig: EmbeddingConfig | null = null
   if (embeddingProvider && embeddingApiKey && embeddingModel && embeddingBaseURL) {
-    embedding = {
+    embeddingConfig = {
       provider: embeddingProvider,
       apiKey: embeddingApiKey,
       baseURL: embeddingBaseURL,
       model: embeddingModel,
     }
+    const cfg = embeddingConfig
+    embedding = {
+      config: cfg,
+      requestDefaults: () => ({
+        apiKey: cfg.apiKey,
+        baseURL: cfg.baseURL,
+        model: cfg.model,
+      }),
+    }
     log.info('Embedding provider configured', { provider: embeddingProvider, model: embeddingModel })
   }
 
-  return { llm, embedding }
+  return { llm, embedding, llmConfig, embeddingConfig }
 }

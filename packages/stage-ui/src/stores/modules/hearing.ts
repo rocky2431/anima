@@ -55,7 +55,7 @@ export const useHearingStore = defineStore('hearing-store', () => {
   const activeCustomModelName = useLocalStorageManualReset('settings/hearing/active-custom-model', '')
   const transcriptionModelSearchQuery = refManualReset<string>('')
   const autoSendEnabled = useLocalStorageManualReset<boolean>('settings/hearing/auto-send-enabled', false)
-  const autoSendDelay = useLocalStorageManualReset<number>('settings/hearing/auto-send-delay', 2000) // Default 2 seconds
+  const autoSendDelay = useLocalStorageManualReset<number>('settings/hearing/auto-send-delay', 1000) // Default 1 second
 
   // Computed properties
   const availableProvidersMetadata = computed(() => allAudioTranscriptionProvidersMetadata.value)
@@ -499,6 +499,7 @@ export const useHearingSpeechInputPipeline = defineStore('modules:hearing:speech
         const providerConfig = providersStore.getProviderConfig(providerId) || {}
         const language = (options?.providerOptions?.language as string)
           || (providerConfig.language as string)
+          || navigator.language
           || 'en-US'
 
         // Web Speech API in continuous mode should run indefinitely - no idle timeout

@@ -9,7 +9,13 @@ import { usePluginHostInspectorStore } from '@proj-airi/stage-ui/stores/devtools
 import { useDisplayModelsStore } from '@proj-airi/stage-ui/stores/display-models'
 import { useModsServerChannelStore } from '@proj-airi/stage-ui/stores/mods/api/channel-server'
 import { useContextBridgeStore } from '@proj-airi/stage-ui/stores/mods/api/context-bridge'
+import { useActivityModuleStore } from '@proj-airi/stage-ui/stores/modules/activity'
 import { useAiriCardStore } from '@proj-airi/stage-ui/stores/modules/airi-card'
+import { useContextDisplayStore } from '@proj-airi/stage-ui/stores/modules/context-display'
+import { useMemoryModuleStore } from '@proj-airi/stage-ui/stores/modules/memory'
+import { usePersonaModuleStore } from '@proj-airi/stage-ui/stores/modules/persona'
+import { useSkillsModuleStore } from '@proj-airi/stage-ui/stores/modules/skills'
+import { useTodoModuleStore } from '@proj-airi/stage-ui/stores/modules/todo'
 import { useOnboardingStore } from '@proj-airi/stage-ui/stores/onboarding'
 import { usePerfTracerBridgeStore } from '@proj-airi/stage-ui/stores/perf-tracer-bridge'
 import { listProvidersForPluginHost, shouldPublishPluginHostCapabilities } from '@proj-airi/stage-ui/stores/plugin-host-capabilities'
@@ -55,6 +61,12 @@ const characterOrchestratorStore = useCharacterOrchestratorStore()
 const analyticsStore = useSharedAnalyticsStore()
 const pluginHostInspectorStore = usePluginHostInspectorStore()
 usePerfTracerBridgeStore()
+const todoStore = useTodoModuleStore()
+const memoryStore = useMemoryModuleStore()
+const activityStore = useActivityModuleStore()
+const skillsStore = useSkillsModuleStore()
+const personaStore = usePersonaModuleStore()
+const contextDisplayStore = useContextDisplayStore()
 
 watch(language, () => {
   i18n.locale.value = language.value
@@ -99,6 +111,14 @@ onMounted(async () => {
   await contextBridgeStore.initialize()
   characterOrchestratorStore.initialize()
 
+  // Initialize brain-connected module stores (after WS is connected)
+  todoStore.initialize()
+  memoryStore.initialize()
+  activityStore.initialize()
+  skillsStore.initialize()
+  personaStore.initialize()
+  contextDisplayStore.initialize()
+
   const startTrackingCursorPoint = useElectronEventaInvoke(electronStartTrackMousePosition)
   const reportPluginCapability = useElectronEventaInvoke(electronPluginUpdateCapability)
   await startTrackingCursorPoint()
@@ -128,7 +148,15 @@ watch(themeColorsHueDynamic, () => {
   document.documentElement.classList.toggle('dynamic-hue', themeColorsHueDynamic.value)
 }, { immediate: true })
 
-onUnmounted(() => contextBridgeStore.dispose())
+onUnmounted(() => {
+  contextBridgeStore.dispose()
+  todoStore.dispose()
+  memoryStore.dispose()
+  activityStore.dispose()
+  skillsStore.dispose()
+  personaStore.dispose()
+  contextDisplayStore.dispose()
+})
 </script>
 
 <template>

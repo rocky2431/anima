@@ -52,6 +52,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      'better-sqlite3': resolve(join(import.meta.dirname, 'src', 'stubs', 'better-sqlite3.ts')),
       '@proj-airi/server-sdk': resolve(join(import.meta.dirname, '..', '..', 'packages', 'server-sdk', 'src')),
       '@proj-airi/i18n': resolve(join(import.meta.dirname, '..', '..', 'packages', 'i18n', 'src')),
       '@proj-airi/stage-ui': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-ui', 'src')),
