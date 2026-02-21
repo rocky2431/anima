@@ -21,6 +21,7 @@
   "dependencies": {
     "@guiiai/logg": "catalog:",
     "@proj-airi/context-engine": "workspace:^",
+    "@proj-airi/desktop-shell": "workspace:^",
     "@proj-airi/persona-engine": "workspace:^",
     "@proj-airi/server-sdk": "workspace:^",
     "@proj-airi/server-shared": "workspace:^",

@@ -15,6 +15,8 @@ import { emitAppBeforeQuit, emitAppReady, emitAppWindowAllClosed } from './libs/
 import { setElectronMainDirname } from './libs/electron/location'
 import { setupServerChannelHandlers } from './services/airi/channel-server'
 import { setupPluginHost } from './services/airi/plugins'
+import { setupChannels } from './services/anima/setup-channels'
+import { setupDesktopShell } from './services/anima/setup-desktop-shell'
 import { setupAnimaOrchestrator } from './services/anima/setup-orchestrator'
 import { setupAutoUpdater } from './services/electron/auto-updater'
 import { setupTray } from './tray'
@@ -76,6 +78,11 @@ app.whenReady().then(async () => {
   const serverChannel = injeca.provide('modules:channel-server', () => setupServerChannelHandlers())
   const pluginHost = injeca.provide('modules:plugin-host', () => setupPluginHost())
   const animaOrchestrator = injeca.provide('modules:anima-orchestrator', () => setupAnimaOrchestrator())
+  const desktopShell = injeca.provide('modules:desktop-shell', {
+    dependsOn: { animaOrchestrator },
+    build: ({ dependsOn }) => setupDesktopShell(dependsOn),
+  })
+  const channels = injeca.provide('modules:channels', () => setupChannels())
   const autoUpdater = injeca.provide('services:auto-updater', () => setupAutoUpdater())
   const widgetsManager = injeca.provide('windows:widgets', () => setupWidgetsWindowManager())
   const noticeWindow = injeca.provide('windows:notice', () => setupNoticeWindowManager())
@@ -114,7 +121,7 @@ app.whenReady().then(async () => {
   })
 
   injeca.invoke({
-    dependsOn: { mainWindow, tray, serverChannel, pluginHost, animaOrchestrator },
+    dependsOn: { mainWindow, tray, serverChannel, pluginHost, animaOrchestrator, desktopShell, channels },
     callback: noop,
   })
 

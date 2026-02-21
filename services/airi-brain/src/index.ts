@@ -8,11 +8,13 @@ import { DocumentStore } from '@proj-airi/context-engine'
 import { Client } from '@proj-airi/server-sdk'
 
 import { registerActivityHandler } from './handlers/activity'
+import { disposeDesktopShellHandler, registerDesktopShellHandler } from './handlers/desktop-shell'
 import { registerMemoryHandler } from './handlers/memory'
 import { disposePersonaHandler, registerPersonaHandler } from './handlers/persona'
 import { registerSkillsHandler } from './handlers/skills'
 import { registerTodoHandler } from './handlers/todo'
 import { disposeVisionHandler, registerVisionHandler } from './handlers/vision'
+import { createBrainProviders } from './providers'
 import { BrainStore } from './store'
 
 setGlobalFormat(Format.Pretty)
@@ -35,7 +37,10 @@ async function main(): Promise<void> {
   const documentStore = new DocumentStore(dbPath)
   const brainStore = new BrainStore(documentStore.getDatabase())
 
-  log.withFields({ url, tokenPresent: !!env.AIRI_TOKEN, dataDir, dbPath }).info('Starting airi-brain bridge')
+  // Initialize LLM/Embedding provider configuration
+  const providers = createBrainProviders()
+
+  log.withFields({ url, tokenPresent: !!env.AIRI_TOKEN, dataDir, dbPath, llmConfigured: !!providers.llm, embeddingConfigured: !!providers.embedding }).info('Starting airi-brain bridge')
 
   const client = new Client({
     name: 'airi-brain',
@@ -89,6 +94,7 @@ async function main(): Promise<void> {
     registerSkillsHandler(client, brainStore)
     registerPersonaHandler(client, documentStore)
     registerVisionHandler(client, brainStore)
+    registerDesktopShellHandler(client, brainStore)
 
     log.info('All handlers registered — airi-brain is ready')
   })
@@ -98,6 +104,7 @@ async function main(): Promise<void> {
     log.info(`Received ${signal}, shutting down...`)
     disposePersonaHandler()
     disposeVisionHandler()
+    disposeDesktopShellHandler()
     client.close()
     documentStore.close()
     process.exit(0)
