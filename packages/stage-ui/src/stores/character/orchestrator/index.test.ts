@@ -156,7 +156,7 @@ describe('store character-orchestrator', () => {
       }
 
       await options?.onStreamEvent?.({ type: 'text-delta', text: 'Ahhh, got hit by zombie!' } satisfies StreamEvent)
-      await options?.onStreamEvent?.({ type: 'finish' } satisfies StreamEvent)
+      await options?.onStreamEvent?.({ type: 'finish', finishReason: 'stop' } satisfies StreamEvent)
     })
 
     const mockOnSparkNotifyReactionStreamEvent = vi.fn()

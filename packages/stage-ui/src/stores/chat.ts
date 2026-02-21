@@ -318,6 +318,9 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
               await parser.consume(event.text)
               break
             case 'finish':
+              if (event.usage) {
+                streamingMessageContext.usage = event.usage
+              }
               break
             case 'error':
               throw event.error ?? new Error('Stream error')

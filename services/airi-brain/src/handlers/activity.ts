@@ -1,51 +1,55 @@
 import type { Client } from '@proj-airi/server-sdk'
 
+import type { BrainStore } from '../store'
+
 import { useLogg } from '@guiiai/logg'
 
 const log = useLogg('brain:activity').useGlobalConfig()
 
 /**
- * Activity handler — primarily push-based from the brain to the UI.
- * The brain monitors system activity and pushes state/summary updates.
- * For the walking skeleton, we simulate periodic activity pushes.
+ * Activity handler — serves real persisted activity data.
+ * Activity events are written by the desktop-shell integration or
+ * other context-engine consumers. This handler reads and broadcasts.
  */
-export function registerActivityHandler(client: Client): void {
-  // Push an initial summary on connect
-  const initialSummary = {
-    date: new Date().toISOString().slice(0, 10),
-    highlights: [
-      'Started a new coding session',
-      'Reviewed project architecture',
-    ],
-    activityBreakdown: [
-      { app: 'VS Code', durationMs: 3_600_000, description: 'Code editing' },
-      { app: 'Browser', durationMs: 1_800_000, description: 'Documentation' },
-    ],
-    totalWorkDurationMs: 5_400_000,
-    personalNote: 'Productive morning session',
-  }
-
-  // Delay initial push slightly to let the UI subscribe
+export function registerActivityHandler(client: Client, brainStore: BrainStore): void {
+  // Push the current day's summary if available
   setTimeout(() => {
-    client.send({
-      type: 'activity:summary',
-      data: initialSummary,
-    })
-    log.info('Pushed initial activity summary')
+    const today = new Date().toISOString().slice(0, 10)
+    const summary = brainStore.getActivitySummary(today)
+
+    if (summary) {
+      client.send({
+        type: 'activity:summary',
+        data: {
+          date: summary.date,
+          highlights: summary.highlights,
+          activityBreakdown: summary.breakdown,
+          totalWorkDurationMs: summary.totalWorkDurationMs,
+          personalNote: '',
+        },
+      })
+      log.info('Pushed existing activity summary', { date: today })
+    }
+    else {
+      log.info('No activity summary for today yet', { date: today })
+    }
   }, 2000)
 
   client.onEvent('activity:history:request', (event) => {
     const { date, limit = 50 } = event.data as { date?: string, limit?: number }
     log.info('Activity history request', { date, limit })
 
-    // Walking skeleton returns mock history
+    const events = brainStore.getActivityEvents({ date, limit })
+
     client.send({
       type: 'activity:state',
       data: {
-        activities: [
-          { timestamp: Date.now() - 3_600_000, app: 'VS Code', description: 'Editing airi-brain', durationMs: 1_800_000 },
-          { timestamp: Date.now() - 1_800_000, app: 'Browser', description: 'Reading documentation', durationMs: 900_000 },
-        ],
+        activities: events.map(e => ({
+          timestamp: e.timestamp,
+          app: e.appName,
+          description: e.description,
+          durationMs: e.durationMs,
+        })),
       },
     })
   })

@@ -3242,6 +3242,40 @@ importers:
         specifier: ^0.20.13
         version: 0.20.13(@types/node@24.10.9)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.30.2)(rollup@4.55.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
+  services/airi-brain:
+    dependencies:
+      '@guiiai/logg':
+        specifier: 'catalog:'
+        version: 1.2.11
+      '@proj-airi/context-engine':
+        specifier: workspace:^
+        version: link:../../packages/context-engine
+      '@proj-airi/persona-engine':
+        specifier: workspace:^
+        version: link:../../packages/persona-engine
+      '@proj-airi/server-sdk':
+        specifier: workspace:^
+        version: link:../../packages/server-sdk
+      '@proj-airi/server-shared':
+        specifier: workspace:^
+        version: link:../../packages/server-shared
+      '@proj-airi/skills-engine':
+        specifier: workspace:^
+        version: link:../../packages/skills-engine
+      better-sqlite3:
+        specifier: 'catalog:'
+        version: 12.6.2
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.6
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: 'catalog:'
+        version: 7.6.13
+
   services/discord-bot:
     dependencies:
       '@discordjs/voice':

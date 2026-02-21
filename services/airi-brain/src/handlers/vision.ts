@@ -1,74 +1,59 @@
 import type { Client } from '@proj-airi/server-sdk'
 
+import type { BrainStore, VisionConfig } from '../store'
+
 import { useLogg } from '@guiiai/logg'
 
 const log = useLogg('brain:vision').useGlobalConfig()
 
-interface VisionConfig {
-  enabled: boolean
-  intervalMs: number
-  similarityThreshold: number
-  vlmProvider?: string
-  vlmModel?: string
-}
-
-let currentConfig: VisionConfig = {
-  enabled: false,
-  intervalMs: 60000,
-  similarityThreshold: 5,
-}
-
 let captureTimer: ReturnType<typeof setInterval> | null = null
-let captureCount = 0
-let uniqueCount = 0
-let duplicateCount = 0
+let brainStoreRef: BrainStore | null = null
 
-function pushStatus(client: Client): void {
+function pushStatus(client: Client, brainStore: BrainStore, config: VisionConfig): void {
+  const stats = brainStore.getVisionStats()
   client.send({
     type: 'vision:status',
     data: {
-      isCapturing: currentConfig.enabled && captureTimer !== null,
-      lastCaptureTimestamp: captureCount > 0 ? Date.now() : null,
+      isCapturing: config.enabled && captureTimer !== null,
+      lastCaptureTimestamp: stats.total > 0 ? Date.now() : null,
       deduplicationStats: {
-        total: captureCount,
-        unique: uniqueCount,
-        duplicates: duplicateCount,
+        total: stats.total,
+        unique: stats.uniqueCount,
+        duplicates: stats.duplicates,
       },
     },
   })
 }
 
-function startCapturePipeline(client: Client): void {
+function startCapturePipeline(client: Client, brainStore: BrainStore, config: VisionConfig): void {
   stopCapturePipeline()
 
-  if (!currentConfig.enabled || !currentConfig.vlmProvider || !currentConfig.vlmModel) {
+  if (!config.enabled || !config.vlmProvider || !config.vlmModel) {
     log.info('Vision pipeline not started: missing provider or model')
-    pushStatus(client)
+    pushStatus(client, brainStore, config)
     return
   }
 
   log.withFields({
-    intervalMs: currentConfig.intervalMs,
-    vlmProvider: currentConfig.vlmProvider,
-    vlmModel: currentConfig.vlmModel,
+    intervalMs: config.intervalMs,
+    vlmProvider: config.vlmProvider,
+    vlmModel: config.vlmModel,
   }).info('Starting vision capture pipeline')
 
   captureTimer = setInterval(() => {
-    captureCount++
-    // Simulate deduplication (in production, actual screenshot comparison happens here)
-    const isDuplicate = Math.random() < 0.3
-    if (isDuplicate) {
-      duplicateCount++
-    }
-    else {
-      uniqueCount++
-    }
+    const stats = brainStore.getVisionStats()
+    // In production: actual screenshot → pHash → dedup → VLM describe
+    // For now: increment total, mark as unique (pipeline placeholder)
+    brainStore.updateVisionStats({
+      total: stats.total + 1,
+      uniqueCount: stats.uniqueCount + 1,
+      duplicates: stats.duplicates,
+    })
+    pushStatus(client, brainStore, config)
+    log.info('Screenshot pipeline tick', { total: stats.total + 1 })
+  }, config.intervalMs)
 
-    pushStatus(client)
-    log.info('Screenshot captured', { total: captureCount, unique: uniqueCount })
-  }, currentConfig.intervalMs)
-
-  pushStatus(client)
+  pushStatus(client, brainStore, config)
 }
 
 function stopCapturePipeline(): void {
@@ -78,29 +63,40 @@ function stopCapturePipeline(): void {
   }
 }
 
-export function registerVisionHandler(client: Client): void {
+export function registerVisionHandler(client: Client, brainStore: BrainStore): void {
+  brainStoreRef = brainStore
+
+  // Load persisted config
+  const config = brainStore.getVisionConfig()
+
   client.onEvent('vision:config:update', (event) => {
-    const config = event.data as VisionConfig
-    log.withFields(config).info('Vision config update received')
+    const newConfig = event.data as VisionConfig
+    log.withFields(newConfig).info('Vision config update received')
 
-    currentConfig = { ...config }
+    brainStore.setVisionConfig(newConfig)
 
-    if (currentConfig.enabled) {
-      startCapturePipeline(client)
+    if (newConfig.enabled) {
+      startCapturePipeline(client, brainStore, newConfig)
     }
     else {
       stopCapturePipeline()
-      pushStatus(client)
+      pushStatus(client, brainStore, newConfig)
     }
   })
 
   // Push initial status
-  setTimeout(() => pushStatus(client), 1000)
+  setTimeout(() => pushStatus(client, brainStore, config), 1000)
+
+  // Start pipeline if it was previously enabled
+  if (config.enabled) {
+    startCapturePipeline(client, brainStore, config)
+  }
 }
 
 export function disposeVisionHandler(): void {
   stopCapturePipeline()
-  captureCount = 0
-  uniqueCount = 0
-  duplicateCount = 0
+  if (brainStoreRef) {
+    // Stats are already persisted on each tick, no final write needed
+    brainStoreRef = null
+  }
 }

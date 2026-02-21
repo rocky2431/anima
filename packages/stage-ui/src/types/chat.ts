@@ -52,6 +52,7 @@ export interface ChatStreamEventContext {
   contexts: Record<string, ContextMessage[]>
   composedMessage: Array<Message>
   input?: WebSocketEventInputs
+  usage?: { promptTokens: number, completionTokens: number, totalTokens: number }
 }
 
 export type ChatStreamEvent

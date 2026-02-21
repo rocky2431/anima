@@ -20,9 +20,16 @@
   },
   "dependencies": {
     "@guiiai/logg": "catalog:",
+    "@proj-airi/context-engine": "workspace:^",
+    "@proj-airi/persona-engine": "workspace:^",
     "@proj-airi/server-sdk": "workspace:^",
     "@proj-airi/server-shared": "workspace:^",
+    "@proj-airi/skills-engine": "workspace:^",
+    "better-sqlite3": "catalog:",
     "nanoid": "catalog:",
     "tsx": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "catalog:"
   }
 }

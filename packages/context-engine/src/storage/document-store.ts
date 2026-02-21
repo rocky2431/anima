@@ -135,6 +135,12 @@ export class DocumentStore {
     }))
   }
 
+  deleteTodo(id: string): boolean {
+    const stmt = this.db.prepare('DELETE FROM todos WHERE id = ?')
+    const result = stmt.run(id)
+    return result.changes > 0
+  }
+
   // --- Settings ---
 
   getSetting(key: string): string | null {
@@ -258,7 +264,32 @@ export class DocumentStore {
     return stmt.all(category, limit) as MemoryEntry[]
   }
 
+  deleteMemoryEntry(id: string): boolean {
+    const stmt = this.db.prepare('DELETE FROM memory_entries WHERE id = ?')
+    const result = stmt.run(id)
+    return result.changes > 0
+  }
+
+  searchMemoryEntries(query: string, limit: number): MemoryEntry[] {
+    const stmt = this.db.prepare(
+      `SELECT id, content, importance, category, source_date AS sourceDate, created_at AS createdAt
+       FROM memory_entries
+       WHERE content LIKE '%' || ? || '%'
+       ORDER BY created_at DESC
+       LIMIT ?`,
+    )
+    return stmt.all(query, limit) as MemoryEntry[]
+  }
+
   // --- Lifecycle ---
+
+  /**
+   * Access the underlying better-sqlite3 Database instance.
+   * Useful for sharing the connection with extension stores (e.g. BrainStore).
+   */
+  getDatabase(): Database.Database {
+    return this.db
+  }
 
   close(): void {
     this.db.close()

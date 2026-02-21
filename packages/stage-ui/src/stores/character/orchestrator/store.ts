@@ -200,7 +200,19 @@ export const useCharacterOrchestratorStore = defineStore('character-orchestrator
   function initialize() {
     modsServerChannelStore.onEvent('spark:notify', async (event) => {
       try {
-        await handleIncomingSparkNotify(event)
+        if (!navigator.locks) {
+          await handleIncomingSparkNotify(event)
+          return
+        }
+        await navigator.locks.request(
+          `spark:notify:${event.data.id}`,
+          { ifAvailable: true },
+          async (lock) => {
+            if (!lock)
+              return
+            await handleIncomingSparkNotify(event)
+          },
+        )
       }
       catch (error) {
         console.warn('Failed to handle spark:notify event:', error)

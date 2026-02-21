@@ -14,7 +14,7 @@ import { useConsciousnessStore } from './modules/consciousness'
 
 export type StreamEvent
   = | { type: 'text-delta', text: string }
-    | { type: 'finish', finishReason: string }
+    | { type: 'finish', finishReason: string, usage?: { promptTokens: number, completionTokens: number, totalTokens: number } }
     | ({ type: 'tool-call' } & CompletionToolCall)
     | { type: 'tool-result', toolCallId: string, result?: string | CommonContentPart[] }
     | { type: 'error', error: any }

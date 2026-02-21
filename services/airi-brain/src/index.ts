@@ -1,6 +1,10 @@
 import process, { env } from 'node:process'
 
+import { mkdirSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { Format, LogLevel, setGlobalFormat, setGlobalLogLevel, useLogg } from '@guiiai/logg'
+import { DocumentStore } from '@proj-airi/context-engine'
 import { Client } from '@proj-airi/server-sdk'
 
 import { registerActivityHandler } from './handlers/activity'
@@ -9,6 +13,7 @@ import { disposePersonaHandler, registerPersonaHandler } from './handlers/person
 import { registerSkillsHandler } from './handlers/skills'
 import { registerTodoHandler } from './handlers/todo'
 import { disposeVisionHandler, registerVisionHandler } from './handlers/vision'
+import { BrainStore } from './store'
 
 setGlobalFormat(Format.Pretty)
 setGlobalLogLevel(LogLevel.Log)
@@ -20,8 +25,17 @@ const DEV_DEFAULT_WS = ['ws://', '127.0.0.1', ':6121/ws'].join('')
 async function main(): Promise<void> {
   const url = env.AIRI_URL ?? env.AIRI_WS_URL ?? DEV_DEFAULT_WS
   const token = env.AIRI_TOKEN ?? 'abcd'
+  const dataDir = resolve(env.AIRI_DATA_DIR ?? './data')
 
-  log.withFields({ url, tokenPresent: !!env.AIRI_TOKEN }).info('Starting airi-brain bridge')
+  // Ensure data directory exists
+  mkdirSync(dataDir, { recursive: true })
+
+  // Initialize storage
+  const dbPath = resolve(dataDir, 'anima.db')
+  const documentStore = new DocumentStore(dbPath)
+  const brainStore = new BrainStore(documentStore.getDatabase())
+
+  log.withFields({ url, tokenPresent: !!env.AIRI_TOKEN, dataDir, dbPath }).info('Starting airi-brain bridge')
 
   const client = new Client({
     name: 'airi-brain',
@@ -69,12 +83,12 @@ async function main(): Promise<void> {
 
     log.info('Authenticated, registering handlers')
 
-    registerTodoHandler(client)
-    registerMemoryHandler(client)
-    registerActivityHandler(client)
-    registerSkillsHandler(client)
-    registerPersonaHandler(client)
-    registerVisionHandler(client)
+    registerTodoHandler(client, documentStore)
+    registerMemoryHandler(client, documentStore)
+    registerActivityHandler(client, brainStore)
+    registerSkillsHandler(client, brainStore)
+    registerPersonaHandler(client, documentStore)
+    registerVisionHandler(client, brainStore)
 
     log.info('All handlers registered — airi-brain is ready')
   })
@@ -85,6 +99,7 @@ async function main(): Promise<void> {
     disposePersonaHandler()
     disposeVisionHandler()
     client.close()
+    documentStore.close()
     process.exit(0)
   }
 
