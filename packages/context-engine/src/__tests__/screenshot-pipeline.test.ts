@@ -286,4 +286,44 @@ describe('screenshotPipeline', () => {
     expect(errors).toHaveLength(1)
     expect(errors[0].message).toBe('Screenshot pipeline tick failed')
   })
+
+  it('tracks deduplication stats via getDeduplicationStats()', async () => {
+    // Sequence: A, A, B → 1st unique (no previous), 2nd duplicate, 3rd unique (different)
+    const screenshotProvider = new SequentialScreenshotProvider([pngA, pngA, pngB])
+    const vlmProvider = new StubVlmProvider()
+    const pipeline = new ScreenshotPipeline({
+      screenshotProvider,
+      vlmProvider,
+    })
+
+    await pipeline.tick() // pngA — first capture, no previous hash, isDuplicate=false
+    await pipeline.tick() // pngA — same as previous, isDuplicate=true
+    await pipeline.tick() // pngB — different, isDuplicate=false
+
+    const stats = pipeline.getDeduplicationStats()
+    expect(stats.totalComparisons).toBe(3)
+    expect(stats.duplicatesFound).toBe(1)
+    expect(stats.uniqueFound).toBe(2)
+    expect(stats.deduplicationRate).toBeCloseTo(1 / 3)
+  })
+
+  it('accepts external DeduplicationTracker', async () => {
+    const { DeduplicationTracker } = await import('../capture/phash')
+    const tracker = new DeduplicationTracker()
+
+    const screenshotProvider = new SequentialScreenshotProvider([pngA, pngA])
+    const vlmProvider = new StubVlmProvider()
+    const pipeline = new ScreenshotPipeline({
+      screenshotProvider,
+      vlmProvider,
+      deduplicationTracker: tracker,
+    })
+
+    await pipeline.tick()
+    await pipeline.tick()
+
+    // External tracker sees the same data
+    expect(tracker.getStats().totalComparisons).toBe(2)
+    expect(pipeline.getDeduplicationStats()).toEqual(tracker.getStats())
+  })
 })

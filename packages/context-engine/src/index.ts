@@ -3,7 +3,8 @@ export { buildActivityContext } from './activity/activity-context'
 export { calculateContinuousWorkDuration } from './activity/duration'
 
 export { FolderMonitor } from './capture/folder-monitor'
-export { areSimilar, computePHash, hammingDistance } from './capture/phash'
+export { areSimilar, computePHash, DeduplicationTracker, hammingDistance } from './capture/phash'
+export type { DeduplicationStats } from './capture/phash'
 export { ScreenshotCapture } from './capture/screenshot'
 
 export { ScreenshotPipeline } from './capture/screenshot-pipeline'
@@ -22,6 +23,8 @@ export { computeImportance, ContextMerger, deduplicateStrings, mergeKeywords, se
 export type { ContextMergerOptions } from './processing/context-merger'
 export { DocumentProcessor } from './processing/document-processor'
 export { EntityExtractor } from './processing/entity-extractor'
+export { classifyTask, ModelRouter } from './processing/model-router'
+export type { ModelRouterOptions, ModelTier, RoutingStats, TaskType } from './processing/model-router'
 export { ScreenshotProcessor } from './processing/screenshot-processor'
 export type { ScreenshotUnderstanding } from './processing/screenshot-processor'
 export { chunkText } from './processing/text-chunker'

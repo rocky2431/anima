@@ -239,6 +239,30 @@
       "p1": 2,
       "total": 25,
       "parent": null
+    },
+    {
+      "id": "20260221-054200-feat-task-24-performance-cost-control-iter1",
+      "branch": "feat/task-24-performance-cost-control-iter1",
+      "iteration": 1,
+      "mode": "all",
+      "timestamp": "2026-02-21T05:42:00Z",
+      "verdict": "REQUEST_CHANGES",
+      "p0": 0,
+      "p1": 6,
+      "total": 27,
+      "parent": null
+    },
+    {
+      "id": "20260221-055400-feat-task-24-performance-cost-control-iter1-iter2",
+      "branch": "feat/task-24-performance-cost-control-iter1",
+      "iteration": 2,
+      "mode": "recheck",
+      "timestamp": "2026-02-21T05:54:00Z",
+      "verdict": "COMMENT",
+      "p0": 0,
+      "p1": 1,
+      "total": 2,
+      "parent": "20260221-054200-feat-task-24-performance-cost-control-iter1"
     }
   ]
 }
