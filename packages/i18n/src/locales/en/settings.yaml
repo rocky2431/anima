@@ -32,6 +32,26 @@ dialogs:
     no-models-help: >-
       Please return to the previous step and check your API key, or check the
       network connection.
+    select-character: Choose a Character
+    select-character-description: Pick a personality template for your AI companion.
+    character-xiaorou-desc: Gentle and caring. Speaks softly with a warm touch. Great at noticing details about your life.
+    character-aria-desc: Energetic and curious. Loves learning and tech. Quick-witted with playful humor.
+    character-mochi-desc: Calm and healing. Relaxed pace with a soothing presence. Sensitive to when you are tired.
+    features-summary: You're All Set!
+    features-summary-description: These core modules will be automatically enabled for the best experience.
+    features-module-persona: Persona
+    features-module-persona-desc: Character personality and emotions
+    features-module-todo: Todo
+    features-module-todo-desc: Task management powered by AI
+    features-module-memory: Memory
+    features-module-memory-desc: Remembers your conversations
+    features-module-activity: Activity
+    features-module-activity-desc: Tracks your daily patterns
+    features-module-skills: Skills
+    features-module-skills-desc: Extensible AI capabilities
+    features-module-screenshot: Screenshot
+    features-module-screenshot-desc: Vision requires VLM model (disabled by default)
+    features-ready: Get Started
 language:
   title: Language
   description: >

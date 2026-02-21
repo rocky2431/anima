@@ -70,8 +70,8 @@ const {
       variant="primary"
       :disabled="!activeModel"
       :loading="isLoadingActiveProviderModels"
-      :label="t('settings.dialogs.onboarding.saveAndContinue')"
-      @click="context.handleSave"
+      :label="t('settings.dialogs.onboarding.next')"
+      @click="context.handleNextStep()"
     />
   </div>
 </template>

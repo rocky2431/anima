@@ -1051,6 +1051,36 @@ export const skillsList = defineEventa<SkillsListEvent>('skills:list')
 export const skillsToggle = defineEventa<SkillsToggleEvent>('skills:toggle')
 export const skillsToggled = defineEventa<SkillsToggledEvent>('skills:toggled')
 
+// ─── Vision Events ─────────────────────────────────────────────────────────
+
+interface VisionConfigUpdateEvent {
+  enabled: boolean
+  intervalMs: number
+  similarityThreshold: number
+  vlmProvider?: string
+  vlmModel?: string
+}
+
+interface VisionStatusEvent {
+  isCapturing: boolean
+  lastCaptureTimestamp: number | null
+  deduplicationStats: {
+    total: number
+    unique: number
+    duplicates: number
+  }
+}
+
+// ─── Persona Template Events ───────────────────────────────────────────────
+
+interface PersonaTemplateSetEvent {
+  templateId: string
+}
+
+export const visionConfigUpdate = defineEventa<VisionConfigUpdateEvent>('vision:config:update')
+export const visionStatus = defineEventa<VisionStatusEvent>('vision:status')
+export const personaTemplateSet = defineEventa<PersonaTemplateSetEvent>('persona:template:set')
+
 // Thanks to:
 //
 // A little hack for creating extensible discriminated unions : r/typescript
@@ -1245,6 +1275,13 @@ export interface ProtocolEvents<C = undefined> {
   'skills:list': SkillsListEvent
   'skills:toggle': SkillsToggleEvent
   'skills:toggled': SkillsToggledEvent
+
+  // Vision
+  'vision:config:update': VisionConfigUpdateEvent
+  'vision:status': VisionStatusEvent
+
+  // Persona Template
+  'persona:template:set': PersonaTemplateSetEvent
 }
 
 export type ProtocolEventOf<E, C = undefined> = E extends keyof ProtocolEvents<C>

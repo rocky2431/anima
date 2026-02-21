@@ -2,6 +2,8 @@
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, provide, ref } from 'vue'
 
+import StepCharacterSelection from './step-character-selection.vue'
+import StepFeaturesSummary from './step-features-summary.vue'
 import StepModelSelection from './step-model-selection.vue'
 import StepProviderConfiguration from './step-provider-configuration.vue'
 import StepProviderSelection from './step-provider-selection.vue'
@@ -66,7 +68,7 @@ async function handleNextStep(configData?: { apiKey: string, baseUrl: string, ac
   }
 
   // Other steps: just proceed
-  if (step.value < 4) {
+  if (step.value < 6) {
     direction.value = 'next'
     step.value++
   }
@@ -126,6 +128,8 @@ provide(OnboardingContextKey, {
       <StepProviderSelection v-else-if="step === 2" :key="2" />
       <StepProviderConfiguration v-else-if="step === 3" :key="3" />
       <StepModelSelection v-else-if="step === 4" :key="4" />
+      <StepCharacterSelection v-else-if="step === 5" :key="5" />
+      <StepFeaturesSummary v-else-if="step === 6" :key="6" />
     </Transition>
   </div>
 </template>

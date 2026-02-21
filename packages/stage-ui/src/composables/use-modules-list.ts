@@ -12,6 +12,7 @@ import { useHearingStore } from '../stores/modules/hearing'
 import { useMcpModuleStore } from '../stores/modules/mcp'
 import { useSpeechStore } from '../stores/modules/speech'
 import { useTwitterStore } from '../stores/modules/twitter'
+import { useVisionStore } from '../stores/modules/vision'
 
 export interface Module {
   id: string
@@ -37,6 +38,7 @@ export function useModulesList() {
   const minecraftStore = useMinecraftStore()
   const factorioStore = useFactorioStore()
   const mcpStore = useMcpModuleStore()
+  const visionStore = useVisionStore()
   const beatSyncState = ref<BeatSyncDetectorState>()
 
   const modulesList = computed<Module[]>(() => [
@@ -73,7 +75,7 @@ export function useModulesList() {
       description: t('settings.pages.modules.vision.description'),
       icon: 'i-solar:eye-closed-bold-duotone',
       to: '/settings/modules/vision',
-      configured: false,
+      configured: visionStore.configured,
       category: 'essential',
     },
     {

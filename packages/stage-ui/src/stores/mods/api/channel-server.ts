@@ -59,6 +59,11 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
     'skills:list',
     'skills:toggle',
     'skills:toggled',
+    // Vision
+    'vision:config:update',
+    'vision:status',
+    // Persona Template
+    'persona:template:set',
   ]
 
   async function initialize(options?: { token?: string, possibleEvents?: Array<keyof WebSocketEvents> }) {

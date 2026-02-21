@@ -120,6 +120,7 @@ onUnmounted(() => {
 // Handle first-time setup events
 function handleSetupConfigured() {
   onboardingStore.markSetupCompleted()
+  onboardingStore.autoEnableModules()
 }
 
 function handleSetupSkipped() {

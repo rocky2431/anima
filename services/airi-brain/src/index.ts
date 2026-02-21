@@ -8,6 +8,7 @@ import { registerMemoryHandler } from './handlers/memory'
 import { disposePersonaHandler, registerPersonaHandler } from './handlers/persona'
 import { registerSkillsHandler } from './handlers/skills'
 import { registerTodoHandler } from './handlers/todo'
+import { disposeVisionHandler, registerVisionHandler } from './handlers/vision'
 
 setGlobalFormat(Format.Pretty)
 setGlobalLogLevel(LogLevel.Log)
@@ -31,6 +32,11 @@ async function main(): Promise<void> {
       'persona:emotion:state',
       'persona:intimacy:state',
       'persona:proactive:trigger',
+      // Vision
+      'vision:config:update',
+      'vision:status',
+      // Persona Template
+      'persona:template:set',
       // Todo
       'todo:list',
       'todo:create',
@@ -68,6 +74,7 @@ async function main(): Promise<void> {
     registerActivityHandler(client)
     registerSkillsHandler(client)
     registerPersonaHandler(client)
+    registerVisionHandler(client)
 
     log.info('All handlers registered — airi-brain is ready')
   })
@@ -76,6 +83,7 @@ async function main(): Promise<void> {
   async function gracefulShutdown(signal: string): Promise<void> {
     log.info(`Received ${signal}, shutting down...`)
     disposePersonaHandler()
+    disposeVisionHandler()
     client.close()
     process.exit(0)
   }

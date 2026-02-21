@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { Alert, ErrorContainer, RadioCardManySelect, RadioCardSimple } from '@proj-airi/stage-ui/components'
 import { useAnalytics } from '@proj-airi/stage-ui/composables'
+import { useModsServerChannelStore } from '@proj-airi/stage-ui/stores/mods/api/channel-server'
 import { useConsciousnessStore } from '@proj-airi/stage-ui/stores/modules/consciousness'
+import { useMemoryModuleStore } from '@proj-airi/stage-ui/stores/modules/memory'
+import { usePersonaModuleStore } from '@proj-airi/stage-ui/stores/modules/persona'
+import { useSkillsModuleStore } from '@proj-airi/stage-ui/stores/modules/skills'
+import { useTodoModuleStore } from '@proj-airi/stage-ui/stores/modules/todo'
 import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
 import { storeToRefs } from 'pinia'
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 
@@ -24,6 +29,37 @@ const {
 
 const { t } = useI18n()
 const { trackProviderClick } = useAnalytics()
+
+// Module stores for status dashboard
+const serverChannelStore = useModsServerChannelStore()
+const personaStore = usePersonaModuleStore()
+const todoStore = useTodoModuleStore()
+const memoryStore = useMemoryModuleStore()
+const skillsStore = useSkillsModuleStore()
+
+const { connected: brainConnected } = storeToRefs(serverChannelStore)
+const { currentEmotion, intimacy, lastProactiveTrigger } = storeToRefs(personaStore)
+
+interface ModuleStatus {
+  id: string
+  label: string
+  icon: string
+  active: boolean
+}
+
+const moduleStatuses = computed<ModuleStatus[]>(() => [
+  { id: 'brain', label: 'Brain', icon: 'i-solar:cpu-bolt-bold-duotone', active: brainConnected.value },
+  { id: 'persona', label: 'Persona', icon: 'i-solar:ghost-bold-duotone', active: !!currentEmotion.value.emotion },
+  { id: 'todo', label: 'Todo', icon: 'i-solar:checklist-minimalistic-bold-duotone', active: todoStore.todos.length >= 0 },
+  { id: 'memory', label: 'Memory', icon: 'i-solar:bookmark-bold-duotone', active: memoryStore.memories.length >= 0 },
+  { id: 'skills', label: 'Skills', icon: 'i-solar:magic-stick-3-bold-duotone', active: skillsStore.skills.length >= 0 },
+])
+
+const lastTriggerTimeAgo = computed(() => {
+  if (!lastProactiveTrigger.value)
+    return null
+  return lastProactiveTrigger.value.headline
+})
 
 watch(activeProvider, async (provider, oldProvider) => {
   if (!provider)
@@ -51,6 +87,46 @@ function handleDeleteProvider(providerId: string) {
 </script>
 
 <template>
+  <!-- AI Status Dashboard -->
+  <div bg="neutral-50 dark:[rgba(0,0,0,0.3)]" flex="~ col gap-4" mb-4 rounded-xl p-4>
+    <h2 class="text-lg text-neutral-500 md:text-2xl dark:text-neutral-500">
+      AI Status Dashboard
+    </h2>
+
+    <!-- Module status indicators -->
+    <div class="flex flex-wrap gap-3">
+      <div
+        v-for="mod in moduleStatuses"
+        :key="mod.id"
+        class="flex items-center gap-2 rounded-lg bg-white px-3 py-2 dark:bg-neutral-800/50"
+      >
+        <div :class="mod.icon" class="text-lg" />
+        <span class="text-sm font-medium">{{ mod.label }}</span>
+        <div
+          class="h-2.5 w-2.5 rounded-full"
+          :class="mod.active ? 'bg-green-500' : 'bg-neutral-300 dark:bg-neutral-600'"
+        />
+      </div>
+    </div>
+
+    <!-- Persona state -->
+    <div v-if="currentEmotion.emotion" class="flex flex-wrap items-center gap-4 border-t border-neutral-200 pt-3 text-sm dark:border-neutral-700">
+      <div class="flex items-center gap-1.5">
+        <span class="text-neutral-500">Emotion:</span>
+        <span class="font-medium">{{ currentEmotion.emotion }}</span>
+        <span class="text-neutral-400">({{ currentEmotion.intensity.toFixed(1) }})</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-neutral-500">Intimacy:</span>
+        <span class="font-medium">{{ intimacy.label }}</span>
+      </div>
+      <div v-if="lastTriggerTimeAgo" class="flex items-center gap-1.5">
+        <span class="text-neutral-500">Last trigger:</span>
+        <span class="truncate font-medium" max-w-50>{{ lastTriggerTimeAgo }}</span>
+      </div>
+    </div>
+  </div>
+
   <div bg="neutral-50 dark:[rgba(0,0,0,0.3)]" rounded-xl p-4 flex="~ col gap-4">
     <div>
       <div flex="~ col gap-4">
