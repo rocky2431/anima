@@ -26,10 +26,12 @@ export const useDesktopShellStore = defineStore('desktop-shell-module', () => {
 
     disposers.value.push(
       serverChannel.onEvent('activity:state', (event) => {
-        const { appName, windowTitle, timestamp } = event.data
-        currentAppName.value = appName ?? ''
-        currentWindowTitle.value = windowTitle ?? ''
-        lastActivityTimestamp.value = timestamp ?? Date.now()
+        const latest = event.data.activities.at(-1)
+        if (!latest)
+          return
+        currentAppName.value = latest.app ?? ''
+        currentWindowTitle.value = latest.description ?? ''
+        lastActivityTimestamp.value = latest.timestamp ?? Date.now()
       }),
     )
   }
