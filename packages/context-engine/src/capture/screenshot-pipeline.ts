@@ -1,7 +1,8 @@
 import type { ProcessedScreenshotContext, ScreenshotProvider, VlmProvider } from '../types'
+import type { DeduplicationStats } from './phash'
 
 import { ScreenshotProcessor } from '../processing/screenshot-processor'
-import { areSimilar, computePHash } from './phash'
+import { areSimilar, computePHash, DeduplicationTracker } from './phash'
 import { ScreenshotCapture } from './screenshot'
 
 export interface ScreenshotPipelineOptions {
@@ -15,6 +16,8 @@ export interface ScreenshotPipelineOptions {
   onContext?: (context: ProcessedScreenshotContext) => void
   /** Callback invoked when a tick fails. Receives the error with context. */
   onError?: (error: Error) => void
+  /** Optional external DeduplicationTracker. If omitted, an internal one is created. */
+  deduplicationTracker?: DeduplicationTracker
 }
 
 /**
@@ -33,6 +36,7 @@ export class ScreenshotPipeline {
   private timer: ReturnType<typeof setInterval> | null = null
   private lastHash: string | null = null
   private ticking = false
+  private dedupTracker: DeduplicationTracker
 
   constructor(options: ScreenshotPipelineOptions) {
     this.capture = new ScreenshotCapture(options.screenshotProvider)
@@ -41,6 +45,7 @@ export class ScreenshotPipeline {
     this.similarityThreshold = options.similarityThreshold ?? 5
     this.onContext = options.onContext
     this.onError = options.onError
+    this.dedupTracker = options.deduplicationTracker ?? new DeduplicationTracker()
   }
 
   /**
@@ -87,7 +92,10 @@ export class ScreenshotPipeline {
       const screenshot = await this.capture.capture()
       const hash = await computePHash(screenshot.buffer)
 
-      if (this.lastHash !== null && areSimilar(this.lastHash, hash, this.similarityThreshold)) {
+      const isDuplicate = this.lastHash !== null && areSimilar(this.lastHash, hash, this.similarityThreshold)
+      this.dedupTracker.track(isDuplicate)
+
+      if (isDuplicate) {
         return false
       }
 
@@ -121,5 +129,10 @@ export class ScreenshotPipeline {
 
   get isRunning(): boolean {
     return this.timer !== null
+  }
+
+  /** Returns deduplication statistics for this pipeline's lifetime. */
+  getDeduplicationStats(): DeduplicationStats {
+    return this.dedupTracker.getStats()
   }
 }

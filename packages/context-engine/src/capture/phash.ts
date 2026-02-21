@@ -72,3 +72,54 @@ export function areSimilar(
 ): boolean {
   return hammingDistance(hash1, hash2) <= threshold
 }
+
+// --- Deduplication Statistics ---
+
+export interface DeduplicationStats {
+  /** Total number of comparisons tracked */
+  totalComparisons: number
+  /** Number of comparisons that found duplicates */
+  duplicatesFound: number
+  /** Number of comparisons that found unique items */
+  uniqueFound: number
+  /** Deduplication rate (0-1): duplicatesFound / totalComparisons. 0 when no comparisons. */
+  deduplicationRate: number
+}
+
+/**
+ * Tracks deduplication statistics over time.
+ * Intended to be paired with the ScreenshotPipeline to measure
+ * how effectively pHash dedup reduces redundant VLM calls.
+ */
+export class DeduplicationTracker {
+  private _duplicates = 0
+  private _unique = 0
+
+  /**
+   * Record a comparison result.
+   * @param isDuplicate true if the comparison found a duplicate, false if unique.
+   */
+  track(isDuplicate: boolean): void {
+    if (isDuplicate) {
+      this._duplicates++
+    }
+    else {
+      this._unique++
+    }
+  }
+
+  getStats(): DeduplicationStats {
+    const total = this._duplicates + this._unique
+    return {
+      totalComparisons: total,
+      duplicatesFound: this._duplicates,
+      uniqueFound: this._unique,
+      deduplicationRate: total > 0 ? this._duplicates / total : 0,
+    }
+  }
+
+  reset(): void {
+    this._duplicates = 0
+    this._unique = 0
+  }
+}
