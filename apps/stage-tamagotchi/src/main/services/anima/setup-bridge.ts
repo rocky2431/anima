@@ -1,4 +1,4 @@
-import type { LanguageModelV2 } from '@ai-sdk/provider'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 
 import type { AiOrchestrator } from './ai-orchestrator'
 import type { AnimaOrchestrator, AnimaProactiveEvent } from './orchestrator'
@@ -53,7 +53,7 @@ export function enqueueProactiveEvent(event: AnimaProactiveEvent): void {
   pendingProactiveEvents.push(event)
 }
 
-function createBridgeModel(): LanguageModelV2 | null {
+function createBridgeModel(): LanguageModelV3 | null {
   const apiKey = env.AIRI_LLM_API_KEY ?? env.AIRI_VLM_API_KEY
   const modelId = env.AIRI_LLM_MODEL ?? 'gpt-4o-mini'
   const baseURL = env.AIRI_LLM_BASE_URL

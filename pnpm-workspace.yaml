@@ -28,6 +28,7 @@ catalog:
   '@ai-sdk/anthropic': ^3.0.45
   '@ai-sdk/mcp': ^1.0.21
   '@ai-sdk/openai': ^3.0.29
+  '@ai-sdk/provider': ^3.0.8
   '@capacitor/cli': ^8.0.1
   '@capacitor/core': ^8.0.1
   '@capacitor/ios': ^8.0.1

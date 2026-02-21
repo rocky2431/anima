@@ -1,4 +1,4 @@
-import type { LanguageModelV2, LanguageModelV2CallOptions } from '@ai-sdk/provider'
+import type { LanguageModelV3, LanguageModelV3CallOptions } from '@ai-sdk/provider'
 import type { Skill } from '@proj-airi/skills-engine'
 
 import * as fs from 'node:fs'
@@ -23,29 +23,34 @@ const BUILTIN_SKILLS_DIR = path.resolve(
 )
 
 /**
- * Test Double rationale: LanguageModelV2 is an external LLM API
+ * Test Double rationale: LanguageModelV3 is an external LLM API
  * (Anthropic/OpenAI). External LLM calls are rate-limited, cost money,
- * and are unavailable in CI. This test double implements the LanguageModelV2
+ * and are unavailable in CI. This test double implements the LanguageModelV3
  * interface to return predictable results for integration testing.
  */
 function createTestModel(options: {
-  generateResult?: (opts: LanguageModelV2CallOptions) => {
+  generateResult?: (opts: LanguageModelV3CallOptions) => {
     content: Array<{ type: 'text', text: string } | { type: 'tool-call', toolCallId: string, toolName: string, input: string }>
-    finishReason: 'stop' | 'tool-calls'
+    finishReason: { unified: 'stop' | 'tool-calls', raw: string | undefined }
   }
-} = {}): LanguageModelV2 {
+} = {}): LanguageModelV3 {
+  const defaultUsage = {
+    inputTokens: { total: 10, noCache: undefined, cacheRead: undefined, cacheWrite: undefined },
+    outputTokens: { total: 5, text: undefined, reasoning: undefined },
+  }
+
   return {
-    specificationVersion: 'v2',
+    specificationVersion: 'v3',
     provider: 'test-provider',
     modelId: 'test-model',
     supportedUrls: {},
 
-    doGenerate: async (callOptions: LanguageModelV2CallOptions) => {
+    doGenerate: async (callOptions: LanguageModelV3CallOptions) => {
       const result = options.generateResult?.(callOptions)
       return {
         content: result?.content ?? [{ type: 'text' as const, text: 'Hello from test model' }],
-        finishReason: result?.finishReason ?? 'stop',
-        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        finishReason: result?.finishReason ?? { unified: 'stop' as const, raw: undefined },
+        usage: defaultUsage,
         warnings: [],
       }
     },
@@ -54,8 +59,8 @@ function createTestModel(options: {
       stream: new ReadableStream({
         start(controller) {
           controller.enqueue({ type: 'text-start' as const, id: 'text-0', providerMetadata: undefined })
-          controller.enqueue({ type: 'text-delta' as const, id: 'text-0', textDelta: 'Hello from test model' })
-          controller.enqueue({ type: 'finish' as const, finishReason: 'stop' as const, usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 } })
+          controller.enqueue({ type: 'text-delta' as const, id: 'text-0', delta: 'Hello from test model' })
+          controller.enqueue({ type: 'finish' as const, finishReason: { unified: 'stop' as const, raw: undefined }, usage: defaultUsage })
           controller.close()
         },
       }),
@@ -101,7 +106,7 @@ describe('ai Orchestrator Integration: AI SDK + MCP + Skills', () => {
             : undefined
           return {
             content: [{ type: 'text', text: 'Response with system prompt' }],
-            finishReason: 'stop',
+            finishReason: { unified: 'stop' as const, raw: undefined },
           }
         },
       })
@@ -255,13 +260,13 @@ describe('ai Orchestrator Integration: AI SDK + MCP + Skills', () => {
                 toolName: 'echo',
                 input: '{}',
               }],
-              finishReason: 'tool-calls',
+              finishReason: { unified: 'tool-calls' as const, raw: undefined },
             }
           }
           // Second call: model sees tool result and generates final text
           return {
             content: [{ type: 'text', text: 'The echo tool returned: Echo: hello' }],
-            finishReason: 'stop',
+            finishReason: { unified: 'stop' as const, raw: undefined },
           }
         },
       })
@@ -368,7 +373,7 @@ describe('ai Orchestrator Integration: AI SDK + MCP + Skills', () => {
             receivedToolDefs = (opts.tools ?? []) as Array<{ type: string, name: string }>
             return {
               content: [{ type: 'text', text: 'Combined response' }],
-              finishReason: 'stop',
+              finishReason: { unified: 'stop' as const, raw: undefined },
             }
           },
         })

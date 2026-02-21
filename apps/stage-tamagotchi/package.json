@@ -31,6 +31,8 @@
     "artifacts-metadata": "tsx scripts/artifacts-metadata.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "catalog:",
+    "@ai-sdk/provider": "catalog:",
     "@date-fns/utc": "^2.1.1",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",

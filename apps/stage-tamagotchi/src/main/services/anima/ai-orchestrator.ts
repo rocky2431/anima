@@ -1,4 +1,4 @@
-import type { LanguageModelV2 } from '@ai-sdk/provider'
+import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type { Skill } from '@proj-airi/skills-engine'
 
 import { useLogg } from '@guiiai/logg'
@@ -59,7 +59,7 @@ export interface AiOrchestrator {
   getTools: () => Promise<Record<string, unknown>>
   /** Generate text using AI SDK with system prompt + MCP tools */
   generate: (
-    model: LanguageModelV2,
+    model: LanguageModelV3,
     messages: Array<{ role: 'user' | 'assistant', content: string }>,
     options?: { maxSteps?: number },
   ) => Promise<GenerateResult>

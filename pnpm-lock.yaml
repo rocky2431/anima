@@ -15,6 +15,9 @@ catalogs:
     '@ai-sdk/openai':
       specifier: ^3.0.29
       version: 3.0.29
+    '@ai-sdk/provider':
+      specifier: ^3.0.8
+      version: 3.0.8
     '@capacitor/cli':
       specifier: ^8.0.1
       version: 8.0.1
@@ -860,6 +863,12 @@ importers:
 
   apps/stage-tamagotchi:
     dependencies:
+      '@ai-sdk/openai':
+        specifier: 'catalog:'
+        version: 3.0.29(zod@4.3.5)
+      '@ai-sdk/provider':
+        specifier: 'catalog:'
+        version: 3.0.8
       '@date-fns/utc':
         specifier: ^2.1.1
         version: 2.1.1

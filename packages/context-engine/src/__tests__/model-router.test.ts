@@ -426,7 +426,7 @@ describe('modelRouter', () => {
 
       // Prove the wiring works: merge a single source
       const result = await merger.merge([{
-        source: 'test',
+        source: 'activity',
         summary: 'User is coding in VS Code',
         keywords: ['coding', 'vscode'],
         entities: ['VS Code'],

@@ -84,7 +84,7 @@ app.whenReady().then(async () => {
   const animaOrchestrator = injeca.provide('modules:anima-orchestrator', () => setupAnimaOrchestrator())
   const desktopShell = injeca.provide('modules:desktop-shell', {
     dependsOn: { animaOrchestrator },
-    build: ({ dependsOn }) => setupDesktopShell(dependsOn),
+    build: ({ dependsOn }) => setupDesktopShell(dependsOn.animaOrchestrator),
   })
   const channels = injeca.provide('modules:channels', () => setupChannels())
   const aiServices = injeca.provide('modules:ai-services', () => setupAiServices())

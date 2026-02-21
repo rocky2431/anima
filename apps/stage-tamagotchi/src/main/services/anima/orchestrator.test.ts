@@ -96,6 +96,8 @@ function makeEvent(timestamp: number, overrides: Partial<ActivityEvent> = {}): A
 
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000
 const FOUR_MINUTES_MS = 4 * 60 * 1000
+/** Deterministic work-hours timestamp to avoid DND quiet hours (23:00-07:00). */
+const WORK_HOURS_TIME = new Date('2026-02-18T10:00:00Z').getTime()
 
 /**
  * Generate a series of activity events at regular intervals (< 5 min gap)
@@ -170,7 +172,7 @@ describe('animaOrchestrator: end-to-end integration', () => {
         },
       )
 
-      const now = Date.now()
+      const now = WORK_HOURS_TIME
       vi.setSystemTime(now)
 
       // Simulate 2h 10min of continuous work with events every 4 min
@@ -266,7 +268,7 @@ describe('animaOrchestrator: end-to-end integration', () => {
 
       expect(orchestrator.getEmotionState()).toBe('idle')
 
-      const now = Date.now()
+      const now = WORK_HOURS_TIME
       vi.setSystemTime(now)
 
       const events = makeContinuousWorkEvents(now, TWO_HOURS_MS + 10 * 60 * 1000)
@@ -296,7 +298,7 @@ describe('animaOrchestrator: end-to-end integration', () => {
         },
       )
 
-      const now = Date.now()
+      const now = WORK_HOURS_TIME
       vi.setSystemTime(now)
 
       const events = makeContinuousWorkEvents(now, TWO_HOURS_MS + 10 * 60 * 1000)
@@ -389,7 +391,7 @@ describe('animaOrchestrator: end-to-end integration', () => {
         },
       )
 
-      const now = Date.now()
+      const now = WORK_HOURS_TIME
       vi.setSystemTime(now)
 
       // Step 1: Record 2+ hours of continuous work
@@ -444,7 +446,7 @@ describe('animaOrchestrator: end-to-end integration', () => {
         },
       )
 
-      const now = Date.now()
+      const now = WORK_HOURS_TIME
       vi.setSystemTime(now)
 
       const events = makeContinuousWorkEvents(now, TWO_HOURS_MS + 10 * 60 * 1000)
@@ -556,7 +558,7 @@ describe('animaOrchestrator: end-to-end integration', () => {
         },
       )
 
-      const now = Date.now()
+      const now = WORK_HOURS_TIME
       vi.setSystemTime(now)
 
       const events = makeContinuousWorkEvents(now, TWO_HOURS_MS + 10 * 60 * 1000)
