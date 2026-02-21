@@ -45,10 +45,10 @@ export function setupDesktopShell(orchestrator: AnimaOrchestrator): DesktopShell
         })
     }, WINDOW_POLL_INTERVAL_MS)
 
-    log.info('Active window polling started (10s interval)')
+    log.log('Active window polling started (10s interval)')
   }
   else {
-    log.info(`Active window polling skipped (platform: ${platform}, only macOS supported)`)
+    log.log(`Active window polling skipped (platform: ${platform}, only macOS supported)`)
   }
 
   // --- Clipboard monitoring ---
@@ -56,7 +56,7 @@ export function setupDesktopShell(orchestrator: AnimaOrchestrator): DesktopShell
     pollIntervalMs: 2000,
     readClipboard: () => clipboard.readText(),
     onChange: (change) => {
-      log.withFields({ length: change.text.length }).info('Clipboard changed')
+      log.withFields({ length: change.text.length }).log('Clipboard changed')
     },
     onError: (err) => {
       log.withError(err).warn('Clipboard monitor error')
@@ -65,7 +65,7 @@ export function setupDesktopShell(orchestrator: AnimaOrchestrator): DesktopShell
 
   try {
     clipboardMonitor.start()
-    log.info('Clipboard monitor started')
+    log.log('Clipboard monitor started')
   }
   catch (err) {
     log.withError(err instanceof Error ? err : new Error(String(err))).warn('Failed to start clipboard monitor')
@@ -77,7 +77,7 @@ export function setupDesktopShell(orchestrator: AnimaOrchestrator): DesktopShell
     register: (accelerator, callback) => globalShortcut.register(accelerator, callback),
     unregisterAll: () => globalShortcut.unregisterAll(),
     onAction: (action) => {
-      log.withFields({ action }).info('Global shortcut triggered')
+      log.withFields({ action }).log('Global shortcut triggered')
     },
     onError: (err) => {
       log.withError(err).warn('Shortcut registration error')
@@ -85,7 +85,7 @@ export function setupDesktopShell(orchestrator: AnimaOrchestrator): DesktopShell
   })
 
   shortcutManager.registerAll()
-  log.info('Desktop shell initialized')
+  log.log('Desktop shell initialized')
 
   return {
     stop() {
@@ -95,7 +95,7 @@ export function setupDesktopShell(orchestrator: AnimaOrchestrator): DesktopShell
       }
       clipboardMonitor.stop()
       shortcutManager.unregisterAll()
-      log.info('Desktop shell stopped')
+      log.log('Desktop shell stopped')
     },
   }
 }

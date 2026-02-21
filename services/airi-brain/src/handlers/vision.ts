@@ -29,7 +29,7 @@ function startCapturePipeline(client: Client, brainStore: BrainStore, config: Vi
   stopCapturePipeline()
 
   if (!config.enabled || !config.vlmProvider || !config.vlmModel) {
-    log.info('Vision pipeline not started: missing provider or model')
+    log.log('Vision pipeline not started: missing provider or model')
     pushStatus(client, brainStore, config)
     return
   }
@@ -38,7 +38,7 @@ function startCapturePipeline(client: Client, brainStore: BrainStore, config: Vi
     intervalMs: config.intervalMs,
     vlmProvider: config.vlmProvider,
     vlmModel: config.vlmModel,
-  }).info('Starting vision capture pipeline')
+  }).log('Starting vision capture pipeline')
 
   captureTimer = setInterval(() => {
     const stats = brainStore.getVisionStats()
@@ -50,7 +50,7 @@ function startCapturePipeline(client: Client, brainStore: BrainStore, config: Vi
       duplicates: stats.duplicates,
     })
     pushStatus(client, brainStore, config)
-    log.info('Screenshot pipeline tick', { total: stats.total + 1 })
+    log.log('Screenshot pipeline tick', { total: stats.total + 1 })
   }, config.intervalMs)
 
   pushStatus(client, brainStore, config)
@@ -71,7 +71,7 @@ export function registerVisionHandler(client: Client, brainStore: BrainStore): v
 
   client.onEvent('vision:config:update', (event) => {
     const newConfig = event.data as VisionConfig
-    log.withFields(newConfig).info('Vision config update received')
+    log.withFields(newConfig).log('Vision config update received')
 
     brainStore.setVisionConfig(newConfig)
 

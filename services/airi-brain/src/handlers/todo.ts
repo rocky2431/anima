@@ -17,7 +17,7 @@ function broadcastList(client: Client, store: DocumentStore): void {
 
 export function registerTodoHandler(client: Client, store: DocumentStore): void {
   client.onEvent('todo:list', () => {
-    log.info('Received todo:list request')
+    log.log('Received todo:list request')
     broadcastList(client, store)
   })
 
@@ -30,7 +30,7 @@ export function registerTodoHandler(client: Client, store: DocumentStore): void 
       createdAt: Date.now(),
       completedAt: null,
     })
-    log.info('Created todo', { title: title.trim() })
+    log.log('Created todo', { title: title.trim() })
     broadcastList(client, store)
   })
 
@@ -49,14 +49,14 @@ export function registerTodoHandler(client: Client, store: DocumentStore): void 
       completedAt: completed !== undefined ? (completed ? Date.now() : null) : existing.completedAt,
     })
 
-    log.info('Updated todo', { id, completed })
+    log.log('Updated todo', { id, completed })
     broadcastList(client, store)
   })
 
   client.onEvent('todo:delete', (event) => {
     const { id } = event.data as { id: string }
     const deleted = store.deleteTodo(id)
-    log.info('Deleted todo', { id, success: deleted })
+    log.log('Deleted todo', { id, success: deleted })
     broadcastList(client, store)
   })
 }

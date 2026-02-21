@@ -27,7 +27,7 @@ let lastWindowTitle = ''
  */
 export function registerDesktopShellHandler(client: Client, brainStore: BrainStore): void {
   if (platform !== 'darwin') {
-    log.info(`Desktop shell handler skipped (platform: ${platform}, only macOS supported)`)
+    log.log(`Desktop shell handler skipped (platform: ${platform}, only macOS supported)`)
     return
   }
 
@@ -58,9 +58,12 @@ export function registerDesktopShellHandler(client: Client, brainStore: BrainSto
         client.send({
           type: 'activity:state',
           data: {
-            appName: info.appName,
-            windowTitle: info.windowTitle,
-            timestamp: Date.now(),
+            activities: [{
+              timestamp: Date.now(),
+              app: info.appName,
+              description: `Active: ${info.appName} — ${info.windowTitle}`,
+              durationMs: 0,
+            }],
           },
         })
       })
@@ -69,13 +72,13 @@ export function registerDesktopShellHandler(client: Client, brainStore: BrainSto
       })
   }, WINDOW_POLL_INTERVAL_MS)
 
-  log.info('Desktop shell handler registered (active window polling every 10s)')
+  log.log('Desktop shell handler registered (active window polling every 10s)')
 }
 
 export function disposeDesktopShellHandler(): void {
   if (pollTimer) {
     clearInterval(pollTimer)
     pollTimer = null
-    log.info('Desktop shell handler disposed')
+    log.log('Desktop shell handler disposed')
   }
 }

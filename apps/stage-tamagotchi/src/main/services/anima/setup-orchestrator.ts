@@ -135,7 +135,7 @@ export function setupAnimaOrchestrator() {
       initialIntimacyScore: 0,
       onProactiveResponse: (event) => {
         consecutiveErrors = 0
-        log.info('Proactive trigger fired', {
+        log.log('Proactive trigger fired', {
           triggerId: event.response.triggerId,
           emotion: event.response.emotion,
           animaEmotion: event.animaEmotion,
@@ -159,7 +159,7 @@ export function setupAnimaOrchestrator() {
   orchestratorRef = orchestrator
   orchestrator.start()
 
-  log.info('Anima orchestrator initialized and started')
+  log.log('Anima orchestrator initialized and started')
 
   return orchestrator
 }

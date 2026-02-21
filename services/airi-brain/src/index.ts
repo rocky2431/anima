@@ -53,7 +53,7 @@ async function main(): Promise<void> {
   // Initialize LLM/Embedding provider configuration
   const providers = createBrainProviders()
 
-  log.withFields({ url, tokenPresent: !!env.AIRI_TOKEN, dataDir, dbPath, llmConfigured: !!providers.llm, embeddingConfigured: !!providers.embedding }).info('Starting airi-brain bridge')
+  log.withFields({ url, tokenPresent: !!env.AIRI_TOKEN, dataDir, dbPath, llmConfigured: !!providers.llm, embeddingConfigured: !!providers.embedding }).log('Starting airi-brain bridge')
 
   const client = new Client({
     name: 'airi-brain',
@@ -99,7 +99,7 @@ async function main(): Promise<void> {
       return
     }
 
-    log.info('Authenticated, registering handlers')
+    log.log('Authenticated, registering handlers')
 
     registerTodoHandler(client, documentStore)
     registerMemoryHandler(client, documentStore)
@@ -109,12 +109,12 @@ async function main(): Promise<void> {
     registerVisionHandler(client, brainStore)
     registerDesktopShellHandler(client, brainStore)
 
-    log.info('All handlers registered — airi-brain is ready')
+    log.log('All handlers registered — airi-brain is ready')
   })
 
   // Graceful shutdown
   async function gracefulShutdown(signal: string): Promise<void> {
-    log.info(`Received ${signal}, shutting down...`)
+    log.log(`Received ${signal}, shutting down...`)
     disposePersonaHandler()
     disposeVisionHandler()
     disposeDesktopShellHandler()

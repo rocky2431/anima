@@ -85,10 +85,10 @@ export function createBrainProviders(): BrainProviders {
         model: cfg.model,
       }),
     }
-    log.info('LLM provider configured', { provider: llmProvider, model: llmModel })
+    log.log('LLM provider configured', { provider: llmProvider, model: llmModel })
   }
   else {
-    log.info('LLM provider not configured (set AIRI_LLM_PROVIDER, AIRI_LLM_API_KEY, AIRI_LLM_MODEL, AIRI_LLM_BASE_URL)')
+    log.log('LLM provider not configured (set AIRI_LLM_PROVIDER, AIRI_LLM_API_KEY, AIRI_LLM_MODEL, AIRI_LLM_BASE_URL)')
   }
 
   let embedding: EmbeddingModelHandle | null = null
@@ -109,7 +109,7 @@ export function createBrainProviders(): BrainProviders {
         model: cfg.model,
       }),
     }
-    log.info('Embedding provider configured', { provider: embeddingProvider, model: embeddingModel })
+    log.log('Embedding provider configured', { provider: embeddingProvider, model: embeddingModel })
   }
 
   return { llm, embedding, llmConfig, embeddingConfig }

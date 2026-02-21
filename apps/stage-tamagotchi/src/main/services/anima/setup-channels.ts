@@ -44,14 +44,14 @@ export async function setupChannels(): Promise<ChannelsHandle> {
         },
       )
       registry.register(channel, { platform: 'slack', botToken: slackBotToken, appToken: slackAppToken, socketMode: true })
-      log.info('Slack channel registered')
+      log.log('Slack channel registered')
     }
     catch (err) {
       log.withError(err instanceof Error ? err : new Error(String(err))).warn('Failed to register Slack channel')
     }
   }
   else {
-    log.info('Slack channel skipped (set AIRI_SLACK_BOT_TOKEN + AIRI_SLACK_APP_TOKEN)')
+    log.log('Slack channel skipped (set AIRI_SLACK_BOT_TOKEN + AIRI_SLACK_APP_TOKEN)')
   }
 
   // --- WhatsApp ---
@@ -60,14 +60,14 @@ export async function setupChannels(): Promise<ChannelsHandle> {
     try {
       const channel = new WhatsAppChannel({ platform: 'whatsapp', authDir: whatsappAuthDir })
       registry.register(channel, { platform: 'whatsapp', authDir: whatsappAuthDir })
-      log.info('WhatsApp channel registered')
+      log.log('WhatsApp channel registered')
     }
     catch (err) {
       log.withError(err instanceof Error ? err : new Error(String(err))).warn('Failed to register WhatsApp channel')
     }
   }
   else {
-    log.info('WhatsApp channel skipped (set AIRI_WHATSAPP_AUTH_DIR)')
+    log.log('WhatsApp channel skipped (set AIRI_WHATSAPP_AUTH_DIR)')
   }
 
   // --- Email ---
@@ -86,14 +86,14 @@ export async function setupChannels(): Promise<ChannelsHandle> {
       }
       const channel = new EmailChannel(config)
       registry.register(channel, config)
-      log.info('Email channel registered')
+      log.log('Email channel registered')
     }
     catch (err) {
       log.withError(err instanceof Error ? err : new Error(String(err))).warn('Failed to register Email channel')
     }
   }
   else {
-    log.info('Email channel skipped (set AIRI_EMAIL_IMAP_HOST + AIRI_EMAIL_SMTP_HOST + AIRI_EMAIL_USER + AIRI_EMAIL_PASS + AIRI_EMAIL_FROM)')
+    log.log('Email channel skipped (set AIRI_EMAIL_IMAP_HOST + AIRI_EMAIL_SMTP_HOST + AIRI_EMAIL_USER + AIRI_EMAIL_PASS + AIRI_EMAIL_FROM)')
   }
 
   // --- Feishu ---
@@ -104,14 +104,14 @@ export async function setupChannels(): Promise<ChannelsHandle> {
       const config = { platform: 'feishu' as const, appId: feishuAppId, appSecret: feishuAppSecret }
       const channel = new FeishuChannel(config)
       registry.register(channel, config)
-      log.info('Feishu channel registered')
+      log.log('Feishu channel registered')
     }
     catch (err) {
       log.withError(err instanceof Error ? err : new Error(String(err))).warn('Failed to register Feishu channel')
     }
   }
   else {
-    log.info('Feishu channel skipped (set AIRI_FEISHU_APP_ID + AIRI_FEISHU_APP_SECRET)')
+    log.log('Feishu channel skipped (set AIRI_FEISHU_APP_ID + AIRI_FEISHU_APP_SECRET)')
   }
 
   // --- DingTalk ---
@@ -122,14 +122,14 @@ export async function setupChannels(): Promise<ChannelsHandle> {
       const config = { platform: 'dingtalk' as const, clientId: dingtalkClientId, clientSecret: dingtalkClientSecret }
       const channel = new DingTalkChannel(config)
       registry.register(channel, config)
-      log.info('DingTalk channel registered')
+      log.log('DingTalk channel registered')
     }
     catch (err) {
       log.withError(err instanceof Error ? err : new Error(String(err))).warn('Failed to register DingTalk channel')
     }
   }
   else {
-    log.info('DingTalk channel skipped (set AIRI_DINGTALK_CLIENT_ID + AIRI_DINGTALK_CLIENT_SECRET)')
+    log.log('DingTalk channel skipped (set AIRI_DINGTALK_CLIENT_ID + AIRI_DINGTALK_CLIENT_SECRET)')
   }
 
   // --- Global message handler ---
@@ -139,14 +139,14 @@ export async function setupChannels(): Promise<ChannelsHandle> {
       senderId: msg.senderId,
       senderName: msg.senderName,
       textLength: msg.text.length,
-    }).info('Incoming channel message')
+    }).log('Incoming channel message')
   })
 
   // --- Connect all registered channels ---
   const results = await registry.connectAll()
   for (const [platform, result] of results) {
     if (result.success) {
-      log.withFields({ platform }).info('Channel connected')
+      log.withFields({ platform }).log('Channel connected')
     }
     else {
       log.withFields({ platform }).withError(result.error!).warn('Channel connection failed')
@@ -154,14 +154,14 @@ export async function setupChannels(): Promise<ChannelsHandle> {
   }
 
   const channelCount = registry.listAll().length
-  log.withFields({ channelCount }).info('Channels setup complete')
+  log.withFields({ channelCount }).log('Channels setup complete')
 
   return {
     registry,
     async stop() {
       unsubMessages?.()
       await registry.disconnectAll()
-      log.info('All channels disconnected')
+      log.log('All channels disconnected')
     },
   }
 }

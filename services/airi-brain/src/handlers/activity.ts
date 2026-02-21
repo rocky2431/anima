@@ -28,16 +28,16 @@ export function registerActivityHandler(client: Client, brainStore: BrainStore):
           personalNote: '',
         },
       })
-      log.info('Pushed existing activity summary', { date: today })
+      log.log('Pushed existing activity summary', { date: today })
     }
     else {
-      log.info('No activity summary for today yet', { date: today })
+      log.log('No activity summary for today yet', { date: today })
     }
   }, 2000)
 
   client.onEvent('activity:history:request', (event) => {
     const { date, limit = 50 } = event.data as { date?: string, limit?: number }
-    log.info('Activity history request', { date, limit })
+    log.log('Activity history request', { date, limit })
 
     const events = brainStore.getActivityEvents({ date, limit })
 

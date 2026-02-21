@@ -55,7 +55,7 @@ export function registerSkillsHandler(client: Client, brainStore: BrainStore): v
           }
         }
       }
-      log.withFields({ count: registry!.getAll().length }).info('Skills loaded and restored')
+      log.withFields({ count: registry!.getAll().length }).log('Skills loaded and restored')
       broadcastList(client)
     })
     .catch((err) => {
@@ -63,7 +63,7 @@ export function registerSkillsHandler(client: Client, brainStore: BrainStore): v
     })
 
   client.onEvent('skills:list', () => {
-    log.info('Received skills:list request')
+    log.log('Received skills:list request')
     broadcastList(client)
   })
 
@@ -81,7 +81,7 @@ export function registerSkillsHandler(client: Client, brainStore: BrainStore): v
       brainStore.setSkillActive(id, active)
     }
 
-    log.info('Toggled skill', { id, active, success })
+    log.log('Toggled skill', { id, active, success })
     client.send({ type: 'skills:toggled', data: { id, active, success } })
   })
 }

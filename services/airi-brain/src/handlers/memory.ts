@@ -16,13 +16,13 @@ function broadcastList(client: Client, store: DocumentStore): void {
 
 export function registerMemoryHandler(client: Client, store: DocumentStore): void {
   client.onEvent('memory:list', () => {
-    log.info('Received memory:list request')
+    log.log('Received memory:list request')
     broadcastList(client, store)
   })
 
   client.onEvent('memory:search', (event) => {
     const { query, category, limit = 20 } = event.data as { query: string, category?: string, limit?: number }
-    log.info('Memory search', { query, category })
+    log.log('Memory search', { query, category })
 
     let results = store.searchMemoryEntries(query, limit)
 
@@ -45,7 +45,7 @@ export function registerMemoryHandler(client: Client, store: DocumentStore): voi
   client.onEvent('memory:delete', (event) => {
     const { id } = event.data as { id: string }
     const success = store.deleteMemoryEntry(id)
-    log.info('Memory delete', { id, success })
+    log.log('Memory delete', { id, success })
 
     client.send({
       type: 'memory:deleted',

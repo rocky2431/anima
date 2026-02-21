@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto'
 import { env, platform } from 'node:process'
 
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { Format, LogLevel, setGlobalFormat, setGlobalLogLevel, useLogg } from '@guiiai/logg'
 import { initScreenCaptureForMain } from '@proj-airi/electron-screen-capture/main'
+import { Client } from '@proj-airi/server-sdk'
 import { app, ipcMain } from 'electron'
 import { noop } from 'es-toolkit'
 import { createLoggLogger, injeca } from 'injeca'
@@ -89,18 +91,47 @@ app.whenReady().then(async () => {
   // Bridge is set up after both animaOrchestrator and aiServices resolve.
   // Uses injeca.invoke (not provide) since it doesn't produce a named dependency.
   const bridge = injeca.provide('modules:anima-bridge', {
-    dependsOn: { animaOrchestrator, aiServices },
-    build: (resolved: any) => setupBridge(
-      {
-        animaOrchestrator: resolved.dependsOn.animaOrchestrator,
-        aiOrchestrator: resolved.dependsOn.aiServices.aiOrchestrator,
-      },
-      {
-        onEnrichedResponse: (event) => {
-          log.info('Enriched proactive response', { triggerId: event.triggerId, isAiGenerated: event.isAiGenerated })
+    dependsOn: { animaOrchestrator, aiServices, serverChannel },
+    build: (resolved: any) => {
+      // Lazy WS client to forward enriched responses to the frontend.
+      // Connects to the same in-process WS server that channel-server starts.
+      const wsPort = env.PORT ? Number(env.PORT) : 6121
+      const wsUrl = `ws://127.0.0.1:${wsPort}/ws`
+      let bridgeClient: Client | null = null
+
+      function getBridgeClient(): Client {
+        if (!bridgeClient) {
+          bridgeClient = new Client({
+            name: 'anima-bridge',
+            url: wsUrl,
+            token: env.AIRI_TOKEN ?? 'abcd',
+            possibleEvents: ['persona:proactive:trigger'],
+          })
+        }
+        return bridgeClient
+      }
+
+      return setupBridge(
+        {
+          animaOrchestrator: resolved.dependsOn.animaOrchestrator,
+          aiOrchestrator: resolved.dependsOn.aiServices.aiOrchestrator,
         },
-      },
-    ),
+        {
+          onEnrichedResponse: (event) => {
+            log.log('Enriched proactive response', { triggerId: event.triggerId, isAiGenerated: event.isAiGenerated })
+            getBridgeClient().send({
+              type: 'persona:proactive:trigger',
+              data: {
+                id: randomUUID(),
+                kind: 'observation' as const,
+                headline: event.text,
+                emotion: event.emotion as 'idle' | 'curious' | 'caring' | 'worried' | 'sleepy' | 'excited' | undefined,
+              },
+            })
+          },
+        },
+      )
+    },
   })
   const autoUpdater = injeca.provide('services:auto-updater', () => setupAutoUpdater())
   const widgetsManager = injeca.provide('windows:widgets', () => setupWidgetsWindowManager())

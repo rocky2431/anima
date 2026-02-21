@@ -165,7 +165,7 @@ export function registerPersonaHandler(client: Client, store: DocumentStore, bra
   emotionActor.subscribe((snapshot) => {
     const emotion = snapshot.value as PersonaEmotion
     pushEmotionState(client, emotion)
-    log.info('Emotion transitioned', { emotion })
+    log.log('Emotion transitioned', { emotion })
   })
 
   // Push initial state after a short delay to let UI subscribe
@@ -216,7 +216,7 @@ export function registerPersonaHandler(client: Client, store: DocumentStore, bra
         },
       })
 
-      log.info('Proactive trigger fired', { triggerId: result.triggerId, triggerName: result.triggerName })
+      log.log('Proactive trigger fired', { triggerId: result.triggerId, triggerName: result.triggerName })
     }
   }, 60_000)
 
@@ -236,7 +236,7 @@ export function registerPersonaHandler(client: Client, store: DocumentStore, bra
         emotion: response.emotion,
       },
     })
-    log.info('Sent initial greeting')
+    log.log('Sent initial greeting')
   }, 10_000)
 }
 
