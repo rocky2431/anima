@@ -35,6 +35,30 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
     'output:gen-ai:chat:complete',
     'output:gen-ai:chat:tool-call',
     'ui:configure',
+    // Persona
+    'persona:emotion:state',
+    'persona:intimacy:state',
+    'persona:proactive:trigger',
+    // Todo
+    'todo:list',
+    'todo:create',
+    'todo:update',
+    'todo:delete',
+    'todo:suggestions',
+    // Memory
+    'memory:list',
+    'memory:search',
+    'memory:search:result',
+    'memory:delete',
+    'memory:deleted',
+    // Activity
+    'activity:state',
+    'activity:summary',
+    'activity:history:request',
+    // Skills
+    'skills:list',
+    'skills:toggle',
+    'skills:toggled',
   ]
 
   async function initialize(options?: { token?: string, possibleEvents?: Array<keyof WebSocketEvents> }) {

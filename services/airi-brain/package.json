@@ -1,0 +1,28 @@
+{
+  "name": "@proj-airi/airi-brain",
+  "type": "module",
+  "private": true,
+  "description": "Brain bridge service - connects backend engines to server-runtime via WebSocket",
+  "author": {
+    "name": "Moeru AI Project AIRI Team",
+    "email": "airi@moeru.ai",
+    "url": "https://github.com/moeru-ai"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moeru-ai/airi.git",
+    "directory": "services/airi-brain"
+  },
+  "scripts": {
+    "start": "tsx --env-file=.env --env-file-if-exists=.env.local src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@guiiai/logg": "catalog:",
+    "@proj-airi/server-sdk": "workspace:^",
+    "@proj-airi/server-shared": "workspace:^",
+    "nanoid": "catalog:",
+    "tsx": "^4.21.0"
+  }
+}

@@ -813,6 +813,158 @@ interface TransportConnectionHeartbeatEvent {
 
 type ContextUpdateEvent = ContextUpdate
 
+// ─── Persona Events ─────────────────────────────────────────────────────────
+
+export type PersonaEmotionName = 'idle' | 'curious' | 'caring' | 'worried' | 'sleepy' | 'excited'
+
+interface PersonaEmotionStateEvent {
+  emotion: PersonaEmotionName
+  intensity: number
+  triggeredBy?: string
+}
+
+interface PersonaIntimacyStateEvent {
+  level: number
+  label: string
+  delta?: number
+}
+
+interface PersonaProactiveTriggerEvent {
+  id: string
+  kind: 'greeting' | 'reminder' | 'observation' | 'care'
+  headline: string
+  note?: string
+  emotion?: PersonaEmotionName
+}
+
+// ─── Todo Events ────────────────────────────────────────────────────────────
+
+interface TodoListEvent {
+  todos: Array<{
+    id: string
+    title: string
+    completed: boolean
+    createdAt: number
+    completedAt: number | null
+  }>
+}
+
+interface TodoCreateEvent {
+  title: string
+}
+
+interface TodoUpdateEvent {
+  id: string
+  completed?: boolean
+  title?: string
+}
+
+interface TodoDeleteEvent {
+  id: string
+}
+
+interface TodoSuggestionsEvent {
+  suggestions: Array<{
+    title: string
+    reason: string
+  }>
+}
+
+// ─── Memory Events ──────────────────────────────────────────────────────────
+
+interface MemoryListEvent {
+  memories: Array<{
+    id: string
+    content: string
+    importance: number
+    category: string
+    sourceDate: string
+    createdAt: number
+  }>
+}
+
+interface MemorySearchEvent {
+  query: string
+  category?: string
+  limit?: number
+}
+
+interface MemorySearchResultEvent {
+  query: string
+  results: Array<{
+    id: string
+    content: string
+    importance: number
+    category: string
+    sourceDate: string
+    createdAt: number
+    score: number
+  }>
+}
+
+interface MemoryDeleteEvent {
+  id: string
+}
+
+interface MemoryDeletedEvent {
+  id: string
+  success: boolean
+}
+
+// ─── Activity Events ────────────────────────────────────────────────────────
+
+interface ActivityStateEvent {
+  activities: Array<{
+    timestamp: number
+    app: string
+    description: string
+    durationMs: number
+  }>
+}
+
+interface ActivitySummaryEvent {
+  date: string
+  highlights: string[]
+  activityBreakdown: Array<{
+    app: string
+    durationMs: number
+    description: string
+  }>
+  totalWorkDurationMs: number
+  personalNote: string
+}
+
+interface ActivityHistoryRequestEvent {
+  date?: string
+  limit?: number
+}
+
+// ─── Skills Events ──────────────────────────────────────────────────────────
+
+interface SkillsListEvent {
+  skills: Array<{
+    id: string
+    name: string
+    category: string
+    version: string
+    description: string
+    source: 'builtin' | 'user'
+    tags: string[]
+    active: boolean
+  }>
+}
+
+interface SkillsToggleEvent {
+  id: string
+  active: boolean
+}
+
+interface SkillsToggledEvent {
+  id: string
+  active: boolean
+  success: boolean
+}
+
 export const moduleAuthenticate = defineEventa<ModuleAuthenticateEvent>('module:authenticate')
 export const moduleAuthenticated = defineEventa<ModuleAuthenticatedEvent>('module:authenticated')
 export const moduleCompatibilityRequest = defineEventa<ModuleCompatibilityRequestEvent>('module:compatibility:request')
@@ -869,6 +1021,35 @@ export const sparkCommand = defineEventa<SparkCommandEvent>('spark:command')
 
 export const transportConnectionHeartbeat = defineEventa<TransportConnectionHeartbeatEvent>('transport:connection:heartbeat')
 export const contextUpdate = defineEventa<ContextUpdateEvent>('context:update')
+
+// Persona
+export const personaEmotionState = defineEventa<PersonaEmotionStateEvent>('persona:emotion:state')
+export const personaIntimacyState = defineEventa<PersonaIntimacyStateEvent>('persona:intimacy:state')
+export const personaProactiveTrigger = defineEventa<PersonaProactiveTriggerEvent>('persona:proactive:trigger')
+
+// Todo
+export const todoList = defineEventa<TodoListEvent>('todo:list')
+export const todoCreate = defineEventa<TodoCreateEvent>('todo:create')
+export const todoUpdate = defineEventa<TodoUpdateEvent>('todo:update')
+export const todoDelete = defineEventa<TodoDeleteEvent>('todo:delete')
+export const todoSuggestions = defineEventa<TodoSuggestionsEvent>('todo:suggestions')
+
+// Memory
+export const memoryList = defineEventa<MemoryListEvent>('memory:list')
+export const memorySearch = defineEventa<MemorySearchEvent>('memory:search')
+export const memorySearchResult = defineEventa<MemorySearchResultEvent>('memory:search:result')
+export const memoryDelete = defineEventa<MemoryDeleteEvent>('memory:delete')
+export const memoryDeleted = defineEventa<MemoryDeletedEvent>('memory:deleted')
+
+// Activity
+export const activityState = defineEventa<ActivityStateEvent>('activity:state')
+export const activitySummary = defineEventa<ActivitySummaryEvent>('activity:summary')
+export const activityHistoryRequest = defineEventa<ActivityHistoryRequestEvent>('activity:history:request')
+
+// Skills
+export const skillsList = defineEventa<SkillsListEvent>('skills:list')
+export const skillsToggle = defineEventa<SkillsToggleEvent>('skills:toggle')
+export const skillsToggled = defineEventa<SkillsToggledEvent>('skills:toggled')
 
 // Thanks to:
 //
@@ -1035,6 +1216,35 @@ export interface ProtocolEvents<C = undefined> {
   'transport:connection:heartbeat': TransportConnectionHeartbeatEvent
 
   'context:update': ContextUpdateEvent
+
+  // Persona
+  'persona:emotion:state': PersonaEmotionStateEvent
+  'persona:intimacy:state': PersonaIntimacyStateEvent
+  'persona:proactive:trigger': PersonaProactiveTriggerEvent
+
+  // Todo
+  'todo:list': TodoListEvent
+  'todo:create': TodoCreateEvent
+  'todo:update': TodoUpdateEvent
+  'todo:delete': TodoDeleteEvent
+  'todo:suggestions': TodoSuggestionsEvent
+
+  // Memory
+  'memory:list': MemoryListEvent
+  'memory:search': MemorySearchEvent
+  'memory:search:result': MemorySearchResultEvent
+  'memory:delete': MemoryDeleteEvent
+  'memory:deleted': MemoryDeletedEvent
+
+  // Activity
+  'activity:state': ActivityStateEvent
+  'activity:summary': ActivitySummaryEvent
+  'activity:history:request': ActivityHistoryRequestEvent
+
+  // Skills
+  'skills:list': SkillsListEvent
+  'skills:toggle': SkillsToggleEvent
+  'skills:toggled': SkillsToggledEvent
 }
 
 export type ProtocolEventOf<E, C = undefined> = E extends keyof ProtocolEvents<C>

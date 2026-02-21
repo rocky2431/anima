@@ -6,7 +6,13 @@ import { useChatSessionStore } from '@proj-airi/stage-ui/stores/chat/session-sto
 import { useDisplayModelsStore } from '@proj-airi/stage-ui/stores/display-models'
 import { useModsServerChannelStore } from '@proj-airi/stage-ui/stores/mods/api/channel-server'
 import { useContextBridgeStore } from '@proj-airi/stage-ui/stores/mods/api/context-bridge'
+import { useActivityModuleStore } from '@proj-airi/stage-ui/stores/modules/activity'
 import { useAiriCardStore } from '@proj-airi/stage-ui/stores/modules/airi-card'
+import { useContextDisplayStore } from '@proj-airi/stage-ui/stores/modules/context-display'
+import { useMemoryModuleStore } from '@proj-airi/stage-ui/stores/modules/memory'
+import { usePersonaModuleStore } from '@proj-airi/stage-ui/stores/modules/persona'
+import { useSkillsModuleStore } from '@proj-airi/stage-ui/stores/modules/skills'
+import { useTodoModuleStore } from '@proj-airi/stage-ui/stores/modules/todo'
 import { useOnboardingStore } from '@proj-airi/stage-ui/stores/onboarding'
 import { useSettings } from '@proj-airi/stage-ui/stores/settings'
 import { useTheme } from '@proj-airi/ui'
@@ -36,6 +42,12 @@ const { shouldShowSetup } = storeToRefs(onboardingStore)
 const { isDark } = useTheme()
 const cardStore = useAiriCardStore()
 const analyticsStore = useSharedAnalyticsStore()
+const todoStore = useTodoModuleStore()
+const memoryStore = useMemoryModuleStore()
+const activityStore = useActivityModuleStore()
+const skillsStore = useSkillsModuleStore()
+const personaStore = usePersonaModuleStore()
+const contextDisplayStore = useContextDisplayStore()
 
 const primaryColor = computed(() => {
   return isDark.value
@@ -83,12 +95,26 @@ onMounted(async () => {
   await contextBridgeStore.initialize()
   characterOrchestratorStore.initialize()
 
+  // Initialize brain-connected module stores (after WS is connected)
+  todoStore.initialize()
+  memoryStore.initialize()
+  activityStore.initialize()
+  skillsStore.initialize()
+  personaStore.initialize()
+  contextDisplayStore.initialize()
+
   await displayModelsStore.loadDisplayModelsFromIndexedDB()
   await settingsStore.initializeStageModel()
 })
 
 onUnmounted(() => {
   contextBridgeStore.dispose()
+  todoStore.dispose()
+  memoryStore.dispose()
+  activityStore.dispose()
+  skillsStore.dispose()
+  personaStore.dispose()
+  contextDisplayStore.dispose()
 })
 
 // Handle first-time setup events
