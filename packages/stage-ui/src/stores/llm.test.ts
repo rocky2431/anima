@@ -1,8 +1,8 @@
 import { env } from 'node:process'
 
-import { createOpenRouter } from '@xsai-ext/providers/create'
 import { describe, expect, it } from 'vitest'
 
+import { createOpenRouter } from '../libs/ai/create-provider'
 import { attemptForToolsCompatibilityDiscovery } from './llm'
 
 function doesHaveOpenRouterApiKey() {

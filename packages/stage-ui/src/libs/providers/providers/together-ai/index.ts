@@ -1,6 +1,6 @@
-import { createTogetherAI } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createTogetherAI } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 

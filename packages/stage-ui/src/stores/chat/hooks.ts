@@ -1,5 +1,4 @@
-import type { ToolMessage } from '@xsai/shared-chat'
-
+import type { ToolMessage } from '../../types/ai-messages'
 import type { ChatStreamEventContext, StreamingAssistantMessage } from '../../types/chat'
 
 export interface ChatHookRegistry {

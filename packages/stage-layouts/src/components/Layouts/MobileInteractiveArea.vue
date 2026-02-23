@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { ChatProvider } from '@proj-airi/stage-ui/stores/providers/types'
 import type { ChatHistoryItem } from '@proj-airi/stage-ui/types/chat'
-import type { ChatProvider } from '@xsai-ext/providers/utils'
 
 import { ChatHistory, HearingConfigDialog } from '@proj-airi/stage-ui/components'
 import { useAudioAnalyzer } from '@proj-airi/stage-ui/composables'

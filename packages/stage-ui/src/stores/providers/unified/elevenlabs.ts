@@ -1,7 +1,6 @@
-import type { SpeechProviderWithExtraOptions } from '@xsai-ext/providers/utils'
 import type { UnElevenLabsOptions, VoiceProviderWithExtraOptions } from 'unspeech'
 
-import type { ModelInfo, UnifiedProviderMetadata, ValidationResult, VoiceInfo } from '../types'
+import type { ModelInfo, SpeechProviderWithExtraOptions, UnifiedProviderMetadata, ValidationResult, VoiceInfo } from '../types'
 
 import { isUrl } from '@proj-airi/stage-shared'
 import { createUnElevenLabs, listVoices } from 'unspeech'

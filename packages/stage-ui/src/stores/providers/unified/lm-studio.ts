@@ -1,7 +1,8 @@
 import type { ModelInfo, UnifiedProviderMetadata, ValidationResult } from '../types'
 
 import { isUrl } from '@proj-airi/stage-shared'
-import { createOpenAI } from '@xsai-ext/providers/create'
+
+import { createOpenAI } from '../../../libs/ai/create-provider'
 
 export const lmStudioProvider: UnifiedProviderMetadata = {
   id: 'lm-studio',

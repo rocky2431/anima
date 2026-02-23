@@ -1,6 +1,43 @@
-import type { AssistantMessage, CommonContentPart, Message, ToolMessage, UserMessage } from '@xsai/shared-chat'
-
 import { defineEventa } from '@moeru/eventa'
+
+// Inline AI message types (previously from @xsai/shared-chat).
+// plugin-protocol must not depend on stage-ui, so we define them here.
+
+interface TextContentPart {
+  type: 'text'
+  text: string
+}
+
+interface ImageContentPart {
+  type: 'image_url'
+  image_url: { url: string, detail?: string }
+}
+
+type CommonContentPart = TextContentPart | ImageContentPart
+
+interface UserMessage {
+  role: 'user'
+  content: string | CommonContentPart[]
+}
+
+interface AssistantMessage {
+  role: 'assistant'
+  content: string | null
+  tool_calls?: Array<{ id: string, type: 'function', function: { name: string, arguments: string } }>
+}
+
+interface ToolMessage {
+  role: 'tool'
+  content: string
+  tool_call_id: string
+}
+
+interface SystemMessage {
+  role: 'system'
+  content: string
+}
+
+type Message = UserMessage | AssistantMessage | ToolMessage | SystemMessage
 
 export interface DiscordGuildMember {
   nickname: string

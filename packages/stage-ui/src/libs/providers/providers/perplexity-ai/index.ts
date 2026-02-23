@@ -1,6 +1,6 @@
-import { createPerplexity } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createPerplexityAI } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -39,7 +39,7 @@ export const providerPerplexityAI = defineProvider<PerplexityConfig>({
     }),
   }),
   createProvider(config) {
-    return createPerplexity(config.apiKey, config.baseUrl)
+    return createPerplexityAI(config.apiKey, config.baseUrl)
   },
 
   validationRequiredWhen(config) {

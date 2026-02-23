@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "catalog:",
     "@discordjs/voice": "^0.19.0",
     "@guiiai/logg": "catalog:",
     "@huggingface/transformers": "^3.8.1",
@@ -26,11 +27,7 @@
     "@proj-airi/server-sdk": "workspace:^",
     "@proj-airi/server-shared": "workspace:^",
     "@snazzah/davey": "^0.1.9",
-    "@xsai-ext/providers": "catalog:",
-    "@xsai/generate-speech": "catalog:",
-    "@xsai/generate-text": "catalog:",
-    "@xsai/generate-transcription": "catalog:",
-    "@xsai/shared-chat": "catalog:",
+    "ai": "catalog:",
     "discord.js": "^14.25.1",
     "libsodium-wrappers": "^0.7.16",
     "opusscript": "^0.1.1",

@@ -8,20 +8,17 @@
  */
 
 import type {
+  AnyProviderInstance,
   ChatProvider,
   ChatProviderWithExtraOptions,
   EmbedProvider,
   EmbedProviderWithExtraOptions,
+  ProgressInfo,
+  ProviderCapabilities,
   SpeechProvider,
   SpeechProviderWithExtraOptions,
   TranscriptionProvider,
   TranscriptionProviderWithExtraOptions,
-} from '@xsai-ext/providers/utils'
-import type { ProgressInfo } from '@xsai-transformers/shared/types'
-
-import type {
-  AnyProviderInstance,
-  ProviderCapabilities,
   UnifiedProviderMetadata,
 } from './providers/types'
 

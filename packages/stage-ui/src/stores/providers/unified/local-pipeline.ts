@@ -1,8 +1,9 @@
 import type { UnifiedProviderMetadata } from '../types'
 
 import { isStageTamagotchi } from '@proj-airi/stage-shared'
-import { createOpenAI } from '@xsai-ext/providers/create'
 import { isWebGPUSupported } from 'gpuu/webgpu'
+
+import { createOpenAI } from '../../../libs/ai/create-provider'
 
 /**
  * Local audio pipeline provider — platform-aware.

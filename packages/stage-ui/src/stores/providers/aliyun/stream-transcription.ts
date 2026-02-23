@@ -1,7 +1,5 @@
-import type { SpeechProviderWithExtraOptions } from '@xsai-ext/providers/utils'
-import type { CommonRequestOptions } from '@xsai/shared'
-import type { StreamTranscriptionDelta, StreamTranscriptionResult } from '@xsai/stream-transcription'
-
+import type { StreamTranscriptionDelta, StreamTranscriptionResult } from '../../../types/stream-transcription'
+import type { SpeechProviderWithExtraOptions } from '../types'
 import type { EventStartTranscription, ServerEvent, ServerEvents } from './'
 
 import { tryCatch } from '@moeru/std'
@@ -91,8 +89,8 @@ export interface AliyunStreamTranscriptionHandle {
 }
 
 interface AliyunStreamTranscriptionOptions extends AliyunRealtimeSpeechExtraOptions {
-  baseURL?: CommonRequestOptions['baseURL']
-  fetch?: CommonRequestOptions['fetch']
+  baseURL?: string | URL
+  fetch?: typeof globalThis.fetch
   headers?: HeadersInit
   file?: Blob
   fileName?: string

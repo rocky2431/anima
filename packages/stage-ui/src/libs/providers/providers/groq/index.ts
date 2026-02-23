@@ -1,6 +1,6 @@
-import { createOpenAI } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createGroq } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -38,7 +38,7 @@ export const providerGroq = defineProvider<GroqConfig>({
     }),
   }),
   createProvider(config) {
-    return createOpenAI(config.apiKey, config.baseUrl)
+    return createGroq(config.apiKey, config.baseUrl)
   },
 
   validationRequiredWhen(config) {

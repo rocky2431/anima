@@ -1,6 +1,6 @@
-import { createMistral } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createMistralAI } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -39,7 +39,7 @@ export const providerMistralAI = defineProvider<MistralConfig>({
     }),
   }),
   createProvider(config) {
-    return createMistral(config.apiKey, config.baseUrl)
+    return createMistralAI(config.apiKey, config.baseUrl)
   },
 
   validationRequiredWhen(config) {

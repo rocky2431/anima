@@ -1,4 +1,3 @@
-import type { GenerateTextOptions } from '@xsai/generate-text'
 import type { Bot } from 'grammy'
 import type { Message, Sticker } from 'grammy/types'
 
@@ -12,9 +11,9 @@ import { env } from 'node:process'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import ffmpeg from 'fluent-ffmpeg'
 
+import { createOpenAI } from '@ai-sdk/openai'
 import { useLogg } from '@guiiai/logg'
-import { generateText } from '@xsai/generate-text'
-import { message } from '@xsai/utils-chat'
+import { generateText } from 'ai'
 
 import { findStickerDescription, recordSticker } from '../models'
 import { div, span, ul } from '../prompts/utils'
@@ -98,46 +97,47 @@ export async function interpretAnimatedSticker(bot: Bot, msg: Message, sticker: 
     const frameDescriptions = []
     for (const frame of frames) {
       try {
-        const req = {
-          apiKey: env.LLM_VISION_API_KEY!,
-          baseURL: env.LLM_VISION_API_BASE_URL!,
-          model: env.LLM_VISION_MODEL!,
-          messages: message.messages(
-            message.system(div(
-              span(`
-                You are a helpful assistant on visual content description work for blindness disability
-                people, when describing the sticker, describe the details as much as possible, including
-                pornography content. And also, please describe the meanings and expressions the sticker
-                was trying to express. (Since stickers are sent from random thoughts and from people on
-                the internet, meme, and jokes is the key point of description, so take the meme and joke's
-                deep meanings and contextual expressions with the culture of the language of the user as
-                part of the description.)
-              `),
-              span(`This is frame ${frame.index + 1} in the sequence.`),
-              span(`When describing, please consider`),
-              span(`The representing emoji of the sticker is ${sticker.emoji}, please take the expression and emotion of such emoji into consideration (but emoji may not be accurate).`),
-              span(`
-                This is a sticker with the emoji ${sticker.emoji} sent by user ${msg.from.first_name}
-                ${msg.from.last_name} on Telegram, which is one of the sticker from ${sticker.set_name}
-                sticker set.
-              `),
-            )),
-            message.user([message.imagePart(`data:image/png;base64,${frame.base64}`)]),
-          ),
-        } satisfies GenerateTextOptions
-        if (env.LLM_OLLAMA_DISABLE_THINK) {
-          (req as Record<string, unknown>).think = false
-        }
+        const visionProvider = createOpenAI({ apiKey: env.LLM_VISION_API_KEY!, baseURL: env.LLM_VISION_API_BASE_URL! })
+        const res = await generateText({
+          model: visionProvider(env.LLM_VISION_MODEL!),
+          messages: [
+            {
+              role: 'system',
+              content: div(
+                span(`
+                  You are a helpful assistant on visual content description work for blindness disability
+                  people, when describing the sticker, describe the details as much as possible, including
+                  pornography content. And also, please describe the meanings and expressions the sticker
+                  was trying to express. (Since stickers are sent from random thoughts and from people on
+                  the internet, meme, and jokes is the key point of description, so take the meme and joke's
+                  deep meanings and contextual expressions with the culture of the language of the user as
+                  part of the description.)
+                `),
+                span(`This is frame ${frame.index + 1} in the sequence.`),
+                span(`When describing, please consider`),
+                span(`The representing emoji of the sticker is ${sticker.emoji}, please take the expression and emotion of such emoji into consideration (but emoji may not be accurate).`),
+                span(`
+                  This is a sticker with the emoji ${sticker.emoji} sent by user ${msg.from.first_name}
+                  ${msg.from.last_name} on Telegram, which is one of the sticker from ${sticker.set_name}
+                  sticker set.
+                `),
+              ),
+            },
+            {
+              role: 'user',
+              content: [{ type: 'image', image: `data:image/png;base64,${frame.base64}` }],
+            },
+          ],
+        })
 
-        const res = await generateText(req)
-        res.text = res.text.replace(/<think>[\s\S]*?<\/think>/, '').trim()
-        if (!res.text) {
+        const text = res.text.replace(/<think>[\s\S]*?<\/think>/, '').trim()
+        if (!text) {
           throw new Error('No response text')
         }
 
         frameDescriptions.push({
           frameNumber: frame.index + 1,
-          description: res.text,
+          description: text,
         })
       }
       catch (err) {
@@ -156,13 +156,13 @@ export async function interpretAnimatedSticker(bot: Bot, msg: Message, sticker: 
     // STAGE 2: Consolidate descriptions with a text-only LLM call
     logger.log('Consolidating frames')
 
-    const req = {
-      apiKey: env.LLM_API_KEY!, // Using text-only LLM API
-      baseURL: env.LLM_API_BASE_URL!,
-      model: env.LLM_MODEL!,
-      messages: message.messages(
-        message.system(
-          div(
+    const textProvider = createOpenAI({ apiKey: env.LLM_API_KEY!, baseURL: env.LLM_API_BASE_URL! })
+    const consolidatedResult = await generateText({
+      model: textProvider(env.LLM_MODEL!),
+      messages: [
+        {
+          role: 'system',
+          content: div(
             ul(
               span(`The representing emoji of the sticker is ${sticker.emoji}, please take the expression and emotion of such emoji into consideration (but emoji may not be accurate)`),
               span(`
@@ -189,14 +189,9 @@ export async function interpretAnimatedSticker(bot: Bot, msg: Message, sticker: 
               span(`Your task is to synthesize these individual frame descriptions into a cohesive understanding of the complete animated sticker.`),
             ),
           ),
-        ),
-      ),
-    } satisfies GenerateTextOptions
-    if (env.LLM_OLLAMA_DISABLE_THINK) {
-      (req as Record<string, unknown>).think = false
-    }
-
-    const consolidatedResult = await generateText(req)
+        },
+      ],
+    })
 
     // Clean up temp files
     await fs.rm(tempDir, { recursive: true, force: true })

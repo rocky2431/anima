@@ -1,6 +1,6 @@
-import { createOpenAI } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createModelScope } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -39,7 +39,7 @@ export const providerModelScope = defineProvider<ModelscopeConfig>({
     }),
   }),
   createProvider(config) {
-    return createOpenAI(config.apiKey, config.baseUrl)
+    return createModelScope(config.apiKey, config.baseUrl)
   },
 
   validationRequiredWhen(config) {

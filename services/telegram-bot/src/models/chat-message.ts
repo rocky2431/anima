@@ -1,11 +1,11 @@
-import type { EmbedResult } from '@xsai/embed'
 import type { SQL } from 'drizzle-orm'
 import type { Message, UserFromGetMe } from 'grammy/types'
 
 import { env } from 'node:process'
 
+import { createOpenAI } from '@ai-sdk/openai'
 import { useLogg } from '@guiiai/logg'
-import { embed } from '@xsai/embed'
+import { embed } from 'ai'
 import { and, cosineDistance, desc, eq, gt, inArray, lt, ne, notInArray, sql } from 'drizzle-orm'
 
 import { useDrizzle } from '../db'
@@ -17,7 +17,7 @@ import { findStickerDescription } from './stickers'
 export async function recordMessage(botInfo: UserFromGetMe, message: Message) {
   const replyToName = message.reply_to_message?.from.first_name || ''
 
-  let embedding: EmbedResult
+  let embedding: { embedding: number[] }
   let text: string
 
   if (message.sticker != null) {
@@ -34,12 +34,12 @@ export async function recordMessage(botInfo: UserFromGetMe, message: Message) {
     return
   }
   else {
-    embedding = await embed({
-      baseURL: env.EMBEDDING_API_BASE_URL!,
-      apiKey: env.EMBEDDING_API_KEY!,
-      model: env.EMBEDDING_MODEL!,
-      input: text,
+    const embeddingProvider = createOpenAI({ apiKey: env.EMBEDDING_API_KEY!, baseURL: env.EMBEDDING_API_BASE_URL! })
+    const embedResult = await embed({
+      model: embeddingProvider.embedding(env.EMBEDDING_MODEL!),
+      value: text,
     })
+    embedding = { embedding: embedResult.embedding as number[] }
   }
 
   const values: Partial<Omit<typeof chatMessagesTable.$inferSelect, 'id' | 'created_at' | 'updated_at'>> = {

@@ -4,10 +4,11 @@ import type { BotContext, ReadUnreadMessagesAction } from '../../../../types'
 
 import { env } from 'node:process'
 
+import { createOpenAI } from '@ai-sdk/openai'
 import { useLogg } from '@guiiai/logg'
 import { withRetry } from '@moeru/std'
 import { trace } from '@opentelemetry/api'
-import { embed } from '@xsai/embed'
+import { embed } from 'ai'
 
 import { findLastNMessages, findRelevantMessages } from '../../../../models'
 import { chatMessageToOneLine, telegramMessageToOneLine } from '../../../../models/common'
@@ -49,11 +50,10 @@ export async function readMessage(
               span.setAttribute('llm.embed.messages', msg.text || msg.caption || '')
               span.setAttribute('llm.provider.api_base_url', env.EMBEDDING_API_BASE_URL!)
 
+              const embeddingProvider = createOpenAI({ apiKey: env.EMBEDDING_API_KEY!, baseURL: env.EMBEDDING_API_BASE_URL! })
               const res = await embed({
-                baseURL: env.EMBEDDING_API_BASE_URL!,
-                apiKey: env.EMBEDDING_API_KEY!,
-                model: env.EMBEDDING_MODEL!,
-                input: msg.text || msg.caption || '',
+                model: embeddingProvider.embedding(env.EMBEDDING_MODEL!),
+                value: msg.text || msg.caption || '',
                 abortSignal: abortController.signal,
               })
 

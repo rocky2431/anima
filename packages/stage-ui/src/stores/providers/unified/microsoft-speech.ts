@@ -1,4 +1,3 @@
-import type { SpeechProviderWithExtraOptions } from '@xsai-ext/providers/utils'
 import type { UnMicrosoftOptions, VoiceProviderWithExtraOptions } from 'unspeech'
 
 import type { ModelInfo, UnifiedProviderMetadata, ValidationResult, VoiceInfo } from '../types'
@@ -30,7 +29,7 @@ export const microsoftSpeechProvider: UnifiedProviderMetadata = {
     speech: config => createUnMicrosoft(
       (config.apiKey as string).trim(),
       (config.baseUrl as string).trim(),
-    ) as SpeechProviderWithExtraOptions<string, UnMicrosoftOptions>,
+    ) as any,
   },
   operations: {
     listModels: async (): Promise<ModelInfo[]> => [{

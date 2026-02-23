@@ -1,8 +1,9 @@
 import type { UnifiedProviderMetadata } from '../types'
 
 import { isUrl } from '@proj-airi/stage-shared'
-import { createOpenRouter } from '@xsai-ext/providers/create'
-import { listModels } from '@xsai/model'
+
+import { createOpenRouter } from '../../../libs/ai/create-provider'
+import { listModels } from '../../../libs/ai/list-models'
 
 export const openrouterProvider: UnifiedProviderMetadata = {
   id: 'openrouter',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EmotionPayload } from '@proj-airi/stage-ui/constants/emotions'
-import type { ChatProvider, SpeechProviderWithExtraOptions } from '@xsai-ext/providers/utils'
+import type { ChatProvider, SpeechProviderWithExtraOptions } from '@proj-airi/stage-ui/stores/providers/types'
 
 import { createPlaybackManager, createSpeechPipeline } from '@proj-airi/pipelines-audio'
 import { ThreeScene } from '@proj-airi/stage-ui-three'
@@ -8,6 +8,7 @@ import { animations } from '@proj-airi/stage-ui-three/assets/vrm'
 import { useDelayMessageQueue, useEmotionsMessageQueue } from '@proj-airi/stage-ui/composables/queues'
 import { llmInferenceEndToken } from '@proj-airi/stage-ui/constants'
 import { EMOTION_EmotionMotionName_value, EMOTION_VRMExpressionName_value, EmotionThinkMotionName } from '@proj-airi/stage-ui/constants/emotions'
+import { generateSpeech } from '@proj-airi/stage-ui/libs/ai/generate-speech'
 import { useAudioContext, useSpeakingStore } from '@proj-airi/stage-ui/stores/audio'
 import { useChatOrchestratorStore } from '@proj-airi/stage-ui/stores/chat'
 import { useChatMaintenanceStore } from '@proj-airi/stage-ui/stores/chat/maintenance'
@@ -17,7 +18,6 @@ import { useSpeechStore } from '@proj-airi/stage-ui/stores/modules/speech'
 import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
 import { useSettings } from '@proj-airi/stage-ui/stores/settings'
 import { createQueue } from '@proj-airi/stream-kit'
-import { generateSpeech } from '@xsai/generate-speech'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 

@@ -1,15 +1,15 @@
 import type { WebSocketEventOf, WebSocketEvents } from '@proj-airi/server-sdk'
-import type { ChatProvider, ChatProviderWithExtraOptions, EmbedProvider, EmbedProviderWithExtraOptions, SpeechProvider, SpeechProviderWithExtraOptions, TranscriptionProvider, TranscriptionProviderWithExtraOptions } from '@xsai-ext/providers/utils'
-import type { Message } from '@xsai/shared-chat'
 
+import type { Message } from '../../../../../types/ai-messages'
 import type { StreamEvent } from '../../../../llm'
+import type { ChatProvider, ChatProviderWithExtraOptions, EmbedProvider, EmbedProviderWithExtraOptions, SpeechProvider, SpeechProviderWithExtraOptions, TranscriptionProvider, TranscriptionProviderWithExtraOptions } from '../../../../providers/types'
 
 import { errorMessageFrom } from '@moeru/std'
-import { tool } from '@xsai/tool'
 import { nanoid } from 'nanoid'
 import { validate } from 'xsschema'
 import { z } from 'zod'
 
+import { tool } from '../../../../../libs/ai/tool'
 import { getEventSourceKey } from '../../../../../utils'
 
 export interface SparkNotifyCommandDraft {

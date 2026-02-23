@@ -1,4 +1,6 @@
-import type { TextContentPart } from '@xsai/shared-chat'
+import type { TextPart } from 'ai'
+
+type TextContentPart = TextPart
 
 export function vif(condition: boolean, a: string, b = '') {
   return condition ? a : b

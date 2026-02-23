@@ -1,4 +1,4 @@
-import type { StreamTextEvent } from '@xsai/stream-text'
+import type { StreamTextEvent } from '@proj-airi/stage-ui/libs/ai/stream-text'
 
 export function mockStreamText(): {
   fullStream: ReadableStream<StreamTextEvent>

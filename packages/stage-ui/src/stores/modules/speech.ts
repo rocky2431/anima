@@ -1,15 +1,14 @@
-import type { SpeechProviderWithExtraOptions } from '@xsai-ext/providers/utils'
-
 import type { VoiceInfo } from '../providers'
+import type { SpeechProviderWithExtraOptions } from '../providers/types'
 
 import { useLocalStorageManualReset } from '@proj-airi/stage-shared/composables'
 import { refManualReset } from '@vueuse/core'
-import { generateSpeech } from '@xsai/generate-speech'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, onMounted, watch } from 'vue'
 import { toXml } from 'xast-util-to-xml'
 import { x } from 'xastscript'
 
+import { generateSpeech } from '../../libs/ai/generate-speech'
 import { useProvidersStore } from '../providers'
 
 export const useSpeechStore = defineStore('speech', () => {

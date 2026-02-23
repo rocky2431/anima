@@ -1,5 +1,3 @@
-import type { GenerateTextOptions } from '@xsai/generate-text'
-
 import { env } from 'node:process'
 
 import { useLogg } from '@guiiai/logg'
@@ -27,11 +25,11 @@ export interface EmbeddingConfig {
 export interface LlmModelHandle {
   config: LlmConfig
   /**
-   * Build a partial GenerateTextOptions pre-filled with credentials.
+   * Build a partial options object pre-filled with credentials.
    * Caller merges in `messages` (and optional overrides) then passes
    * the result to `generateText()`.
    */
-  requestDefaults: () => Pick<GenerateTextOptions, 'apiKey' | 'baseURL' | 'model'>
+  requestDefaults: () => { apiKey: string, baseURL: string, model: string }
 }
 
 export interface EmbeddingModelHandle {
@@ -49,7 +47,7 @@ export interface BrainProviders {
 
 /**
  * Read LLM/Embedding configuration from environment variables and
- * create model handles that can be used directly with xsAI's
+ * create model handles that can be used directly with AI SDK's
  * `generateText()` / `embed()`.
  *
  * Required env vars for LLM: AIRI_LLM_PROVIDER, AIRI_LLM_API_KEY, AIRI_LLM_MODEL, AIRI_LLM_BASE_URL

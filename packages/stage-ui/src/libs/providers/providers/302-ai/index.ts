@@ -1,6 +1,6 @@
-import { createChatProvider, createEmbedProvider, createModelProvider, merge } from '@xsai-ext/providers/utils'
 import { z } from 'zod'
 
+import { create302AI } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -40,11 +40,7 @@ export const provider302AI = defineProvider<AI302Config>({
     }),
   }),
   createProvider(config) {
-    return merge(
-      createChatProvider({ apiKey: config.apiKey, baseURL: config.baseUrl! }),
-      createEmbedProvider({ apiKey: config.apiKey, baseURL: config.baseUrl! }),
-      createModelProvider({ apiKey: config.apiKey, baseURL: config.baseUrl! }),
-    )
+    return create302AI(config.apiKey, config.baseUrl!)
   },
 
   validationRequiredWhen(config) {

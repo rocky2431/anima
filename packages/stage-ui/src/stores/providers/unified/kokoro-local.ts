@@ -1,7 +1,4 @@
-import type { SpeechProvider } from '@xsai-ext/providers/utils'
-import type { ProgressInfo } from '@xsai-transformers/shared/types'
-
-import type { ModelInfo, UnifiedProviderMetadata, VoiceInfo } from '../types'
+import type { ModelInfo, ProgressInfo, SpeechProvider, UnifiedProviderMetadata, VoiceInfo } from '../types'
 
 import { isStageTamagotchi } from '@proj-airi/stage-shared'
 import { isWebGPUSupported } from 'gpuu/webgpu'

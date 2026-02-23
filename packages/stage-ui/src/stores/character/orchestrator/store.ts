@@ -39,10 +39,10 @@ export const useCharacterOrchestratorStore = defineStore('character-orchestrator
   })
   let tickTimer: ReturnType<typeof setInterval> | undefined
   const sparkNotifyAgent = setupAgentSparkNotifyHandler({
-    stream,
+    stream: stream as any,
     getActiveProvider: () => activeProvider.value,
     getActiveModel: () => activeModel.value,
-    getProviderInstance: name => providersStore.getProviderInstance(name),
+    getProviderInstance: name => providersStore.getProviderInstance(name) as any,
     onReactionDelta: (eventId, text) => characterStore.onSparkNotifyReactionStreamEvent(eventId, text),
     onReactionEnd: (eventId, text) => characterStore.onSparkNotifyReactionStreamEnd(eventId, text),
     getSystemPrompt: () => systemPrompt.value,

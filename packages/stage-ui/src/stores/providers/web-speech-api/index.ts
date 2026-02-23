@@ -1,5 +1,5 @@
-import type { TranscriptionProviderWithExtraOptions } from '@xsai-ext/providers/utils'
-import type { StreamTranscriptionDelta, StreamTranscriptionResult } from '@xsai/stream-transcription'
+import type { StreamTranscriptionDelta, StreamTranscriptionResult } from '../../../types/stream-transcription'
+import type { TranscriptionProviderWithExtraOptions } from '../types'
 
 // NOTICE: Copied/adapted from @xsai/stream-transcription delayed promise helper.
 // Ref: @xsai/stream-transcription@0.4.0-beta.8 (dist/index.js DelayedPromise usage).

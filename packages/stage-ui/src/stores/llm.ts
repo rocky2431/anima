@@ -1,16 +1,13 @@
-import type { ChatProvider } from '@xsai-ext/providers/utils'
-import type { CommonContentPart, CompletionToolCall, Message, Tool } from '@xsai/shared-chat'
+import type { CommonContentPart, CompletionToolCall, Message, Tool } from '../types/ai-messages'
+import type { ChatProvider } from './providers/types'
 
-import { listModels } from '@xsai/model'
-import { XSAIError } from '@xsai/shared'
-import { streamText } from '@xsai/stream-text'
-import { streamText as aiSdkStreamText, stepCountIs } from 'ai'
+import { stepCountIs, streamText } from 'ai'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 import { convertXsaiToolsToAiSdk, createAiSdkModel } from '../composables/use-ai-sdk'
+import { listModels } from '../libs/ai/list-models'
 import { debug, mcp } from '../tools'
-import { useConsciousnessStore } from './modules/consciousness'
 
 export type StreamEvent
   = | { type: 'text-delta', text: string }
@@ -24,9 +21,8 @@ export interface StreamOptions {
   onStreamEvent?: (event: StreamEvent) => void | Promise<void>
   toolsCompatibility?: Map<string, boolean>
   supportsTools?: boolean
-  waitForTools?: boolean // when true, won't resolve on tool-related finishReason ('tool_calls' for xsAI, 'tool-calls' for AI SDK)
+  waitForTools?: boolean
   tools?: Tool[] | (() => Promise<Tool[] | undefined>)
-  useAiSdk?: boolean
 }
 
 // Converts non-standard message roles (e.g. 'error') into valid user messages
@@ -46,60 +42,6 @@ function streamOptionsToolsCompatibilityOk(model: string, chatProvider: ChatProv
   return !!(options?.supportsTools || options?.toolsCompatibility?.get(`${chatProvider.chat(model).baseURL}-${model}`))
 }
 
-async function streamFrom(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {
-  const headers = options?.headers
-  const sanitized = sanitizeMessages(messages as unknown[])
-  const tools = await resolveXsaiTools(model, chatProvider, messages, options)
-
-  return new Promise<void>((resolve, reject) => {
-    let settled = false
-    const resolveOnce = () => {
-      if (settled)
-        return
-      settled = true
-      resolve()
-    }
-    const rejectOnce = (err: unknown) => {
-      if (settled)
-        return
-      settled = true
-      reject(err)
-    }
-
-    const onEvent = async (event: unknown) => {
-      try {
-        await options?.onStreamEvent?.(event as StreamEvent)
-        if (event && (event as StreamEvent).type === 'finish') {
-          const finishReason = (event as any).finishReason
-          if (finishReason !== 'tool_calls' || !options?.waitForTools)
-            resolveOnce()
-        }
-        else if (event && (event as StreamEvent).type === 'error') {
-          const error = (event as any).error ?? new Error('Stream error')
-          rejectOnce(error)
-        }
-      }
-      catch (err) {
-        rejectOnce(err)
-      }
-    }
-
-    try {
-      streamText({
-        ...chatProvider.chat(model),
-        maxSteps: 10,
-        messages: sanitized,
-        headers,
-        tools,
-        onEvent,
-      })
-    }
-    catch (err) {
-      rejectOnce(err)
-    }
-  })
-}
-
 async function resolveXsaiTools(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions): Promise<Tool[] | undefined> {
   const resolveTools = async () => {
     const tools = typeof options?.tools === 'function'
@@ -114,8 +56,8 @@ async function resolveXsaiTools(model: string, chatProvider: ChatProvider, messa
 
   try {
     return [
-      ...await mcp(),
-      ...await debug(),
+      ...await mcp() as Tool[],
+      ...await debug() as Tool[],
       ...await resolveTools(),
     ]
   }
@@ -124,7 +66,7 @@ async function resolveXsaiTools(model: string, chatProvider: ChatProvider, messa
   }
 }
 
-export async function streamFromAiSdk(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {
+async function streamFrom(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {
   const chatConfig = chatProvider.chat(model) as unknown as Record<string, unknown>
   const baseURL = String(chatConfig.baseURL ?? '')
   const apiKey = String(chatConfig.apiKey ?? '')
@@ -145,7 +87,7 @@ export async function streamFromAiSdk(model: string, chatProvider: ChatProvider,
 
   const sanitized = sanitizeMessages(messages as unknown[])
   const xsaiTools = await resolveXsaiTools(model, chatProvider, messages, options)
-  const aiSdkTools = xsaiTools ? convertXsaiToolsToAiSdk(xsaiTools) : undefined
+  const aiSdkTools = xsaiTools ? convertXsaiToolsToAiSdk(xsaiTools as any) : undefined
 
   return new Promise<void>((resolve, reject) => {
     let settled = false
@@ -153,7 +95,7 @@ export async function streamFromAiSdk(model: string, chatProvider: ChatProvider,
     const rejectOnce = (err: unknown) => { if (!settled) { settled = true; reject(err) } }
 
     try {
-      const result = aiSdkStreamText({
+      const result = streamText({
         model: aiModel,
         messages: sanitized as unknown as import('ai').ModelMessage[],
         tools: aiSdkTools,
@@ -212,6 +154,8 @@ export async function streamFromAiSdk(model: string, chatProvider: ChatProvider,
   })
 }
 
+export { streamFrom as streamFromAiSdk }
+
 export async function attemptForToolsCompatibilityDiscovery(model: string, chatProvider: ChatProvider, _: Message[], options?: Omit<StreamOptions, 'supportsTools'>): Promise<boolean> {
   async function attempt(enable: boolean) {
     try {
@@ -219,20 +163,15 @@ export async function attemptForToolsCompatibilityDiscovery(model: string, chatP
       return true
     }
     catch (err) {
-      if (err instanceof Error && err.name === new XSAIError('').name) {
+      if (err instanceof Error) {
+        const errStr = String(err)
         // Known provider-specific tool incompatibility errors
-        // Ollama
-        /**
-         * {"error":{"message":"registry.ollama.ai/<scope>/<model> does not support tools","type":"api_error","param":null,"code":null}}
-         */
-        if (String(err).includes('does not support tools')) {
+        // Ollama: "does not support tools"
+        if (errStr.includes('does not support tools')) {
           return false
         }
-        // OpenRouter
-        /**
-         * {"error":{"message":"No endpoints found that support tool use. To learn more about provider routing, visit: https://openrouter.ai/docs/provider-routing","code":404}}
-         */
-        if (String(err).includes('No endpoints found that support tool use.')) {
+        // OpenRouter: "No endpoints found that support tool use."
+        if (errStr.includes('No endpoints found that support tool use.')) {
           return false
         }
       }
@@ -296,12 +235,6 @@ export const useLLM = defineStore('llm', () => {
 
   function stream(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions) {
     const mergedOptions = { ...options, toolsCompatibility: toolsCompatibility.value }
-    if (mergedOptions.useAiSdk === undefined) {
-      mergedOptions.useAiSdk = useConsciousnessStore().useAiSdk
-    }
-    if (mergedOptions.useAiSdk) {
-      return streamFromAiSdk(model, chatProvider, messages, mergedOptions)
-    }
     return streamFrom(model, chatProvider, messages, mergedOptions)
   }
 
@@ -312,7 +245,7 @@ export const useLLM = defineStore('llm', () => {
 
     try {
       return await listModels({
-        baseURL: (apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`) as `${string}/`,
+        baseURL: apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`,
         apiKey,
       })
     }

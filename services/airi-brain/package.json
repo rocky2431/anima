@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "catalog:",
     "@guiiai/logg": "catalog:",
     "@proj-airi/context-engine": "workspace:^",
     "@proj-airi/desktop-shell": "workspace:^",
@@ -26,7 +27,7 @@
     "@proj-airi/server-sdk": "workspace:^",
     "@proj-airi/server-shared": "workspace:^",
     "@proj-airi/skills-engine": "workspace:^",
-    "@xsai/generate-text": "catalog:",
+    "ai": "catalog:",
     "better-sqlite3": "catalog:",
     "nanoid": "catalog:",
     "tsx": "^4.21.0"

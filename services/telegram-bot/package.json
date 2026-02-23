@@ -22,6 +22,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "catalog:",
     "@dotenvx/dotenvx": "^1.51.4",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@grammyjs/files": "^1.2.0",
@@ -39,11 +40,7 @@
     "@opentelemetry/sdk-trace-node": "^2.4.0",
     "@opentelemetry/semantic-conventions": "^1.39.0",
     "@velin-dev/core": "^0.3.4",
-    "@xsai/embed": "catalog:",
-    "@xsai/generate-text": "catalog:",
-    "@xsai/shared-chat": "catalog:",
-    "@xsai/tool": "catalog:",
-    "@xsai/utils-chat": "catalog:",
+    "ai": "catalog:",
     "best-effort-json-parser": "^1.2.1",
     "drizzle-orm": "^0.45.1",
     "es-toolkit": "^1.44.0",

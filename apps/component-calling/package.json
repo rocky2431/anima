@@ -21,12 +21,10 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@proj-airi/stage-ui": "workspace:^",
     "@proj-airi/ui": "workspace:^",
     "@valibot/to-json-schema": "1.0.0-rc.0",
     "@vueuse/core": "^14.1.0",
-    "@xsai/generate-text": "catalog:",
-    "@xsai/shared-chat": "catalog:",
-    "@xsai/stream-text": "catalog:",
     "es-toolkit": "^1.44.0",
     "valibot": "^1.2.0",
     "vue": "catalog:",

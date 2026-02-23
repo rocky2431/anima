@@ -2,7 +2,8 @@ import { env } from 'node:process'
 
 import pLimit from 'p-limit'
 
-import { embed } from '@xsai/embed'
+import { createOpenAI } from '@ai-sdk/openai'
+import { embed } from 'ai'
 import { eq, isNull } from 'drizzle-orm'
 import { chunk } from 'es-toolkit'
 
@@ -59,11 +60,10 @@ async function main() {
     await limit(async () => {
       const embedPromises = batch.map(async (message) => {
         try {
+          const embeddingProvider = createOpenAI({ apiKey: env.EMBEDDING_API_KEY!, baseURL: env.EMBEDDING_API_BASE_URL! })
           const embeddingRes = await embed({
-            baseURL: env.EMBEDDING_API_BASE_URL!,
-            apiKey: env.EMBEDDING_API_KEY!,
-            model: env.EMBEDDING_MODEL!,
-            input: message.content,
+            model: embeddingProvider.embedding(env.EMBEDDING_MODEL!),
+            value: message.content,
           })
 
           switch (env.EMBEDDING_DIMENSION) {

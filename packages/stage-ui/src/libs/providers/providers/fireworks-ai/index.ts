@@ -1,6 +1,6 @@
-import { createFireworks } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createFireworksAI } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -39,7 +39,7 @@ export const providerFireworksAI = defineProvider<FireworksConfig>({
     }),
   }),
   createProvider(config) {
-    return createFireworks(config.apiKey, config.baseUrl)
+    return createFireworksAI(config.apiKey, config.baseUrl)
   },
 
   validationRequiredWhen(config) {

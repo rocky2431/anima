@@ -1,14 +1,13 @@
-import type { GenerateTextOptions } from '@xsai/generate-text'
 import type { Message } from 'grammy/types'
 
 import type { BotContext, ChatContext } from '../../../../types'
 
 import { env } from 'node:process'
 
+import { createOpenAI } from '@ai-sdk/openai'
 import { useLogg } from '@guiiai/logg'
 import { sleep } from '@moeru/std'
-import { generateText } from '@xsai/generate-text'
-import { message } from '@xsai/utils-chat'
+import { generateText } from 'ai'
 import { parse } from 'best-effort-json-parser'
 import { randomInt } from 'es-toolkit'
 
@@ -66,43 +65,37 @@ export async function sendMessage(
     return // Don't send the message, let the next processing loop handle it
   }
 
-  const req = {
-    apiKey: env.LLM_API_KEY!,
-    baseURL: env.LLM_API_BASE_URL!,
-    model: env.LLM_MODEL!,
-    messages: message.messages(
-      message.system(await messageSplit()),
-      message.user('This is the input message:'),
-      message.user(responseText),
-    ),
+  const provider = createOpenAI({ apiKey: env.LLM_API_KEY!, baseURL: env.LLM_API_BASE_URL! })
+  const res = await generateText({
+    model: provider(env.LLM_MODEL!),
+    messages: [
+      { role: 'system', content: await messageSplit() },
+      { role: 'user', content: 'This is the input message:' },
+      { role: 'user', content: responseText },
+    ],
     abortSignal: abortController.signal,
-  } satisfies GenerateTextOptions
-  if (env.LLM_OLLAMA_DISABLE_THINK) {
-    (req as Record<string, unknown>).think = false
-  }
+  })
 
-  const res = await generateText(req)
-  res.text = res.text
+  const cleanedText = res.text
     .replace(/<think>[\s\S]*?<\/think>/, '')
     .replace(/^```json\s*\n/, '')
     .replace(/\n```$/, '')
     .replace(/^```\s*\n/, '')
     .replace(/\n```$/, '')
     .trim()
-  if (!res.text) {
+  if (!cleanedText) {
     throw new Error('No response text')
   }
 
   logger.withFields({
     messages: responseText,
-    response: res.text,
+    response: cleanedText,
     now: new Date().toLocaleString(),
-    totalTokens: res.usage.total_tokens,
-    promptTokens: res.usage.prompt_tokens,
-    completion_tokens: res.usage.completion_tokens,
+    inputTokens: res.usage.inputTokens,
+    outputTokens: res.usage.outputTokens,
   }).log('Message split')
 
-  const structuredMessage = parseMayStructuredMessage(res.text)
+  const structuredMessage = parseMayStructuredMessage(cleanedText)
   if (structuredMessage == null) {
     botContext.logger.log(`Not sending message to ${chatId} - no messages to send`)
     return

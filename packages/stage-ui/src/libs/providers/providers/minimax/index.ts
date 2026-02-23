@@ -1,8 +1,8 @@
 import type { ModelInfo } from '../../types'
 
-import { createMinimax, createMinimaxCn } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createMinimax, createOpenAICompatible } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -91,7 +91,7 @@ export const providerMinimax = defineProvider<MinimaxCnConfig>({
     }),
   }),
   createProvider(config) {
-    return createMinimaxCn(config.apiKey, config.baseUrl)
+    return createOpenAICompatible(config.apiKey, config.baseUrl!)
   },
 
   extraMethods: {
@@ -131,7 +131,7 @@ export const providerMinimaxGlobal = defineProvider<MinimaxGlobalConfig>({
     }),
   }),
   createProvider(config) {
-    return createMinimax(config.apiKey, config.baseUrl)
+    return createMinimax(config.apiKey, config.baseUrl!)
   },
 
   extraMethods: {

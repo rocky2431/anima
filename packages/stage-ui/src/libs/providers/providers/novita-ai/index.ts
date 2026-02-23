@@ -1,6 +1,6 @@
-import { createNovita } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createNovitaAI } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -39,7 +39,7 @@ export const providerNovitaAI = defineProvider<NovitaConfig>({
     }),
   }),
   createProvider(config) {
-    return createNovita(config.apiKey, config.baseUrl)
+    return createNovitaAI(config.apiKey, config.baseUrl)
   },
 
   validationRequiredWhen(config) {

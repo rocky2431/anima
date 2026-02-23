@@ -1,8 +1,9 @@
 import type { ModelInfo, UnifiedProviderMetadata, ValidationResult } from '../types'
 
 import { isUrl } from '@proj-airi/stage-shared'
-import { createOllama } from '@xsai-ext/providers/create'
-import { listModels } from '@xsai/model'
+
+import { createOllama } from '../../../libs/ai/create-provider'
+import { listModels } from '../../../libs/ai/list-models'
 
 export const ollamaProvider: UnifiedProviderMetadata = {
   id: 'ollama',

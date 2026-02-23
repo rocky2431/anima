@@ -1,7 +1,5 @@
-import type { ChatProvider } from '@xsai-ext/providers/utils'
-import type { UserMessage } from '@xsai/shared-chat'
-
 import type { ChatStreamEvent, ContextMessage } from '../../../types/chat'
+import type { ChatProvider } from '../../providers/types'
 
 import { isStageTamagotchi, isStageWeb } from '@proj-airi/stage-shared'
 import { useBroadcastChannel } from '@vueuse/core'
@@ -84,7 +82,7 @@ export const useContextBridgeStore = defineStore('mods:api:context-bridge', () =
               ...update,
               metadata: event.metadata,
               createdAt,
-            })
+            } as ContextMessage)
           }
         }
 
@@ -199,13 +197,13 @@ export const useContextBridgeStore = defineStore('mods:api:context-bridge', () =
             type: 'output:gen-ai:chat:message',
             data: {
               ...context.input?.data,
-              message,
+              'message': message as any,
               'stage-web': isStageWeb(),
               'stage-tamagotchi': isStageTamagotchi(),
               'gen-ai:chat': {
-                message: context.message as UserMessage,
-                composedMessage: context.composedMessage,
-                contexts: context.contexts,
+                message: context.message as any,
+                composedMessage: context.composedMessage as any,
+                contexts: context.contexts as any,
                 input: context.input,
               },
             },
@@ -217,7 +215,7 @@ export const useContextBridgeStore = defineStore('mods:api:context-bridge', () =
             type: 'output:gen-ai:chat:complete',
             data: {
               ...context.input?.data,
-              'message': chat.output,
+              'message': chat.output as any,
               'toolCalls': chat.output.slices
                 .filter((s: any) => s.type === 'tool-call')
                 .map((s: any) => s.toolCall),
@@ -227,9 +225,9 @@ export const useContextBridgeStore = defineStore('mods:api:context-bridge', () =
                 ? { ...context.usage, source: 'provider-based' as const }
                 : { promptTokens: 0, completionTokens: 0, totalTokens: 0, source: 'estimate-based' as const },
               'gen-ai:chat': {
-                message: context.message as UserMessage,
-                composedMessage: context.composedMessage,
-                contexts: context.contexts,
+                message: context.message as any,
+                composedMessage: context.composedMessage as any,
+                contexts: context.contexts as any,
                 input: context.input,
               },
             },

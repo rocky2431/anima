@@ -6,11 +6,11 @@ import { env } from 'node:process'
 
 import wavefile from 'wavefile'
 
+import { createOpenAI } from '@ai-sdk/openai'
 import { useLogg } from '@guiiai/logg'
 import { pipeline } from '@huggingface/transformers'
 import { toWav } from '@proj-airi/audio'
-import { createOpenAI } from '@xsai-ext/providers/create'
-import { generateTranscription } from '@xsai/generate-transcription'
+import { experimental_transcribe as aiTranscribe } from 'ai'
 
 export class WhisperLargeV3Pipeline {
   static task: PipelineType = 'automatic-speech-recognition'
@@ -75,13 +75,12 @@ export async function openaiTranscribe(wavBuffer: Buffer) {
 
   log.log('Transcribing audio...')
 
-  const wavFile = new Blob([wavBuffer], { type: 'audio/wav' })
-  const openai = createOpenAI(env.OPENAI_STT_API_KEY, env.OPENAI_STT_API_BASE_URL)
+  const openai = createOpenAI({ apiKey: env.OPENAI_STT_API_KEY!, baseURL: env.OPENAI_STT_API_BASE_URL! })
 
   try {
-    const result = await generateTranscription({
-      ...openai.transcription(env.OPENAI_STT_MODEL),
-      file: wavFile,
+    const result = await aiTranscribe({
+      model: openai.transcription(env.OPENAI_STT_MODEL!),
+      audio: new Uint8Array(wavBuffer),
     })
 
     log.withField('result', result.text).log('Transcription result')

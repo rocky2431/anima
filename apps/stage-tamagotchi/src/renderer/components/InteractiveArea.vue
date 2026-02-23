@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { ChatProvider } from '@proj-airi/stage-ui/stores/providers/types'
 import type { ChatHistoryItem } from '@proj-airi/stage-ui/types/chat'
-import type { ChatProvider } from '@xsai-ext/providers/utils'
 
 import { ChatHistory } from '@proj-airi/stage-ui/components'
 import { useChatOrchestratorStore } from '@proj-airi/stage-ui/stores/chat'
@@ -55,7 +55,7 @@ async function handleSend() {
       chatProvider: await providersStore.getProviderInstance<ChatProvider>(activeProvider.value),
       providerConfig,
       attachments: attachmentsToSend,
-      tools: widgetsTools,
+      tools: widgetsTools as any,
     })
 
     attachmentsToSend.forEach(att => URL.revokeObjectURL(att.url))

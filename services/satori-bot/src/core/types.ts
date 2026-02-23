@@ -1,5 +1,5 @@
 import type { Logg } from '@guiiai/logg'
-import type { Message as LLMMessage } from '@xsai/shared-chat'
+import type { ModelMessage as LLMMessage } from 'ai'
 
 import type { SatoriEvent } from '../adapter/satori/types'
 

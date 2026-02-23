@@ -1,10 +1,16 @@
-import type { CommonRequestOptions } from '@xsai/shared'
-import type { Message } from '@xsai/shared-chat'
+import type { Message } from '@proj-airi/stage-ui/types/ai-messages'
 import type { Infer, Schema } from 'xsschema'
 
-import { generateText } from '@xsai/generate-text'
-import { message } from '@xsai/utils-chat'
+import { generateText } from '@proj-airi/stage-ui/libs/ai/generate-text'
+import { message } from '@proj-airi/stage-ui/libs/ai/message-helpers'
 import { toJsonSchema, validate } from 'xsschema'
+
+interface CommonRequestOptions {
+  baseURL: string | URL
+  apiKey?: string
+  headers?: Record<string, string>
+  [key: string]: unknown
+}
 
 type SchemaOrString<S extends Schema | undefined | unknown> = S extends unknown ? string : S extends Schema ? Infer<S> : never
 
@@ -39,7 +45,6 @@ ${JSON.stringify(await toJsonSchema(schema))}`))
       return parseJSONFormat(response, options, schema, content, String(parseError))
     }
 
-    // TODO: print validation issues
     return await validate(schema, parsedContent) as R
   }
   catch (error) {

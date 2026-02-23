@@ -1,6 +1,6 @@
-import { createXai } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createXAI } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -38,7 +38,7 @@ export const providerXAI = defineProvider<XAIConfig>({
     }),
   }),
   createProvider(config) {
-    return createXai(config.apiKey, config.baseUrl)
+    return createXAI(config.apiKey, config.baseUrl)
   },
 
   validationRequiredWhen(config) {

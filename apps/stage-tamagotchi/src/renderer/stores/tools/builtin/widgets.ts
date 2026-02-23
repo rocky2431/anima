@@ -1,8 +1,8 @@
-import type { Tool } from '@xsai/shared-chat'
+import type { Tool } from '@proj-airi/stage-ui/types/ai-messages'
 
 import { defineInvoke } from '@moeru/eventa'
 import { createContext } from '@moeru/eventa/adapters/electron/renderer'
-import { tool } from '@xsai/tool'
+import { tool } from '@proj-airi/stage-ui/libs/ai/tool'
 import { z } from 'zod'
 
 import { widgetsAdd, widgetsClear, widgetsOpenWindow, widgetsPrepareWindow, widgetsRemove, widgetsUpdate } from '../../../../shared/eventa'

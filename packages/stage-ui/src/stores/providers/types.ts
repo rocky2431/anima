@@ -1,14 +1,55 @@
-import type {
-  ChatProvider,
-  ChatProviderWithExtraOptions,
-  EmbedProvider,
-  EmbedProviderWithExtraOptions,
-  SpeechProvider,
-  SpeechProviderWithExtraOptions,
-  TranscriptionProvider,
-  TranscriptionProviderWithExtraOptions,
-} from '@xsai-ext/providers/utils'
-import type { ProgressInfo } from '@xsai-transformers/shared/types'
+import type { ProviderBundle, ProviderConfig } from '../../libs/ai/create-provider'
+
+// ---------------------------------------------------------------------------
+// Provider capability interfaces (replaces @xsai-ext/providers/utils types)
+// ---------------------------------------------------------------------------
+
+export interface ChatProvider {
+  chat: (model: string, extra?: Record<string, unknown>) => ProviderConfig
+}
+
+export interface ChatProviderWithExtraOptions<_TModel extends string = string, TExtra = Record<string, unknown>> {
+  chat: (model: string, extra?: TExtra) => ProviderConfig
+}
+
+export interface SpeechProvider {
+  speech: (model: string, extra?: Record<string, unknown>) => ProviderConfig
+}
+
+export interface SpeechProviderWithExtraOptions<_TModel extends string = string, TExtra = Record<string, unknown>> {
+  speech: (model: string, extra?: TExtra) => ProviderConfig
+}
+
+export interface TranscriptionProvider {
+  transcription: (model: string, extra?: Record<string, unknown>) => ProviderConfig
+}
+
+export interface TranscriptionProviderWithExtraOptions<_TModel extends string = string, TExtra = Record<string, unknown>> {
+  transcription: (model: string, extra?: TExtra) => ProviderConfig
+}
+
+export interface EmbedProvider {
+  embed: (model: string) => ProviderConfig
+}
+
+export interface EmbedProviderWithExtraOptions<_TModel extends string = string, TExtra = Record<string, unknown>> {
+  embed: (model: string, extra?: TExtra) => ProviderConfig
+}
+
+// ---------------------------------------------------------------------------
+// Progress info (replaces @xsai-transformers/shared/types)
+// ---------------------------------------------------------------------------
+
+export interface ProgressInfo {
+  status: string
+  progress?: number
+  file?: string
+  loaded?: number
+  total?: number
+}
+
+// Re-export ProviderBundle for convenience
+export type { ProviderBundle, ProviderConfig }
 
 /**
  * Provider tier classification for the OpenRouter-First architecture.

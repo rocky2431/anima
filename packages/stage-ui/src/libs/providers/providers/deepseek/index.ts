@@ -1,6 +1,6 @@
-import { createDeepSeek } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createDeepSeek } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 

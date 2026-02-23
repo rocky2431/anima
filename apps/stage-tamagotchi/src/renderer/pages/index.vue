@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChatProvider } from '@xsai-ext/providers/utils'
+import type { ChatProvider } from '@proj-airi/stage-ui/stores/providers/types'
 
 import workletUrl from '@proj-airi/stage-ui/workers/vad/process.worklet?worker&url'
 

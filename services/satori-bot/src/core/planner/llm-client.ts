@@ -1,14 +1,13 @@
-import type { GenerateTextOptions } from '@xsai/generate-text'
-import type { Message as LLMMessage } from '@xsai/shared-chat'
+import type { ModelMessage as LLMMessage } from 'ai'
 
 import type { SatoriEvent } from '../../adapter/satori/types'
 import type { Action } from '../types'
 
 import { env } from 'node:process'
 
+import { createOpenAI } from '@ai-sdk/openai'
 import { useLogg } from '@guiiai/logg'
-import { generateText } from '@xsai/generate-text'
-import { message } from '@xsai/utils-chat'
+import { generateText } from 'ai'
 import { parse } from 'best-effort-json-parser'
 
 import { personality, systemPrompt } from './prompts'
@@ -26,16 +25,18 @@ export async function imagineAnAction(
 
   let responseText = ''
 
-  const requestMessages = message.messages(
-    message.system(
-      [
+  const requestMessages: LLMMessage[] = [
+    {
+      role: 'system',
+      content: [
         await systemPrompt(),
         await personality(),
       ].join('\n\n'),
-    ),
+    },
     ...messages,
-    message.user(
-      [
+    {
+      role: 'user',
+      content: [
         globalStates?.incomingEvents?.length > 0
           ? `Incoming events:\n${globalStates.incomingEvents.filter(Boolean).map(event =>
             `- [${event.channel?.name || event.channel?.id}] ${event.user?.name || event.user?.id}: ${event.message?.content || '[No content]'}`,
@@ -50,8 +51,8 @@ export async function imagineAnAction(
         'Based on the context, what do you want to do? Choose a right action from the listing of the tools you want to take next.',
         'Respond with the action and parameters you choose in JSON only, without any explanation and markups.',
       ].filter(Boolean).join('\n\n'),
-    ),
-  )
+    },
+  ]
 
   try {
     // Validate API configuration
@@ -65,35 +66,28 @@ export async function imagineAnAction(
       throw new Error('LLM_MODEL is not configured. Please set it in your .env.local file.')
     }
 
-    const req = {
-      apiKey: env.LLM_API_KEY,
-      baseURL: env.LLM_API_BASE_URL,
-      model: env.LLM_MODEL,
+    const provider = createOpenAI({ apiKey: env.LLM_API_KEY!, baseURL: env.LLM_API_BASE_URL! })
+    const res = await generateText({
+      model: provider(env.LLM_MODEL!),
       messages: requestMessages,
       abortSignal: currentAbortController?.signal,
-    } satisfies GenerateTextOptions
+    })
 
-    if (env.LLM_OLLAMA_DISABLE_THINK) {
-      (req as Record<string, unknown>).think = false
-    }
+    const cleanedText = res.text.replace(/<think>[\s\S]*?<\/think>/, '').trim()
 
-    const res = await generateText(req)
-    res.text = res.text.replace(/<think>[\s\S]*?<\/think>/, '').trim()
-
-    if (!res.text) {
+    if (!cleanedText) {
       throw new Error('No response text')
     }
 
     logger.withFields({
-      response: res.text,
+      response: cleanedText,
       unreadEvents: Object.fromEntries(Object.entries(globalStates.unreadEvents).map(([key, value]) => [key, value.length])),
       now: new Date().toLocaleString(),
-      totalTokens: res.usage.total_tokens,
-      promptTokens: res.usage.prompt_tokens,
-      completion_tokens: res.usage.completion_tokens,
+      inputTokens: res.usage.inputTokens,
+      outputTokens: res.usage.outputTokens,
     }).log('Generated action')
 
-    responseText = res.text
+    responseText = cleanedText
       .replace(/^```(?:json)?\s*/m, '')
       .replace(/\s*```\s*$/m, '')
       .trim()

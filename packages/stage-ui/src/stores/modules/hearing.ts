@@ -1,32 +1,59 @@
-import type { TranscriptionProviderWithExtraOptions } from '@xsai-ext/providers/utils'
-import type { WithUnknown } from '@xsai/shared'
-import type { StreamTranscriptionResult, StreamTranscriptionOptions as XSAIStreamTranscriptionOptions } from '@xsai/stream-transcription'
+import type { TranscriptionProviderWithExtraOptions } from '../providers/types'
 
 import { tryCatch } from '@moeru/std'
 import { useLocalStorageManualReset } from '@proj-airi/stage-shared/composables'
 import { refManualReset } from '@vueuse/core'
-import { generateTranscription } from '@xsai/generate-transcription'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
 
 import vadWorkletUrl from '../../workers/vad/process.worklet?worker&url'
 
+import { generateTranscription } from '../../libs/ai/generate-transcription'
 import { useProvidersStore } from '../providers'
 import { streamAliyunTranscription } from '../providers/aliyun/stream-transcription'
 import { streamWebSpeechAPITranscription } from '../providers/web-speech-api'
 
-export interface StreamTranscriptionFileInputOptions extends Omit<XSAIStreamTranscriptionOptions, 'file' | 'fileName'> {
+// ---------------------------------------------------------------------------
+// Local stream-transcription types (replaces @xsai/stream-transcription)
+// ---------------------------------------------------------------------------
+
+export type StreamTranscriptionDeltaType = 'transcript.text.delta' | 'transcript.text.done'
+
+export interface StreamTranscriptionDelta {
+  delta: string
+  type: StreamTranscriptionDeltaType
+}
+
+export interface StreamTranscriptionResult {
+  fullStream: ReadableStream<StreamTranscriptionDelta>
+  text: Promise<string>
+  textStream: ReadableStream<string>
+}
+
+export interface StreamTranscriptionBaseOptions {
+  abortSignal?: AbortSignal
+  apiKey?: string
+  baseURL?: string | URL
+  headers?: Headers | Record<string, string>
+  model?: string
+  language?: string
+  prompt?: string
+  temperature?: string
+  [key: string]: unknown
+}
+
+export interface StreamTranscriptionFileInputOptions extends StreamTranscriptionBaseOptions {
   file: Blob
   fileName?: string
 }
 
-export interface StreamTranscriptionStreamInputOptions extends Omit<XSAIStreamTranscriptionOptions, 'file' | 'fileName'> {
+export interface StreamTranscriptionStreamInputOptions extends StreamTranscriptionBaseOptions {
   inputAudioStream: ReadableStream<ArrayBuffer>
 }
 
-export type StreamTranscription = (options: WithUnknown<StreamTranscriptionFileInputOptions | StreamTranscriptionStreamInputOptions>) => StreamTranscriptionResult
+export type StreamTranscription = (options: StreamTranscriptionFileInputOptions | StreamTranscriptionStreamInputOptions) => StreamTranscriptionResult
 
-type GenerateTranscriptionResponse = Awaited<ReturnType<typeof generateTranscription>>
+interface GenerateTranscriptionResponse { text: string | Promise<string> }
 type HearingTranscriptionGenerateResult = GenerateTranscriptionResponse & { mode: 'generate' }
 type HearingTranscriptionStreamResult = StreamTranscriptionResult & { mode: 'stream' }
 export type HearingTranscriptionResult = HearingTranscriptionGenerateResult | HearingTranscriptionStreamResult
@@ -136,7 +163,7 @@ export const useHearingStore = defineStore('hearing-store', () => {
     const streamExecutor = STREAM_TRANSCRIPTION_EXECUTORS[providerId]
 
     if (features.supportsStreamOutput && streamExecutor) {
-      // TODO: integrate VAD-driven silence detection to stop and restart realtime sessions based on silence thresholds.
+      // Future enhancement: VAD-driven silence detection to stop and restart realtime sessions based on silence thresholds.
       const request = provider.transcription(model, options?.providerOptions)
 
       if (features.supportsStreamInput && normalizedInput.inputAudioStream) {

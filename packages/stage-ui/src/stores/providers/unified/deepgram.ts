@@ -1,7 +1,6 @@
-import type { SpeechProviderWithExtraOptions } from '@xsai-ext/providers/utils'
 import type { UnDeepgramOptions, VoiceProviderWithExtraOptions } from 'unspeech'
 
-import type { UnifiedProviderMetadata, ValidationResult, VoiceInfo } from '../types'
+import type { SpeechProviderWithExtraOptions, UnifiedProviderMetadata, ValidationResult, VoiceInfo } from '../types'
 
 import { isUrl } from '@proj-airi/stage-shared'
 import { createUnDeepgram, listVoices } from 'unspeech'

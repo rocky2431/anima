@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SpeechProvider } from '@xsai-ext/providers/utils'
+import type { SpeechProvider } from '@proj-airi/stage-ui/stores/providers/types'
 
 import {
   SpeechPlayground,

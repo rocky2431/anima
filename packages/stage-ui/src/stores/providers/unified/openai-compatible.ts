@@ -1,7 +1,7 @@
 import type { UnifiedProviderMetadata } from '../types'
 
-import { createOpenAI } from '@xsai-ext/providers/create'
-import { listModels } from '@xsai/model'
+import { createOpenAI } from '../../../libs/ai/create-provider'
+import { listModels } from '../../../libs/ai/list-models'
 
 export const openaiCompatibleProvider: UnifiedProviderMetadata = {
   id: 'openai-compatible',

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChatProvider } from '@xsai-ext/providers/utils'
+import type { ChatProvider } from '@proj-airi/stage-ui/stores/providers/types'
 
 import { isStageTamagotchi } from '@proj-airi/stage-shared'
 import { useAudioAnalyzer } from '@proj-airi/stage-ui/composables'

@@ -1,6 +1,6 @@
 import type { FileFlavor } from '@grammyjs/files'
 import type { Logg } from '@guiiai/logg'
-import type { Message as LLMMessage } from '@xsai/shared-chat'
+import type { ModelMessage as LLMMessage } from 'ai'
 import type { Bot, Context } from 'grammy'
 import type { Message } from 'grammy/types'
 

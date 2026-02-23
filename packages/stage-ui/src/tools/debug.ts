@@ -1,5 +1,6 @@
-import { tool } from '@xsai/tool'
 import { z } from 'zod'
+
+import { tool } from '../libs/ai/tool'
 
 const tools = [
   tool({

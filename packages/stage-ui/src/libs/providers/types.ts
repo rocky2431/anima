@@ -1,19 +1,57 @@
-import type {
-  ChatProvider,
-  ChatProviderWithExtraOptions,
-  EmbedProvider,
-  EmbedProviderWithExtraOptions,
-  ModelProvider,
-  ModelProviderWithExtraOptions,
-  SpeechProvider,
-  SpeechProviderWithExtraOptions,
-  TranscriptionProvider,
-  TranscriptionProviderWithExtraOptions,
-} from '@xsai-ext/providers/utils'
-import type { ProgressInfo } from '@xsai-transformers/shared/types'
 import type { MaybePromise } from 'clustr'
 import type { ComposerTranslation } from 'vue-i18n'
 import type { $ZodType } from 'zod/v4/core'
+
+import type { ProviderBundle, ProviderConfig } from '../ai/create-provider'
+
+// ---------------------------------------------------------------------------
+// Provider capability interfaces (replaces @xsai-ext/providers/utils types)
+// ---------------------------------------------------------------------------
+
+export interface ChatProvider {
+  chat: (model: string, extra?: Record<string, unknown>) => ProviderConfig
+}
+
+export type ChatProviderWithExtraOptions<_TModel extends string = string, _TExtra = unknown> = ChatProvider
+
+export interface SpeechProvider {
+  speech: (model: string, extra?: Record<string, unknown>) => ProviderConfig
+}
+
+export type SpeechProviderWithExtraOptions<_TModel extends string = string, _TExtra = unknown> = SpeechProvider
+
+export interface TranscriptionProvider {
+  transcription: (model: string, extra?: Record<string, unknown>) => ProviderConfig
+}
+
+export type TranscriptionProviderWithExtraOptions<_TModel extends string = string, _TExtra = unknown> = TranscriptionProvider
+
+export interface EmbedProvider {
+  embed: (model: string) => ProviderConfig
+}
+
+export type EmbedProviderWithExtraOptions<_TModel extends string = string, _TExtra = unknown> = EmbedProvider
+
+export interface ModelProvider {
+  model: () => { baseURL: string, apiKey: string, headers?: Record<string, string> }
+}
+
+export type ModelProviderWithExtraOptions<_TModel extends string = string, _TExtra = unknown> = ModelProvider
+
+// ---------------------------------------------------------------------------
+// Progress info (replaces @xsai-transformers/shared/types)
+// ---------------------------------------------------------------------------
+
+export interface ProgressInfo {
+  status: string
+  progress?: number
+  file?: string
+  loaded?: number
+  total?: number
+}
+
+// Re-export ProviderBundle for convenience
+export type { ProviderBundle, ProviderConfig }
 
 export type ProviderInstance
   = | ChatProvider

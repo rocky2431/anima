@@ -54,17 +54,6 @@ catalog:
   '@types/splitpanes': ^2.2.6
   '@types/unist': ^3.0.3
   '@vueuse/core': 14.1.0
-  '@xsai-ext/providers': ^0.4.2
-  '@xsai/embed': ^0.4.2
-  '@xsai/generate-speech': 0.4.0-beta.13
-  '@xsai/generate-text': ^0.4.2
-  '@xsai/generate-transcription': ^0.4.2
-  '@xsai/model': ^0.4.2
-  '@xsai/shared': 0.4.0-beta.13
-  '@xsai/shared-chat': 0.4.0-beta.13
-  '@xsai/stream-text': ^0.4.2
-  '@xsai/tool': ^0.4.2
-  '@xsai/utils-chat': 0.4.0-beta.13
   ai: ^6.0.90
   async-mutex: 0.5.0
   better-auth: ^1.4.16

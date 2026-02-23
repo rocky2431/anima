@@ -7,7 +7,6 @@ import { env } from 'node:process'
 
 import { useLogg } from '@guiiai/logg'
 import { sleep } from '@moeru/std'
-import { message } from '@xsai/utils-chat'
 import { Bot } from 'grammy'
 
 import { imagineAnAction } from '../../llm/actions'
@@ -25,7 +24,7 @@ async function dispatchAction(ctx: BotContext, action: Action, abortController: 
   if (!action || !action.action) {
     ctx.logger.withField('action', action).log('No valid action returned.')
     if (chatCtx) {
-      chatCtx.messages.push(message.user('AIRI System: No valid action returned.'))
+      chatCtx.messages.push({ role: 'user' as const, content: 'AIRI System: No valid action returned.' })
       return () => handleLoopStep(ctx, chatCtx)
     }
     else {
@@ -97,7 +96,7 @@ async function dispatchAction(ctx: BotContext, action: Action, abortController: 
 
       const mentionedBy = unreadMessagesForThisChat.find(msg => msg.text?.includes(ctx.bot.botInfo.username) || msg.text?.includes(ctx.bot.botInfo.first_name))
       if (mentionedBy) {
-        chatCtx.messages.push(message.user(`AIRI System: You were mentioned in a message: ${mentionedBy.text} by ${mentionedBy.from?.first_name} (${mentionedBy.from?.username}), please respond as much as possible.`))
+        chatCtx.messages.push({ role: 'user' as const, content: `AIRI System: You were mentioned in a message: ${mentionedBy.text} by ${mentionedBy.from?.first_name} (${mentionedBy.from?.username}), please respond as much as possible.` })
       }
 
       if (!Array.isArray(unreadMessagesForThisChat)) {
@@ -166,7 +165,7 @@ async function dispatchAction(ctx: BotContext, action: Action, abortController: 
       return () => handleLoopStep(ctx, chatCtx)
     default:
       if (chatCtx) {
-        chatCtx.messages.push(message.user(`AIRI System: The action you sent ${action.action} haven't implemented yet by developer.`))
+        chatCtx.messages.push({ role: 'user' as const, content: `AIRI System: The action you sent ${action.action} haven't implemented yet by developer.` })
       }
 
       return () => handleLoopStep(ctx, chatCtx)
@@ -230,7 +229,7 @@ async function handleLoopStep(ctx: BotContext, chatCtx: ChatContext, incomingMes
       const length = chatCtx.messages.length
       // pick the latest 5
       chatCtx.messages = chatCtx.messages.slice(-5)
-      chatCtx.messages.push(message.user(`AIRI System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.messages.length}, history may lost.`))
+      chatCtx.messages.push({ role: 'user' as const, content: `AIRI System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.messages.length}, history may lost.` })
     }
 
     if (chatCtx.actions == null) {
@@ -240,7 +239,7 @@ async function handleLoopStep(ctx: BotContext, chatCtx: ChatContext, incomingMes
       const length = chatCtx.actions.length
       // pick the latest 20
       chatCtx.actions = chatCtx.actions.slice(-20)
-      chatCtx.messages.push(message.user(`AIRI System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.actions.length}, history of actions may lost.`))
+      chatCtx.messages.push({ role: 'user' as const, content: `AIRI System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.actions.length}, history of actions may lost.` })
     }
   }
 
@@ -544,6 +543,6 @@ export async function startTelegramBot() {
     loopPeriodic(botCtx)
   }
   catch (err) {
-    console.error(err)
+    log.withError(err).error('Fatal error in periodic loop')
   }
 }

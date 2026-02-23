@@ -1,6 +1,6 @@
-import { createWorkersAI } from '@xsai-ext/providers/special/create'
 import { z } from 'zod'
 
+import { createCloudflareWorkersAI } from '../../../../libs/ai/create-provider'
 import { defineProvider } from '../registry'
 
 export const providerCloudflareWorkersAI = defineProvider({
@@ -27,7 +27,7 @@ export const providerCloudflareWorkersAI = defineProvider({
     }),
   }),
   createProvider(config) {
-    return createWorkersAI(config.apiKey, config.accountId)
+    return createCloudflareWorkersAI(config.apiKey, config.accountId)
   },
   validationRequiredWhen: (config) => {
     return !!config.apiKey && !!config.accountId

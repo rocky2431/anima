@@ -1,7 +1,6 @@
-import type { ChatProvider } from '@xsai-ext/providers/utils'
-import type { Message } from '@xsai/shared-chat'
-
+import type { Message } from '../types/ai-messages'
 import type { StreamEvent, StreamOptions } from './llm'
+import type { ChatProvider } from './providers/types'
 
 import { env } from 'node:process'
 
@@ -297,7 +296,7 @@ describe('stream() routing', () => {
     vi.restoreAllMocks()
   })
 
-  it('should route to AI SDK path when useAiSdk is true', async () => {
+  it('should route to AI SDK streamText (now the only path)', async () => {
     const { streamFromAiSdk } = await import('./llm')
 
     streamTextMock.mockImplementation((opts: any) => {
@@ -309,16 +308,9 @@ describe('stream() routing', () => {
 
     const provider = createMockChatProvider()
     await streamFromAiSdk('test-model', provider, testMessages, {
-      useAiSdk: true,
       onStreamEvent: async () => {},
     })
 
     expect(streamTextMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('should not call AI SDK streamText when useAiSdk is false', async () => {
-    // When useAiSdk is false, stream() calls streamFrom which uses xsAI's streamText
-    // AI SDK's streamText should NOT be called — verify mock was never invoked
-    expect(streamTextMock).not.toHaveBeenCalled()
   })
 })

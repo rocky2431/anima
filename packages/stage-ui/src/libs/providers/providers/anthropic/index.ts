@@ -1,8 +1,8 @@
 import type { ModelInfo } from '../../types'
 
-import { createChatProvider, createModelProvider, merge } from '@xsai-ext/providers/utils'
 import { z } from 'zod'
 
+import { createAnthropic as createAnthropicProvider } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -17,23 +17,8 @@ const anthropicConfigSchema = z.object({
 
 type AnthropicConfig = z.input<typeof anthropicConfigSchema>
 
-function createAnthropic(apiKey: string, baseURL: string = 'https://api.anthropic.com/v1/') {
-  const anthropicFetch = async (input: any, init: any) => {
-    init.headers ??= {}
-    if (Array.isArray(init.headers))
-      init.headers.push(['anthropic-dangerous-direct-browser-access', 'true'])
-    else if (init.headers instanceof Headers)
-      init.headers.append('anthropic-dangerous-direct-browser-access', 'true')
-    else
-      init.headers['anthropic-dangerous-direct-browser-access'] = 'true'
-
-    return fetch(input, init)
-  }
-
-  return merge(
-    createChatProvider({ apiKey, fetch: anthropicFetch, baseURL }),
-    createModelProvider({ apiKey, fetch: anthropicFetch, baseURL }),
-  )
+function createAnthropic(apiKey: string, baseURL?: string) {
+  return createAnthropicProvider(apiKey, baseURL)
 }
 
 export const providerAnthropic = defineProvider<AnthropicConfig>({

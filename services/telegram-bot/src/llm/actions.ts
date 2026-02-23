@@ -1,15 +1,14 @@
-import type { GenerateTextOptions } from '@xsai/generate-text'
-import type { Message as LLMMessage } from '@xsai/shared-chat'
+import type { ModelMessage as LLMMessage } from 'ai'
 import type { Message } from 'grammy/types'
 
 import type { Action } from '../types'
 
 import { env } from 'node:process'
 
+import { createOpenAI } from '@ai-sdk/openai'
 import { Format, useLogg } from '@guiiai/logg'
 import { trace } from '@opentelemetry/api'
-import { generateText } from '@xsai/generate-text'
-import { message } from '@xsai/utils-chat'
+import { generateText } from 'ai'
 import { parse } from 'best-effort-json-parser'
 
 import { personality, systemTicking } from '../prompts'
@@ -33,16 +32,18 @@ export async function imagineAnAction(
 
     let responseText = ''
 
-    const requestMessages = message.messages(
-      message.system(
-        div(
+    const requestMessages: LLMMessage[] = [
+      {
+        role: 'system',
+        content: div(
           await systemTicking(),
           await personality(),
         ),
-      ),
+      },
       ...messages,
-      message.user(
-        div(
+      {
+        role: 'user',
+        content: div(
           vif(
             globalStates?.incomingMessages?.length > 0,
             div(
@@ -62,8 +63,8 @@ export async function imagineAnAction(
           'Based on the context, What do you want to do? Choose a right action from the listing of the tools you want to take next.',
           'Respond with the action and parameters you choose in JSON only, without any explanation and markups.',
         ),
-      ),
-    )
+      },
+    ]
 
     try {
       const res = await tracer.startActiveSpan('llm.chat.generate_text', async (s) => {
@@ -71,39 +72,31 @@ export async function imagineAnAction(
         s.setAttribute('llm.chat.messages', JSON.stringify(requestMessages))
         s.setAttribute('llm.provider.api_base_url', env.LLM_API_BASE_URL!)
 
-        const req = {
-          apiKey: env.LLM_API_KEY!,
-          baseURL: env.LLM_API_BASE_URL!,
-          model: env.LLM_MODEL!,
+        const provider = createOpenAI({ apiKey: env.LLM_API_KEY!, baseURL: env.LLM_API_BASE_URL! })
+        const res = await generateText({
+          model: provider(env.LLM_MODEL!),
           messages: requestMessages,
           abortSignal: currentAbortController?.signal,
-        } satisfies GenerateTextOptions
-        if (env.LLM_OLLAMA_DISABLE_THINK) {
-          (req as Record<string, unknown>).think = false
-          s.setAttribute('llm.chat.ollama.think', false)
-        }
-
-        const res = await generateText(req)
+        })
         s.setAttribute('llm.chat.generate_text.response.full_text', res.text)
 
-        res.text = res.text.replace(/<think>[\s\S]*?<\/think>/, '').trim()
-        if (!res.text) {
+        const cleanedText = res.text.replace(/<think>[\s\S]*?<\/think>/, '').trim()
+        if (!cleanedText) {
           throw new Error('No response text')
         }
 
-        s.setAttribute('llm.chat.generate_text.response.text', res.text)
+        s.setAttribute('llm.chat.generate_text.response.text', cleanedText)
 
         s.end()
-        return res
+        return { text: cleanedText, usage: res.usage }
       })
 
       logger.withFields({
         response: res.text,
         unreadMessages: Object.fromEntries(Object.entries(globalStates.unreadMessages).map(([key, value]) => [key, value.length])),
         now: new Date().toLocaleString(),
-        totalTokens: res.usage.total_tokens,
-        promptTokens: res.usage.prompt_tokens,
-        completion_tokens: res.usage.completion_tokens,
+        inputTokens: res.usage.inputTokens,
+        outputTokens: res.usage.outputTokens,
       }).log('Generated action')
 
       const action = tracer.startActiveSpan('telegram.module.generate_agent_action.parse', (s) => {

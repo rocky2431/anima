@@ -1,6 +1,6 @@
-import { createOllama } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createOllama } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators'
 import { defineProvider } from '../registry'
 

@@ -1,4 +1,4 @@
-import type { Message as LLMMessage } from '@xsai/shared-chat'
+import type { ModelMessage as LLMMessage } from 'ai'
 import type { Message } from 'grammy/types'
 
 interface InterruptionParams {

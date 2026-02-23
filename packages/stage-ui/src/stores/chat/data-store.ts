@@ -1,5 +1,4 @@
-import type { SystemMessage } from '@xsai/shared-chat'
-
+import type { SystemMessage } from '../../types/ai-messages'
 import type { ChatHistoryItem } from '../../types/chat'
 
 export interface ChatDataAccess {

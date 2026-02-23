@@ -20,12 +20,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "catalog:",
     "@guiiai/logg": "catalog:",
     "@moeru/std": "catalog:",
     "@velin-dev/core": "^0.3.4",
-    "@xsai/generate-text": "catalog:",
-    "@xsai/shared-chat": "catalog:",
-    "@xsai/utils-chat": "catalog:",
+    "ai": "catalog:",
     "best-effort-json-parser": "^1.2.1",
     "es-toolkit": "^1.44.0",
     "lowdb": "^7.0.1",

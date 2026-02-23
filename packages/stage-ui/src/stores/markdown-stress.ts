@@ -1,7 +1,7 @@
 import type { TraceEvent } from '@proj-airi/stage-shared'
-import type { ChatProvider } from '@xsai-ext/providers/utils'
 
 import type { StreamEvent } from './llm'
+import type { ChatProvider } from './providers/types'
 
 import { defaultPerfTracer, exportCsv as exportCsvFile } from '@proj-airi/stage-shared'
 import { defineStore, storeToRefs } from 'pinia'

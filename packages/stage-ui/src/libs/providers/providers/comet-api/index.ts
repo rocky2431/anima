@@ -1,6 +1,6 @@
-import { createChatProvider, createModelProvider, merge } from '@xsai-ext/providers/utils'
 import { z } from 'zod'
 
+import { createCometAPI } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -39,10 +39,7 @@ export const providerCometAPI = defineProvider<CometApiConfig>({
     }),
   }),
   createProvider(config) {
-    return merge(
-      createChatProvider({ apiKey: config.apiKey, baseURL: config.baseUrl! }),
-      createModelProvider({ apiKey: config.apiKey, baseURL: config.baseUrl! }),
-    )
+    return createCometAPI(config.apiKey, config.baseUrl!)
   },
 
   validationRequiredWhen(config) {

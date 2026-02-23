@@ -1,6 +1,7 @@
 import { callTool, connectServer, disconnectServer, listTools } from '@proj-airi/tauri-plugin-mcp'
-import { tool } from '@xsai/tool'
 import { z } from 'zod'
+
+import { tool } from '../libs/ai/tool'
 
 const tools = [
   tool({
@@ -36,7 +37,7 @@ const tools = [
     name: 'mcp_call_tool',
     description: 'Call a tool on the MCP server. The result is a list of content and a boolean indicating whether the tool call is an error.',
     execute: async ({ name, parameters }) => {
-      const parametersObject = Object.fromEntries(parameters.map(({ name, value }) => [name, value]))
+      const parametersObject = Object.fromEntries(parameters.map(({ name, value }: { name: string, value: unknown }) => [name, value]))
       const result = await callTool(name, parametersObject)
       return result satisfies {
         content: {

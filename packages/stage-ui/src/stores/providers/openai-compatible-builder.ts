@@ -1,8 +1,8 @@
 import type { ModelInfo, ProviderMetadata } from '../providers'
 
-import { generateText } from '@xsai/generate-text'
-import { listModels } from '@xsai/model'
-import { message } from '@xsai/utils-chat'
+import { generateText } from '../../libs/ai/generate-text'
+import { listModels } from '../../libs/ai/list-models'
+import { message } from '../../libs/ai/message-helpers'
 
 type ProviderCreator = (apiKey: string, baseUrl: string) => any
 

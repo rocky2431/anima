@@ -1,5 +1,6 @@
-import type { Tool as XsaiTool } from '@xsai/shared-chat'
 import type { ToolSet } from 'ai'
+
+import type { Tool as XsaiTool } from '../types/ai-messages'
 
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'

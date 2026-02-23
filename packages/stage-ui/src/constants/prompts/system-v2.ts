@@ -1,4 +1,4 @@
-import type { SystemMessage } from '@xsai/shared-chat'
+import type { SystemMessage } from '../../types/ai-messages'
 
 import { EMOTION_EmotionMotionName_value, EMOTION_VALUES } from '../emotions'
 

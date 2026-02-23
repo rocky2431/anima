@@ -112,7 +112,7 @@ onStopRecord(async (recording) => {
       const text = result.mode === 'stream'
         ? await result.text
         : result.text
-      transcriptions.value.push(text)
+      transcriptions.value.push(await text as string)
       // Clear error message on success
       errorMessage.value = ''
     }

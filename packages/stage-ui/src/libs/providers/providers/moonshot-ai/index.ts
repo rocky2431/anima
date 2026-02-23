@@ -1,6 +1,6 @@
-import { createMoonshotai } from '@xsai-ext/providers/create'
 import { z } from 'zod'
 
+import { createMoonshotAI } from '../../../../libs/ai/create-provider'
 import { createOpenAICompatibleValidators } from '../../validators/openai-compatible'
 import { defineProvider } from '../registry'
 
@@ -38,7 +38,7 @@ export const providerMoonshotAI = defineProvider<MoonshotConfig>({
     }),
   }),
   createProvider(config) {
-    return createMoonshotai(config.apiKey, config.baseUrl)
+    return createMoonshotAI(config.apiKey, config.baseUrl)
   },
 
   validationRequiredWhen(config) {

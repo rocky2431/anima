@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SpeechProviderWithExtraOptions } from '@xsai-ext/providers/utils'
+import type { SpeechProviderWithExtraOptions } from '@proj-airi/stage-ui/stores/providers/types'
 import type { UnElevenLabsOptions } from 'unspeech'
 
 import {

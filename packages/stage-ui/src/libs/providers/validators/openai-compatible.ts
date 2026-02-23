@@ -3,11 +3,11 @@ import type { ProviderDefinition, ProviderExtraMethods, ProviderInstance } from 
 import isNetworkError from 'is-network-error'
 
 import { errorMessageFrom } from '@moeru/std'
-import { generateText } from '@xsai/generate-text'
-import { listModels } from '@xsai/model'
-import { message } from '@xsai/utils-chat'
 import { Mutex } from 'es-toolkit'
 
+import { generateText } from '../../ai/generate-text'
+import { listModels } from '../../ai/list-models'
+import { message } from '../../ai/message-helpers'
 import { isModelProvider } from '../types'
 
 type OpenAICompatibleValidationCheck = 'connectivity' | 'model_list' | 'chat_completions'

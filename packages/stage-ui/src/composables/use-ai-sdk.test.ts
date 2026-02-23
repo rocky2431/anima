@@ -1,11 +1,11 @@
-import type { Tool as XsaiTool } from '@xsai/shared-chat'
+import type { Tool as XsaiTool } from '../types/ai-messages'
 
 import { env } from 'node:process'
 
-import { tool as xsaiTool } from '@xsai/tool'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
+import { tool as xsaiTool } from '../libs/ai/tool'
 import {
   convertXsaiToolsToAiSdk,
   createAiSdkModel,
