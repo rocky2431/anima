@@ -47,7 +47,7 @@ const selectedProvider = computed(() => {
 })
 
 // Reset validation state when provider changes
-function selectProvider(provider: typeof popularProviders.value[0]) {
+function selectProvider(provider: { id: string }) {
   selectedProviderId.value = provider.id
 }
 

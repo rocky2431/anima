@@ -18,6 +18,10 @@ const {
   similarityThreshold,
   vlmProvider,
   vlmModel,
+  useConsciousnessProvider,
+  consciousnessSupportsVision,
+  effectiveVlmProvider,
+  effectiveVlmModel,
   isCapturing,
   lastCaptureTimestamp,
   deduplicationStats,
@@ -43,15 +47,13 @@ const lastCaptureFormatted = computed(() => {
   return `${Math.floor(diff / 3600000)}h ago`
 })
 
-// Auto-populate VLM provider from consciousness (chat) provider if not set
-watch(enabled, (isEnabled) => {
-  if (isEnabled && !vlmProvider.value && consciousnessStore.activeProvider) {
-    vlmProvider.value = consciousnessStore.activeProvider
-  }
-}, { immediate: true })
+/** Whether consciousness-based vision is active and working */
+const consciousnessVisionActive = computed(() =>
+  useConsciousnessProvider.value && consciousnessSupportsVision.value,
+)
 
 // Send config update when settings change
-watch([enabled, intervalMs, similarityThreshold, vlmProvider, vlmModel], () => {
+watch([enabled, intervalMs, similarityThreshold, vlmProvider, vlmModel, useConsciousnessProvider], () => {
   visionStore.sendConfigUpdate()
 }, { deep: true })
 </script>
@@ -90,8 +92,49 @@ watch([enabled, intervalMs, similarityThreshold, vlmProvider, vlmModel], () => {
           :format-value="(v: number) => `${v}`"
         />
 
-        <!-- VLM Provider selection -->
-        <div flex="~ col gap-4">
+        <!-- Consciousness provider reuse toggle -->
+        <div class="border-t border-neutral-200 pt-4 dark:border-neutral-700">
+          <FieldCheckbox
+            v-model="useConsciousnessProvider"
+            label="Use Consciousness Provider"
+            description="Reuse your chat model for vision analysis. Most modern models (GPT-4o, Claude, Gemini) natively support vision."
+          />
+
+          <!-- Status indicator for consciousness reuse -->
+          <div v-if="useConsciousnessProvider" mt-3>
+            <div
+              v-if="consciousnessVisionActive"
+              class="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400"
+            >
+              <div i-solar:check-circle-bold-duotone class="flex-shrink-0 text-lg" />
+              <span>
+                Using <strong class="font-medium">{{ consciousnessStore.activeModel || 'consciousness model' }}</strong> for vision
+              </span>
+            </div>
+            <div
+              v-else-if="!consciousnessStore.configured"
+              class="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+            >
+              <div i-solar:warning-circle-bold-duotone class="flex-shrink-0 text-lg" />
+              <span>
+                No consciousness provider configured.
+                <RouterLink to="/settings/modules/consciousness" class="underline">
+                  Configure one first
+                </RouterLink>
+              </span>
+            </div>
+            <div
+              v-else
+              class="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+            >
+              <div i-solar:warning-circle-bold-duotone class="flex-shrink-0 text-lg" />
+              <span>Current consciousness provider does not support vision. Select a VLM below or switch to a vision-capable model.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual VLM Provider selection (shown when consciousness reuse is off or unsupported) -->
+        <div v-if="!consciousnessVisionActive" flex="~ col gap-4">
           <div>
             <h2 class="text-lg text-neutral-500 md:text-2xl dark:text-neutral-500">
               VLM Provider
@@ -154,8 +197,8 @@ watch([enabled, intervalMs, similarityThreshold, vlmProvider, vlmModel], () => {
           </div>
         </div>
 
-        <!-- VLM Model manual input -->
-        <div v-if="vlmProvider" class="border-t border-neutral-200 pt-4 dark:border-neutral-700">
+        <!-- VLM Model manual input (only when not using consciousness) -->
+        <div v-if="!consciousnessVisionActive && vlmProvider" class="border-t border-neutral-200 pt-4 dark:border-neutral-700">
           <label class="mb-1 block text-sm font-medium">
             VLM Model Name
           </label>
@@ -168,6 +211,14 @@ watch([enabled, intervalMs, similarityThreshold, vlmProvider, vlmModel], () => {
             class="w-full border border-neutral-300 rounded bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
             placeholder="gpt-4o"
           >
+        </div>
+
+        <!-- Effective provider summary -->
+        <div v-if="effectiveVlmProvider" class="border-t border-neutral-200 pt-4 dark:border-neutral-700">
+          <div class="text-xs text-neutral-400 dark:text-neutral-500">
+            Active: <span class="font-medium">{{ effectiveVlmProvider }}</span>
+            <span v-if="effectiveVlmModel"> / {{ effectiveVlmModel }}</span>
+          </div>
         </div>
       </template>
     </div>

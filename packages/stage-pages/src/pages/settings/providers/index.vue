@@ -2,74 +2,100 @@
 import { IconStatusItem, RippleGrid } from '@proj-airi/stage-ui/components'
 import { useAnalytics, useScrollToHash } from '@proj-airi/stage-ui/composables'
 import { useRippleGridState } from '@proj-airi/stage-ui/composables/use-ripple-grid-state'
-import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
+import { useUnifiedProvidersStore } from '@proj-airi/stage-ui/stores/unified-providers'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const providersStore = useProvidersStore()
+const { t } = useI18n()
+const unifiedStore = useUnifiedProvidersStore()
 const { lastClickedIndex, setLastClickedIndex } = useRippleGridState()
 const { trackProviderClick } = useAnalytics()
 
 const {
-  allChatProvidersMetadata,
-  allAudioSpeechProvidersMetadata,
-  allAudioTranscriptionProvidersMetadata,
-  allEmbeddingProvidersMetadata,
-} = storeToRefs(providersStore)
+  primaryProviders,
+  enhancementProviders,
+  localProviders,
+  compatibleProviders,
+} = storeToRefs(unifiedStore)
 
-const providerBlocksConfig = [
-  {
-    id: 'chat',
-    icon: 'i-solar:chat-square-like-bold-duotone',
-    title: 'Chat',
-    description: 'Text generation model providers. e.g. OpenRouter, OpenAI, Ollama.',
-    providersRef: allChatProvidersMetadata,
-  },
-  {
-    id: 'speech',
-    icon: 'i-solar:user-speak-rounded-bold-duotone',
-    title: 'Speech',
-    description: 'Speech (text-to-speech) model providers. e.g. ElevenLabs, Azure Speech.',
-    providersRef: allAudioSpeechProvidersMetadata,
-  },
-  {
-    id: 'transcription',
-    icon: 'i-solar:microphone-3-bold-duotone',
-    title: 'Transcription',
-    description: 'Transcription (speech-to-text) model providers. e.g. Whisper.cpp, OpenAI, Azure Speech',
-    providersRef: allAudioTranscriptionProvidersMetadata,
-  },
-  {
-    id: 'embedding',
-    icon: 'i-solar:graph-new-bold-duotone',
-    title: 'Embedding',
-    description: 'Text embedding providers for semantic search and memory. e.g. Ollama, OpenAI',
-    providersRef: allEmbeddingProvidersMetadata,
-  },
-]
+/**
+ * Transitional route map: unified provider ID → old detail page path.
+ * Will be replaced by new unified detail pages in Phase 7.
+ */
+const DETAIL_ROUTE_MAP: Record<string, string> = {
+  'openrouter': '/settings/providers/chat/openrouter-ai',
+  'openai-compatible': '/settings/providers/chat/openai-compatible',
+  'ollama': '/settings/providers/chat/ollama',
+  'lm-studio': '/settings/providers/chat/lm-studio',
+  'elevenlabs': '/settings/providers/speech/elevenlabs',
+  'kokoro-local': '/settings/providers/speech/kokoro-local',
+  'microsoft-speech': '/settings/providers/speech/microsoft-speech',
+  'deepgram': '/settings/providers/speech/deepgram-tts',
+  'aliyun': '/settings/providers/speech/alibaba-cloud-model-studio',
+  'volcengine': '/settings/providers/speech/volcengine',
+  'web-speech-api': '/settings/providers/transcription/browser-web-speech-api',
+  'local-pipeline': '/settings/providers/chat/local-pipeline',
+}
 
-const providerBlocks = computed(() => {
+function getDetailRoute(id: string): string {
+  return DETAIL_ROUTE_MAP[id] || `/settings/providers/chat/${id}`
+}
+
+const tierBlocks = computed(() => {
   let globalIndex = 0
-  return providerBlocksConfig.map(block => ({
-    id: block.id,
-    icon: block.icon,
-    title: block.title,
-    description: block.description,
-    providers: block.providersRef.value.map(provider => ({
-      ...provider,
-      renderIndex: globalIndex++,
-    })),
-  }))
+
+  const blocks = [
+    {
+      id: 'primary',
+      icon: 'i-solar:star-bold-duotone',
+      title: t('settings.pages.providers.tier.primary.title', 'Recommended'),
+      description: t('settings.pages.providers.tier.primary.description', 'Multi-capability providers for chat, vision, audio, and more'),
+      providers: primaryProviders.value,
+    },
+    {
+      id: 'enhancement',
+      icon: 'i-solar:magic-stick-3-bold-duotone',
+      title: t('settings.pages.providers.tier.enhancement.title', 'Enhancement'),
+      description: t('settings.pages.providers.tier.enhancement.description', 'Specialized providers for high-quality TTS, STT, and more'),
+      providers: enhancementProviders.value,
+    },
+    {
+      id: 'local',
+      icon: 'i-solar:laptop-minimalistic-bold-duotone',
+      title: t('settings.pages.providers.tier.local.title', 'Local / Self-hosted'),
+      description: t('settings.pages.providers.tier.local.description', 'Run models locally for privacy and offline use'),
+      providers: localProviders.value,
+    },
+    {
+      id: 'compatible',
+      icon: 'i-solar:plug-circle-bold-duotone',
+      title: t('settings.pages.providers.tier.compatible.title', 'Custom / Compatible'),
+      description: t('settings.pages.providers.tier.compatible.description', 'Connect any OpenAI-compatible API endpoint'),
+      providers: compatibleProviders.value,
+    },
+  ]
+
+  return blocks
+    .filter(block => block.providers.length > 0)
+    .map(block => ({
+      ...block,
+      providers: block.providers.map(provider => ({
+        ...provider,
+        renderIndex: globalIndex++,
+        detailRoute: getDetailRoute(provider.id),
+      })),
+    }))
 })
 
 useScrollToHash(() => route.hash, {
-  auto: true, // automatically react to route hash
-  offset: 16, // header + margin spacing
-  behavior: 'smooth', // smooth scroll animation
-  maxRetries: 15, // retry if target element isn't ready
-  retryDelay: 150, // wait between retries
+  auto: true,
+  offset: 16,
+  behavior: 'smooth',
+  maxRetries: 15,
+  retryDelay: 150,
 })
 </script>
 
@@ -92,7 +118,7 @@ useScrollToHash(() => route.hash, {
     </div>
 
     <RippleGrid
-      :sections="providerBlocks"
+      :sections="tierBlocks"
       :get-items="block => block.providers"
       :columns="{ default: 1, sm: 2, xl: 3 }"
       :origin-index="lastClickedIndex"
@@ -121,9 +147,9 @@ useScrollToHash(() => route.hash, {
           :icon="provider.icon"
           :icon-color="provider.iconColor"
           :icon-image="provider.iconImage"
-          :to="`/settings/providers/${provider.category}/${provider.id}`"
+          :to="provider.detailRoute"
           :configured="provider.configured"
-          @click="trackProviderClick(provider.id, provider.category)"
+          @click="trackProviderClick(provider.id, provider.tier)"
         />
       </template>
     </RippleGrid>

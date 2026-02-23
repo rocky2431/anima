@@ -584,6 +584,19 @@ pages:
         enable: Enable DingTalk
         enable_desc: Set app credentials in server environment
   providers:
+    tier:
+      primary:
+        title: Recommended
+        description: Multi-capability providers for chat, vision, audio, and more
+      enhancement:
+        title: Enhancement
+        description: Specialized providers for high-quality TTS, STT, and more
+      local:
+        title: Local / Self-hosted
+        description: Run models locally for privacy and offline use
+      compatible:
+        title: Custom / Compatible
+        description: Connect any OpenAI-compatible API endpoint
     explained:
       chat: Text generation model providers. e.g. OpenRouter, OpenAI, Ollama.
       Speech: Speech (text-to-speech) model providers. e.g. ElevenLabs, Azure Speech.

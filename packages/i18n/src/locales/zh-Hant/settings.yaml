@@ -549,6 +549,19 @@ pages:
         enable: 啟用釘釘
         enable_desc: 在伺服器環境中設定應用憑證
   providers:
+    tier:
+      primary:
+        title: 推薦
+        description: 多功能供應商，支援對話、視覺、音訊等
+      enhancement:
+        title: 增強模組
+        description: 專用高品質 TTS、STT 等供應商
+      local:
+        title: 本地 / 自架
+        description: 在本地執行模型，保護隱私與離線使用
+      compatible:
+        title: 自訂 / 相容
+        description: 連接任意 OpenAI 相容 API 端點
     explained:
       chat: 文字生成模型服務來源，例如 OpenRouter、OpenAI、Ollama
       Speech: 語音（文字轉語音）模型服務來源，例如 ElevenLabs、Azure Speech

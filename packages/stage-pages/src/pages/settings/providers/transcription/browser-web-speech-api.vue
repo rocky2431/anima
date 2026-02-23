@@ -18,7 +18,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-const providerId = 'browser-web-speech-api'
+const providerId = 'web-speech-api'
 const { t } = useI18n()
 const router = useRouter()
 

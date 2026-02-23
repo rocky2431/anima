@@ -13,7 +13,7 @@ import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const providerId = 'alibaba-cloud-model-studio'
+const providerId = 'aliyun'
 const defaultModel = 'cosyvoice-v1'
 
 // Default voice settings specific to ElevenLabs

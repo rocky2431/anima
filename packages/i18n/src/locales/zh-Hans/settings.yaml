@@ -549,6 +549,19 @@ pages:
         enable: 启用钉钉
         enable_desc: 在服务器环境中设置应用凭据
   providers:
+    tier:
+      primary:
+        title: 推荐
+        description: 多功能供应商，支持对话、视觉、音频等
+      enhancement:
+        title: 增强模块
+        description: 专用高质量 TTS、STT 等供应商
+      local:
+        title: 本地 / 自托管
+        description: 在本地运行模型，保护隐私和离线使用
+      compatible:
+        title: 自定义 / 兼容
+        description: 连接任意 OpenAI 兼容 API 端点
     explained:
       chat: 文本生成模型服务来源，例如 OpenRouter, OpenAI, Ollama
       Speech: 语音（文本转语音）模型服务来源，例如 ElevenLabs, Azure Speech
