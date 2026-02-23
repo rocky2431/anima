@@ -3,7 +3,9 @@ import { useDesktopShellStore } from '@proj-airi/stage-ui/stores/modules/desktop
 import { FieldCheckbox, FieldRange } from '@proj-airi/ui'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const store = useDesktopShellStore()
 const {
   windowPollingEnabled,
@@ -30,7 +32,7 @@ const pollingIntervalSeconds = computed({
 
 const lastActivityFormatted = computed(() => {
   if (!lastActivityTimestamp.value)
-    return 'No data'
+    return t('settings.pages.modules.desktop-shell.no_data')
   const diff = Date.now() - lastActivityTimestamp.value
   if (diff < 60000)
     return `${Math.floor(diff / 1000)}s ago`
@@ -39,12 +41,12 @@ const lastActivityFormatted = computed(() => {
   return `${Math.floor(diff / 3600000)}h ago`
 })
 
-const shortcuts = [
-  { key: 'Cmd+Shift+A', action: 'Toggle main panel' },
-  { key: 'Cmd+Shift+V', action: 'Quick voice input' },
-  { key: 'Cmd+Shift+C', action: 'Send clipboard to AI' },
-  { key: 'Cmd+Shift+L', action: 'Lock screen awareness' },
-]
+const shortcuts = computed(() => [
+  { key: 'Cmd+Shift+A', action: t('settings.pages.modules.desktop-shell.shortcuts.toggle_panel') },
+  { key: 'Cmd+Shift+V', action: t('settings.pages.modules.desktop-shell.shortcuts.quick_voice') },
+  { key: 'Cmd+Shift+C', action: t('settings.pages.modules.desktop-shell.shortcuts.send_clipboard') },
+  { key: 'Cmd+Shift+L', action: t('settings.pages.modules.desktop-shell.shortcuts.lock_screen') },
+])
 </script>
 
 <template>
@@ -54,15 +56,15 @@ const shortcuts = [
       <!-- Window Polling -->
       <FieldCheckbox
         v-model="windowPollingEnabled"
-        label="Active Window Polling"
-        description="Track which application is currently focused. macOS only."
+        :label="$t('settings.pages.modules.desktop-shell.window_polling')"
+        :description="$t('settings.pages.modules.desktop-shell.window_polling_desc')"
       />
 
       <template v-if="windowPollingEnabled">
         <FieldRange
           v-model="pollingIntervalSeconds"
-          label="Polling Interval"
-          description="How often to check the active window"
+          :label="$t('settings.pages.modules.desktop-shell.polling_interval')"
+          :description="$t('settings.pages.modules.desktop-shell.polling_interval_desc')"
           :min="5"
           :max="60"
           :step="5"
@@ -74,8 +76,8 @@ const shortcuts = [
       <div class="border-t border-neutral-200 pt-4 dark:border-neutral-700">
         <FieldCheckbox
           v-model="clipboardMonitoringEnabled"
-          label="Clipboard Monitoring"
-          description="Detect clipboard changes for contextual awareness."
+          :label="$t('settings.pages.modules.desktop-shell.clipboard_monitoring')"
+          :description="$t('settings.pages.modules.desktop-shell.clipboard_monitoring_desc')"
         />
       </div>
 
@@ -83,8 +85,8 @@ const shortcuts = [
       <div class="border-t border-neutral-200 pt-4 dark:border-neutral-700">
         <FieldCheckbox
           v-model="shortcutsEnabled"
-          label="Global Shortcuts"
-          description="Register system-wide keyboard shortcuts. Desktop only."
+          :label="$t('settings.pages.modules.desktop-shell.global_shortcuts')"
+          :description="$t('settings.pages.modules.desktop-shell.global_shortcuts_desc')"
         />
 
         <div v-if="shortcutsEnabled" class="mt-3 space-y-2">
@@ -106,7 +108,7 @@ const shortcuts = [
         <div class="flex items-start gap-2 text-amber-700 dark:text-amber-400">
           <div i-solar:shield-warning-bold-duotone class="mt-0.5 flex-shrink-0 text-lg" />
           <div class="text-xs">
-            <span class="font-medium">Privacy Notice:</span> Window titles and clipboard content are processed locally. No data is sent externally unless an AI provider is configured and active.
+            <span class="font-medium">{{ $t('settings.pages.modules.desktop-shell.privacy_title') }}</span> {{ $t('settings.pages.modules.desktop-shell.privacy_text') }}
           </div>
         </div>
       </div>
@@ -116,7 +118,7 @@ const shortcuts = [
     <div flex="~ col gap-4" class="w-full md:w-[55%]">
       <div w-full rounded-xl bg="neutral-50 dark:[rgba(0,0,0,0.3)]" p-4 flex="~ col gap-4">
         <h2 class="text-lg text-neutral-500 md:text-2xl dark:text-neutral-400">
-          Desktop Status
+          {{ $t('settings.pages.modules.desktop-shell.desktop_status') }}
         </h2>
 
         <!-- Current window -->
@@ -127,13 +129,13 @@ const shortcuts = [
               :class="currentAppName ? 'bg-green-500 shadow-lg shadow-green-500/30' : 'bg-neutral-300 dark:bg-neutral-600'"
             />
             <span class="text-sm font-medium">
-              {{ currentAppName ? 'Tracking active' : 'Waiting for data' }}
+              {{ currentAppName ? $t('settings.pages.modules.desktop-shell.tracking_active') : $t('settings.pages.modules.desktop-shell.waiting_for_data') }}
             </span>
           </div>
 
           <div v-if="currentAppName" class="rounded-lg bg-white p-3 dark:bg-neutral-800/50">
             <div class="mb-1 text-xs text-neutral-400 dark:text-neutral-500">
-              Current Window
+              {{ $t('settings.pages.modules.desktop-shell.current_window') }}
             </div>
             <div class="text-sm font-medium">
               {{ currentAppName }}
@@ -145,14 +147,14 @@ const shortcuts = [
 
           <div class="flex items-center gap-3">
             <div i-solar:clock-circle-line-duotone class="text-lg text-neutral-400" />
-            <span class="text-sm">Last update: <span class="font-medium">{{ lastActivityFormatted }}</span></span>
+            <span class="text-sm">{{ $t('settings.pages.modules.desktop-shell.last_update') }} <span class="font-medium">{{ lastActivityFormatted }}</span></span>
           </div>
         </div>
 
         <!-- Feature status -->
         <div class="border-t border-neutral-200 pt-4 dark:border-neutral-700">
           <h3 class="mb-3 text-sm text-neutral-500 font-medium dark:text-neutral-400">
-            Feature Status
+            {{ $t('settings.pages.modules.desktop-shell.feature_status') }}
           </h3>
           <div class="grid grid-cols-3 gap-3">
             <div class="rounded-lg bg-white p-3 text-center dark:bg-neutral-800/50">
@@ -161,7 +163,7 @@ const shortcuts = [
                 :class="windowPollingEnabled ? 'i-solar:monitor-bold-duotone text-green-500' : 'i-solar:monitor-line-duotone text-neutral-400'"
               />
               <div class="text-xs text-neutral-500">
-                Window
+                {{ $t('settings.pages.modules.desktop-shell.feature_window') }}
               </div>
             </div>
             <div class="rounded-lg bg-white p-3 text-center dark:bg-neutral-800/50">
@@ -170,7 +172,7 @@ const shortcuts = [
                 :class="clipboardMonitoringEnabled ? 'i-solar:clipboard-bold-duotone text-green-500' : 'i-solar:clipboard-line-duotone text-neutral-400'"
               />
               <div class="text-xs text-neutral-500">
-                Clipboard
+                {{ $t('settings.pages.modules.desktop-shell.feature_clipboard') }}
               </div>
             </div>
             <div class="rounded-lg bg-white p-3 text-center dark:bg-neutral-800/50">
@@ -179,7 +181,7 @@ const shortcuts = [
                 :class="shortcutsEnabled ? 'i-solar:keyboard-bold-duotone text-green-500' : 'i-solar:keyboard-line-duotone text-neutral-400'"
               />
               <div class="text-xs text-neutral-500">
-                Shortcuts
+                {{ $t('settings.pages.modules.desktop-shell.feature_shortcuts') }}
               </div>
             </div>
           </div>

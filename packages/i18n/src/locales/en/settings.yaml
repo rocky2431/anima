@@ -239,6 +239,14 @@ pages:
     active_count: '{count} active'
     search_placeholder: Search skills...
     empty: No skills available.
+  context:
+    title: AI Context
+    description: AI perception and context data
+    view_title: AI Context View
+    entry_count: '{count} entries'
+    empty: No context updates received yet. Connect to airi-brain to see AI perception data.
+    lane: Lane
+    clear: Clear entries
   data:
     title: Data
     description: Manage stored AIRI data, exports, and resets
@@ -519,9 +527,62 @@ pages:
     desktop-shell:
       description: Active window tracking, clipboard, and global shortcuts
       title: Desktop Shell
+      window_polling: Active Window Polling
+      window_polling_desc: Track which application is currently focused. macOS only.
+      polling_interval: Polling Interval
+      polling_interval_desc: How often to check the active window
+      clipboard_monitoring: Clipboard Monitoring
+      clipboard_monitoring_desc: Detect clipboard changes for contextual awareness.
+      global_shortcuts: Global Shortcuts
+      global_shortcuts_desc: Register system-wide keyboard shortcuts. Desktop only.
+      desktop_status: Desktop Status
+      tracking_active: Tracking active
+      waiting_for_data: Waiting for data
+      current_window: Current Window
+      last_update: 'Last update:'
+      feature_status: Feature Status
+      feature_window: Window
+      feature_clipboard: Clipboard
+      feature_shortcuts: Shortcuts
+      no_data: No data
+      privacy_title: 'Privacy Notice:'
+      privacy_text: Window titles and clipboard content are processed locally. No data is sent externally unless an AI provider is configured and active.
+      shortcuts:
+        toggle_panel: Toggle main panel
+        quick_voice: Quick voice input
+        send_clipboard: Send clipboard to AI
+        lock_screen: Lock screen awareness
     channels:
       description: Slack, WhatsApp, Email, Feishu, DingTalk messaging
       title: Channels
+      messaging_channels: Messaging Channels
+      enabled_count: '{count} enabled'
+      connected_count: '{count} connected'
+      config_title: Channel Configuration
+      config_desc: Most channels require environment variables to be set on the server (airi-brain or stage-tamagotchi). Enable channels here, then set the required tokens in your server environment.
+      slack:
+        description: Connect to Slack workspaces via Socket Mode
+        enable: Enable Slack
+        enable_desc: Connect AIRI to your Slack workspace
+        bot_token: Bot Token
+        app_token: App Token
+      whatsapp:
+        description: Chat through WhatsApp using Baileys
+        enable: Enable WhatsApp
+        enable_desc: Requires server-side QR code authentication
+        env_hint: Requires QR code authentication
+      email:
+        description: Send and receive emails via IMAP/SMTP
+        enable: Enable Email
+        enable_desc: Set IMAP/SMTP credentials in server environment
+      feishu:
+        description: Connect to Feishu (Lark) workspace
+        enable: Enable Feishu
+        enable_desc: Set app credentials in server environment
+      dingtalk:
+        description: Connect to DingTalk workspace
+        enable: Enable DingTalk
+        enable_desc: Set app credentials in server environment
   providers:
     explained:
       chat: Text generation model providers. e.g. OpenRouter, OpenAI, Ollama.

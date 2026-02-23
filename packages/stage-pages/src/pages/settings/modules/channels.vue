@@ -2,7 +2,10 @@
 import { useChannelsStore } from '@proj-airi/stage-ui/stores/modules/channels'
 import { FieldCheckbox } from '@proj-airi/ui'
 import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const store = useChannelsStore()
 const {
   slackEnabled,
@@ -26,14 +29,14 @@ interface ChannelInfo {
   envHint: string
 }
 
-const channels: ChannelInfo[] = [
+const channels = computed<ChannelInfo[]>(() => [
   {
     id: 'slack',
     name: 'Slack',
     icon: 'i-simple-icons:slack',
     iconColor: 'text-[#4A154B]',
     enabled: slackEnabled.value,
-    description: 'Connect to Slack workspaces via Socket Mode',
+    description: t('settings.pages.modules.channels.slack.description'),
     envHint: 'AIRI_SLACK_BOT_TOKEN + AIRI_SLACK_APP_TOKEN',
   },
   {
@@ -42,8 +45,8 @@ const channels: ChannelInfo[] = [
     icon: 'i-simple-icons:whatsapp',
     iconColor: 'text-[#25D366]',
     enabled: whatsappEnabled.value,
-    description: 'Chat through WhatsApp using Baileys',
-    envHint: 'Requires QR code authentication',
+    description: t('settings.pages.modules.channels.whatsapp.description'),
+    envHint: t('settings.pages.modules.channels.whatsapp.env_hint'),
   },
   {
     id: 'email',
@@ -51,7 +54,7 @@ const channels: ChannelInfo[] = [
     icon: 'i-solar:letter-bold-duotone',
     iconColor: 'text-blue-500',
     enabled: emailEnabled.value,
-    description: 'Send and receive emails via IMAP/SMTP',
+    description: t('settings.pages.modules.channels.email.description'),
     envHint: 'AIRI_EMAIL_IMAP_HOST + AIRI_EMAIL_SMTP_HOST',
   },
   {
@@ -60,7 +63,7 @@ const channels: ChannelInfo[] = [
     icon: 'i-simple-icons:lark',
     iconColor: 'text-blue-600',
     enabled: feishuEnabled.value,
-    description: 'Connect to Feishu (Lark) workspace',
+    description: t('settings.pages.modules.channels.feishu.description'),
     envHint: 'AIRI_FEISHU_APP_ID + AIRI_FEISHU_APP_SECRET',
   },
   {
@@ -69,29 +72,29 @@ const channels: ChannelInfo[] = [
     icon: 'i-simple-icons:dingtalk',
     iconColor: 'text-blue-500',
     enabled: dingtalkEnabled.value,
-    description: 'Connect to DingTalk workspace',
+    description: t('settings.pages.modules.channels.dingtalk.description'),
     envHint: 'AIRI_DINGTALK_APP_KEY + AIRI_DINGTALK_APP_SECRET',
   },
-]
+])
 </script>
 
 <template>
   <!-- Stats header -->
   <div bg="neutral-50 dark:[rgba(0,0,0,0.3)]" flex="~ col gap-4" mb-4 rounded-xl p-4>
     <h2 class="text-lg text-neutral-500 md:text-2xl dark:text-neutral-500">
-      Messaging Channels
+      {{ $t('settings.pages.modules.channels.messaging_channels') }}
     </h2>
     <div class="flex flex-wrap items-center gap-3">
       <div class="flex items-center gap-2 rounded-lg bg-white px-3 py-2 dark:bg-neutral-800/50">
         <div class="i-solar:chat-round-dots-bold-duotone text-lg" />
-        <span class="text-sm font-medium">{{ enabledCount }} enabled</span>
+        <span class="text-sm font-medium">{{ $t('settings.pages.modules.channels.enabled_count', { count: enabledCount }) }}</span>
       </div>
       <div class="flex items-center gap-2 rounded-lg bg-white px-3 py-2 dark:bg-neutral-800/50">
         <div
           class="h-2 w-2 rounded-full"
           :class="connectedCount > 0 ? 'bg-green-500' : 'bg-neutral-300 dark:bg-neutral-600'"
         />
-        <span class="text-sm font-medium">{{ connectedCount }} connected</span>
+        <span class="text-sm font-medium">{{ $t('settings.pages.modules.channels.connected_count', { count: connectedCount }) }}</span>
       </div>
     </div>
   </div>
@@ -102,11 +105,10 @@ const channels: ChannelInfo[] = [
       <div i-solar:info-circle-bold-duotone class="mt-0.5 flex-shrink-0 text-xl text-primary-600 dark:text-primary-400" />
       <div>
         <div class="text-sm text-primary-800 font-medium dark:text-primary-200">
-          Channel Configuration
+          {{ $t('settings.pages.modules.channels.config_title') }}
         </div>
         <div class="mt-1 text-xs text-primary-700 dark:text-primary-300">
-          Most channels require environment variables to be set on the server (airi-brain or stage-tamagotchi).
-          Enable channels here, then set the required tokens in your server environment.
+          {{ $t('settings.pages.modules.channels.config_desc') }}
         </div>
       </div>
     </div>
@@ -139,13 +141,13 @@ const channels: ChannelInfo[] = [
       <template v-if="channel.id === 'slack'">
         <FieldCheckbox
           v-model="slackEnabled"
-          label="Enable Slack"
-          description="Connect AIRI to your Slack workspace"
+          :label="$t('settings.pages.modules.channels.slack.enable')"
+          :description="$t('settings.pages.modules.channels.slack.enable_desc')"
         />
         <template v-if="slackEnabled">
           <div class="mt-3 space-y-2">
             <div>
-              <label class="mb-1 block text-xs text-neutral-500 font-medium">Bot Token</label>
+              <label class="mb-1 block text-xs text-neutral-500 font-medium">{{ $t('settings.pages.modules.channels.slack.bot_token') }}</label>
               <input
                 v-model="slackBotToken"
                 type="password"
@@ -154,7 +156,7 @@ const channels: ChannelInfo[] = [
               >
             </div>
             <div>
-              <label class="mb-1 block text-xs text-neutral-500 font-medium">App Token</label>
+              <label class="mb-1 block text-xs text-neutral-500 font-medium">{{ $t('settings.pages.modules.channels.slack.app_token') }}</label>
               <input
                 v-model="slackAppToken"
                 type="password"
@@ -170,8 +172,8 @@ const channels: ChannelInfo[] = [
       <template v-else-if="channel.id === 'whatsapp'">
         <FieldCheckbox
           v-model="whatsappEnabled"
-          label="Enable WhatsApp"
-          description="Requires server-side QR code authentication"
+          :label="$t('settings.pages.modules.channels.whatsapp.enable')"
+          :description="$t('settings.pages.modules.channels.whatsapp.enable_desc')"
         />
       </template>
 
@@ -179,8 +181,8 @@ const channels: ChannelInfo[] = [
       <template v-else-if="channel.id === 'email'">
         <FieldCheckbox
           v-model="emailEnabled"
-          label="Enable Email"
-          description="Set IMAP/SMTP credentials in server environment"
+          :label="$t('settings.pages.modules.channels.email.enable')"
+          :description="$t('settings.pages.modules.channels.email.enable_desc')"
         />
       </template>
 
@@ -188,8 +190,8 @@ const channels: ChannelInfo[] = [
       <template v-else-if="channel.id === 'feishu'">
         <FieldCheckbox
           v-model="feishuEnabled"
-          label="Enable Feishu"
-          description="Set app credentials in server environment"
+          :label="$t('settings.pages.modules.channels.feishu.enable')"
+          :description="$t('settings.pages.modules.channels.feishu.enable_desc')"
         />
       </template>
 
@@ -197,8 +199,8 @@ const channels: ChannelInfo[] = [
       <template v-else-if="channel.id === 'dingtalk'">
         <FieldCheckbox
           v-model="dingtalkEnabled"
-          label="Enable DingTalk"
-          description="Set app credentials in server environment"
+          :label="$t('settings.pages.modules.channels.dingtalk.enable')"
+          :description="$t('settings.pages.modules.channels.dingtalk.enable_desc')"
         />
       </template>
 

@@ -14,21 +14,21 @@ function formatTimestamp(ts: number): string {
   <div :class="['flex flex-col gap-4 p-4']">
     <div :class="['flex items-center justify-between']">
       <h2 :class="['text-lg font-semibold']">
-        AI Context View
+        {{ $t('settings.pages.context.view_title') }}
       </h2>
       <span :class="['text-sm op-60']">
-        {{ entryCount }} entries
+        {{ $t('settings.pages.context.entry_count', { count: entryCount }) }}
       </span>
     </div>
 
     <div v-if="latestEntries.length === 0" :class="['flex items-center justify-center py-12 op-40']">
-      <p>No context updates received yet. Connect to airi-brain to see AI perception data.</p>
+      <p>{{ $t('settings.pages.context.empty') }}</p>
     </div>
 
     <template v-else>
       <div v-for="[lane, entries] in Object.entries(laneGroups)" :key="lane" :class="['flex flex-col gap-2']">
         <h3 :class="['text-sm font-medium op-70']">
-          Lane: {{ lane }}
+          {{ $t('settings.pages.context.lane') }}: {{ lane }}
         </h3>
         <div
           v-for="entry in entries.slice(0, 10)"
@@ -60,7 +60,7 @@ function formatTimestamp(ts: number): string {
       :class="['self-center text-sm op-60 hover:op-100 transition-opacity']"
       @click="contextDisplayStore.clearEntries()"
     >
-      Clear entries
+      {{ $t('settings.pages.context.clear') }}
     </button>
   </div>
 </template>

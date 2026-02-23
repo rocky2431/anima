@@ -170,52 +170,101 @@ pages:
   memory:
     description: 存放記憶的地方，以及策略
     title: 記憶體
+    count: '{count}筆記憶'
+    search_placeholder: 搜尋記憶...
+    empty: 尚無記憶。隨著 AIRI 了解你，記憶會逐漸累積。
+    detail: 記憶詳情
+    delete: 刪除
+    importance: '重要程度：{score}'
+    categories:
+      all: 全部
+      preference: 偏好
+      event: 事件
+      habit: 習慣
+      goal: 目標
+      emotion: 情感
+  todo:
+    title: 待辦事項
+    description: 智慧待辦與任務管理
+    active_count: '{count}個待完成'
+    completed_count: '{count}個已完成'
+    add_placeholder: 需要做什麼？
+    add: 新增
+    clear_completed: 清除已完成
+    empty: 尚無待辦事項。在上方新增，或讓 AIRI 建議任務。
+    filter:
+      all: 全部
+      active: 進行中
+      completed: 已完成
+  activity:
+    title: 活動
+    description: 今日活動時間線與工作摘要
+    today_summary: 今日摘要
+    total_work: 總工作時數
+    highlights: 亮點
+    breakdown: 應用分佈
+    empty: 尚無活動資料。使用電腦後活動會自動顯示。
+  skills:
+    title: 技能
+    description: 管理角色的技能與能力
+    total: '{count}項技能'
+    active_count: '{count}個已啟用'
+    search_placeholder: 搜尋技能...
+    empty: 尚無可用技能。
+  context:
+    title: AI 上下文
+    description: AI 感知與上下文資料
+    view_title: AI 上下文檢視
+    entry_count: '{count}筆記錄'
+    empty: 尚未收到上下文更新。連線 airi-brain 以查看 AI 感知資料。
+    lane: 通道
+    clear: 清除記錄
   data:
-    title: Data
-    description: Manage stored AIRI data, exports, and resets
+    title: 資料
+    description: 管理儲存的 AIRI 資料、匯出與重置
     sections:
       chats:
-        title: Chat sessions
-        description: Export or import saved chat sessions.
-        export: Export chats
-        import: Import chats
-        delete: Delete all chat sessions
+        title: 聊天會話
+        description: 匯出或匯入儲存的聊天會話。
+        export: 匯出聊天記錄
+        import: 匯入聊天記錄
+        delete: 刪除所有聊天會話
       models:
-        title: Models
-        description: Remove imported Live2D/VRM models.
-        delete: Delete all models
+        title: 模型
+        description: 刪除匯入的 Live2D/VRM 模型。
+        delete: 刪除所有模型
       modules:
-        title: Modules
-        description: Reset module preferences and credentials.
-        reset: Reset module settings
+        title: 模組
+        description: 重置模組偏好設定與憑證。
+        reset: 重置模組設定
       providers:
-        title: Providers
-        description: Reset all provider settings and credentials.
-        reset: Reset provider settings
+        title: 服務來源
+        description: 重置所有服務來源設定與憑證。
+        reset: 重置服務來源設定
       danger:
-        title: Danger zone
-        description: Irreversible actions. Export what you need before continuing.
+        title: 危險區域
+        description: 不可逆操作。繼續之前，請匯出您需要的內容。
       all:
-        title: Delete all data
-        description: Wipe every local setting, provider config, and model.
-        delete: Delete all data
+        title: 刪除所有資料
+        description: 清除每個本機設定、服務來源設定和模型。
+        delete: 刪除所有資料
       desktop:
-        title: Reset desktop settings & states
-        description: Clear AIRI desktop settings and runtime state.
-        reset: Reset desktop data
+        title: 重置桌面設定與狀態
+        description: 清除 AIRI 桌面設定和執行狀態。
+        reset: 重置桌面資料
     confirmations:
-      tooltip: Are you sure?
-      'yes': 'Yes'
+      tooltip: 您確定嗎？
+      'yes': '是'
     status:
-      exported: Chat sessions exported.
-      imported: Chat sessions imported.
-      import_error: Failed to import chat sessions. Please check the file format.
-      chats_deleted: Chat sessions deleted.
-      models_deleted: Models deleted.
-      modules_reset: Module settings reset.
-      providers_reset: Provider settings reset.
-      all_deleted: All local data deleted.
-      desktop_reset: Desktop data reset.
+      exported: 聊天會話已匯出。
+      imported: 聊天會話已匯入。
+      import_error: 無法匯入聊天會話。請檢查檔案格式。
+      chats_deleted: 聊天會話已刪除。
+      models_deleted: 模型已刪除。
+      modules_reset: 模組設定已重置。
+      providers_reset: 服務來源設定已重置。
+      all_deleted: 已刪除所有本機資料。
+      desktop_reset: 桌面資料已重置。
   models:
     description: 切換角色的 Live2D、VRM 模型
     title: 角色模型
@@ -228,6 +277,26 @@ pages:
           title: VRM
           description: Configure 3D VRM models and settings
         scene: 場景
+  mcp:
+    server_count: '{count}個伺服器'
+    connected_count: '{count}個已連線'
+    add_server: 新增伺服器
+    edit_server: 編輯伺服器
+    empty: 尚未設定 MCP 伺服器
+    recommended: 推薦伺服器
+    status:
+      connected: 已連線
+      disconnected: 已斷線
+      error: 錯誤
+    form:
+      name: 伺服器名稱
+      name_placeholder: 我的 MCP 伺服器
+      command: 命令
+      args: 參數
+      url: 伺服器 URL
+      cancel: 取消
+      save: 儲存
+      add: 新增
   modules:
     beat_sync:
       description: Vibe with beats from the audio source
@@ -420,6 +489,65 @@ pages:
     mcp-server:
       description: 連線與管理 MCP 伺服器及工具
       title: MCP 伺服器
+    desktop-shell:
+      description: 活躍視窗追蹤、剪貼簿與全域快捷鍵
+      title: 桌面殼層
+      window_polling: 活躍視窗輪詢
+      window_polling_desc: 追蹤當前聚焦的應用程式。僅限 macOS。
+      polling_interval: 輪詢間隔
+      polling_interval_desc: 檢查活躍視窗的頻率
+      clipboard_monitoring: 剪貼簿監控
+      clipboard_monitoring_desc: 偵測剪貼簿變更以提供上下文感知。
+      global_shortcuts: 全域快捷鍵
+      global_shortcuts_desc: 註冊系統層級鍵盤快捷鍵。僅限桌面端。
+      desktop_status: 桌面狀態
+      tracking_active: 正在追蹤
+      waiting_for_data: 等待資料
+      current_window: 當前視窗
+      last_update: 最近更新：
+      feature_status: 功能狀態
+      feature_window: 視窗
+      feature_clipboard: 剪貼簿
+      feature_shortcuts: 快捷鍵
+      no_data: 尚無資料
+      privacy_title: 隱私提示：
+      privacy_text: 視窗標題和剪貼簿內容僅在本機處理。除非已設定並啟用 AI 服務，否則不會向外部傳送任何資料。
+      shortcuts:
+        toggle_panel: 切換主面板
+        quick_voice: 快速語音輸入
+        send_clipboard: 傳送剪貼簿到 AI
+        lock_screen: 鎖定螢幕感知
+    channels:
+      description: Slack、WhatsApp、電子郵件、飛書、釘釘訊息
+      title: 頻道
+      messaging_channels: 訊息頻道
+      enabled_count: '{count}個已啟用'
+      connected_count: '{count}個已連線'
+      config_title: 頻道設定
+      config_desc: 大多數頻道需要在伺服器（airi-brain 或 stage-tamagotchi）上設定環境變數。在此啟用頻道，然後在伺服器環境中設定所需的權杖。
+      slack:
+        description: 透過 Socket Mode 連線到 Slack 工作區
+        enable: 啟用 Slack
+        enable_desc: 將 AIRI 連線到你的 Slack 工作區
+        bot_token: Bot Token
+        app_token: App Token
+      whatsapp:
+        description: 使用 Baileys 透過 WhatsApp 聊天
+        enable: 啟用 WhatsApp
+        enable_desc: 需要伺服器端掃碼認證
+        env_hint: 需要掃碼認證
+      email:
+        description: 透過 IMAP/SMTP 收發電子郵件
+        enable: 啟用電子郵件
+        enable_desc: 在伺服器環境中設定 IMAP/SMTP 憑證
+      feishu:
+        description: 連線到飛書（Lark）工作區
+        enable: 啟用飛書
+        enable_desc: 在伺服器環境中設定應用憑證
+      dingtalk:
+        description: 連線到釘釘工作區
+        enable: 啟用釘釘
+        enable_desc: 在伺服器環境中設定應用憑證
   providers:
     explained:
       chat: 文字生成模型服務來源，例如 OpenRouter、OpenAI、Ollama

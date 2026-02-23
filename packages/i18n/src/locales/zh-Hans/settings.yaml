@@ -170,8 +170,57 @@ pages:
   memory:
     description: 存放记忆的地方，以及策略
     title: 记忆体
+    count: '{count}条记忆'
+    search_placeholder: 搜索记忆...
+    empty: 暂无记忆。随着 AIRI 了解你，记忆会逐渐积累。
+    detail: 记忆详情
+    delete: 删除
+    importance: '重要程度：{score}'
+    categories:
+      all: 全部
+      preference: 偏好
+      event: 事件
+      habit: 习惯
+      goal: 目标
+      emotion: 情感
+  todo:
+    title: 待办事项
+    description: 智能待办和任务管理
+    active_count: '{count}个待完成'
+    completed_count: '{count}个已完成'
+    add_placeholder: 需要做什么？
+    add: 添加
+    clear_completed: 清除已完成
+    empty: 暂无待办。在上方添加，或让 AIRI 建议任务。
+    filter:
+      all: 全部
+      active: 进行中
+      completed: 已完成
+  activity:
+    title: 活动
+    description: 今日活动时间线和工作总结
+    today_summary: 今日总结
+    total_work: 总工作时长
+    highlights: 亮点
+    breakdown: 应用分布
+    empty: 暂无活动数据。使用电脑后活动会自动显示。
+  skills:
+    title: 技能
+    description: 管理角色的技能和能力
+    total: '{count}项技能'
+    active_count: '{count}个已启用'
+    search_placeholder: 搜索技能...
+    empty: 暂无可用技能。
+  context:
+    title: AI 上下文
+    description: AI 感知与上下文数据
+    view_title: AI 上下文视图
+    entry_count: '{count}条记录'
+    empty: 尚未收到上下文更新。连接 airi-brain 以查看 AI 感知数据。
+    lane: 通道
+    clear: 清除记录
   data:
-    title: Data
+    title: 数据
     description: 管理存储 AIRI 数据、导出和重置
     sections:
       chats:
@@ -228,6 +277,26 @@ pages:
           title: VRM
           description: 配置 3D VRM 模型
         scene: 场景
+  mcp:
+    server_count: '{count}个服务器'
+    connected_count: '{count}个已连接'
+    add_server: 添加服务器
+    edit_server: 编辑服务器
+    empty: 暂未配置 MCP 服务器
+    recommended: 推荐服务器
+    status:
+      connected: 已连接
+      disconnected: 已断开
+      error: 错误
+    form:
+      name: 服务器名称
+      name_placeholder: 我的 MCP 服务器
+      command: 命令
+      args: 参数
+      url: 服务器 URL
+      cancel: 取消
+      save: 保存
+      add: 添加
   modules:
     beat_sync:
       description: 随音源节拍律动
@@ -420,6 +489,65 @@ pages:
     mcp-server:
       description: 连接和管理 MCP 服务器及工具
       title: MCP 服务器
+    desktop-shell:
+      description: 活跃窗口跟踪、剪贴板和全局快捷键
+      title: 桌面壳层
+      window_polling: 活跃窗口轮询
+      window_polling_desc: 跟踪当前聚焦的应用程序。仅限 macOS。
+      polling_interval: 轮询间隔
+      polling_interval_desc: 检查活跃窗口的频率
+      clipboard_monitoring: 剪贴板监控
+      clipboard_monitoring_desc: 检测剪贴板变化以提供上下文感知。
+      global_shortcuts: 全局快捷键
+      global_shortcuts_desc: 注册系统级键盘快捷键。仅限桌面端。
+      desktop_status: 桌面状态
+      tracking_active: 正在跟踪
+      waiting_for_data: 等待数据
+      current_window: 当前窗口
+      last_update: 最近更新：
+      feature_status: 功能状态
+      feature_window: 窗口
+      feature_clipboard: 剪贴板
+      feature_shortcuts: 快捷键
+      no_data: 暂无数据
+      privacy_title: 隐私提示：
+      privacy_text: 窗口标题和剪贴板内容仅在本地处理。除非已配置并启用 AI 服务，否则不会向外部发送任何数据。
+      shortcuts:
+        toggle_panel: 切换主面板
+        quick_voice: 快速语音输入
+        send_clipboard: 发送剪贴板到 AI
+        lock_screen: 锁屏感知
+    channels:
+      description: Slack、WhatsApp、邮件、飞书、钉钉消息
+      title: 频道
+      messaging_channels: 消息频道
+      enabled_count: '{count}个已启用'
+      connected_count: '{count}个已连接'
+      config_title: 频道配置
+      config_desc: 大多数频道需要在服务器（airi-brain 或 stage-tamagotchi）上设置环境变量。在此启用频道，然后在服务器环境中设置所需的令牌。
+      slack:
+        description: 通过 Socket Mode 连接到 Slack 工作区
+        enable: 启用 Slack
+        enable_desc: 将 AIRI 连接到你的 Slack 工作区
+        bot_token: Bot Token
+        app_token: App Token
+      whatsapp:
+        description: 使用 Baileys 通过 WhatsApp 聊天
+        enable: 启用 WhatsApp
+        enable_desc: 需要服务器端扫码认证
+        env_hint: 需要扫码认证
+      email:
+        description: 通过 IMAP/SMTP 收发邮件
+        enable: 启用邮件
+        enable_desc: 在服务器环境中设置 IMAP/SMTP 凭据
+      feishu:
+        description: 连接到飞书（Lark）工作区
+        enable: 启用飞书
+        enable_desc: 在服务器环境中设置应用凭据
+      dingtalk:
+        description: 连接到钉钉工作区
+        enable: 启用钉钉
+        enable_desc: 在服务器环境中设置应用凭据
   providers:
     explained:
       chat: 文本生成模型服务来源，例如 OpenRouter, OpenAI, Ollama
