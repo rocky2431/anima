@@ -19,7 +19,7 @@ export const openrouterProvider: UnifiedProviderMetadata = {
     vision: true,
     speech: true,
     transcription: true,
-    embedding: false,
+    embedding: true,
     functionCalling: true,
   },
   defaultOptions: () => ({
@@ -35,6 +35,10 @@ export const openrouterProvider: UnifiedProviderMetadata = {
       normalizeBaseUrl(config.baseUrl as string),
     ),
     transcription: config => createOpenRouter(
+      (config.apiKey as string).trim(),
+      normalizeBaseUrl(config.baseUrl as string),
+    ),
+    embedding: config => createOpenRouter(
       (config.apiKey as string).trim(),
       normalizeBaseUrl(config.baseUrl as string),
     ),
