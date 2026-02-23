@@ -28,6 +28,7 @@ lerna-debug.log*
 *.wav
 *.ogg
 *.mp3
+!docs/**/*.mp3
 
 # Credentials
 cert*/
