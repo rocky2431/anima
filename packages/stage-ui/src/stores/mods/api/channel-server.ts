@@ -62,6 +62,13 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
     // Vision
     'vision:config:update',
     'vision:status',
+    // Embedding
+    'embedding:config:update',
+    'embedding:config:status',
+    'embedding:models:list',
+    'embedding:models:result',
+    'embedding:model:validate',
+    'embedding:model:validated',
     // Persona Template
     'persona:template:set',
   ]

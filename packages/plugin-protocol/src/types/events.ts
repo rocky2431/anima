@@ -1123,6 +1123,30 @@ export interface EmbeddingConfigStatusEvent {
   model?: string
 }
 
+export interface EmbeddingModelsListEvent {
+  provider: string
+  apiKey: string
+  baseURL: string
+}
+
+export interface EmbeddingModelsResultEvent {
+  provider: string
+  models: Array<{ id: string, name: string, provider: string, description?: string, contextLength?: number }>
+  error?: string
+}
+
+export interface EmbeddingModelValidateEvent {
+  provider: string
+  apiKey: string
+  baseURL: string
+  model: string
+}
+
+export interface EmbeddingModelValidatedEvent {
+  success: boolean
+  error?: string
+}
+
 // ─── Persona Template Events ───────────────────────────────────────────────
 
 interface PersonaTemplateSetEvent {
@@ -1133,6 +1157,10 @@ export const visionConfigUpdate = defineEventa<VisionConfigUpdateEvent>('vision:
 export const visionStatus = defineEventa<VisionStatusEvent>('vision:status')
 export const embeddingConfigUpdate = defineEventa<EmbeddingConfigUpdateEvent>('embedding:config:update')
 export const embeddingConfigStatus = defineEventa<EmbeddingConfigStatusEvent>('embedding:config:status')
+export const embeddingModelsList = defineEventa<EmbeddingModelsListEvent>('embedding:models:list')
+export const embeddingModelsResult = defineEventa<EmbeddingModelsResultEvent>('embedding:models:result')
+export const embeddingModelValidate = defineEventa<EmbeddingModelValidateEvent>('embedding:model:validate')
+export const embeddingModelValidated = defineEventa<EmbeddingModelValidatedEvent>('embedding:model:validated')
 export const personaTemplateSet = defineEventa<PersonaTemplateSetEvent>('persona:template:set')
 
 // Thanks to:
@@ -1337,6 +1365,10 @@ export interface ProtocolEvents<C = undefined> {
   // Embedding
   'embedding:config:update': EmbeddingConfigUpdateEvent
   'embedding:config:status': EmbeddingConfigStatusEvent
+  'embedding:models:list': EmbeddingModelsListEvent
+  'embedding:models:result': EmbeddingModelsResultEvent
+  'embedding:model:validate': EmbeddingModelValidateEvent
+  'embedding:model:validated': EmbeddingModelValidatedEvent
 
   // Persona Template
   'persona:template:set': PersonaTemplateSetEvent

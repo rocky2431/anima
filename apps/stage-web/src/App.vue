@@ -9,6 +9,7 @@ import { useContextBridgeStore } from '@proj-airi/stage-ui/stores/mods/api/conte
 import { useActivityModuleStore } from '@proj-airi/stage-ui/stores/modules/activity'
 import { useAiriCardStore } from '@proj-airi/stage-ui/stores/modules/airi-card'
 import { useContextDisplayStore } from '@proj-airi/stage-ui/stores/modules/context-display'
+import { useEmbeddingStore } from '@proj-airi/stage-ui/stores/modules/embedding'
 import { useMemoryModuleStore } from '@proj-airi/stage-ui/stores/modules/memory'
 import { usePersonaModuleStore } from '@proj-airi/stage-ui/stores/modules/persona'
 import { useSkillsModuleStore } from '@proj-airi/stage-ui/stores/modules/skills'
@@ -48,6 +49,7 @@ const activityStore = useActivityModuleStore()
 const skillsStore = useSkillsModuleStore()
 const personaStore = usePersonaModuleStore()
 const contextDisplayStore = useContextDisplayStore()
+const embeddingStore = useEmbeddingStore()
 
 const primaryColor = computed(() => {
   return isDark.value
@@ -102,6 +104,7 @@ onMounted(async () => {
   skillsStore.initialize()
   personaStore.initialize()
   contextDisplayStore.initialize()
+  embeddingStore.initialize()
 
   await displayModelsStore.loadDisplayModelsFromIndexedDB()
   await settingsStore.initializeStageModel()
@@ -115,6 +118,7 @@ onUnmounted(() => {
   skillsStore.dispose()
   personaStore.dispose()
   contextDisplayStore.dispose()
+  embeddingStore.dispose()
 })
 
 // Handle first-time setup events

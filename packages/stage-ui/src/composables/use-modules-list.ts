@@ -8,6 +8,7 @@ import { useChannelsStore } from '../stores/modules/channels'
 import { useConsciousnessStore } from '../stores/modules/consciousness'
 import { useDesktopShellStore } from '../stores/modules/desktop-shell'
 import { useDiscordStore } from '../stores/modules/discord'
+import { useEmbeddingStore } from '../stores/modules/embedding'
 import { useHearingStore } from '../stores/modules/hearing'
 import { useMcpModuleStore } from '../stores/modules/mcp'
 import { useSpeechStore } from '../stores/modules/speech'
@@ -38,6 +39,7 @@ export function useModulesList() {
   const mcpStore = useMcpModuleStore()
   const visionStore = useVisionStore()
   const desktopShellStore = useDesktopShellStore()
+  const embeddingStore = useEmbeddingStore()
   const channelsStore = useChannelsStore()
   const beatSyncState = ref<BeatSyncDetectorState>()
 
@@ -76,6 +78,15 @@ export function useModulesList() {
       icon: 'i-solar:eye-closed-bold-duotone',
       to: '/settings/modules/vision',
       configured: visionStore.configured,
+      category: 'essential',
+    },
+    {
+      id: 'embedding',
+      name: t('settings.pages.modules.embedding.title'),
+      description: t('settings.pages.modules.embedding.description'),
+      icon: 'i-solar:graph-new-bold-duotone',
+      to: '/settings/modules/embedding',
+      configured: embeddingStore.configured,
       category: 'essential',
     },
     {

@@ -12,7 +12,7 @@ import { availableLogLevelStrings, Format, LogLevelString, logLevelStringToLogLe
 import { MessageHeartbeat, MessageHeartbeatKind, WebSocketEventSource } from '@proj-airi/server-shared/types'
 import { defineWebSocketHandler, H3 } from 'h3'
 import { nanoid } from 'nanoid'
-import { stringify } from 'superjson'
+import { stringify, parse as superjsonParse } from 'superjson'
 
 import packageJSON from '../package.json'
 
@@ -200,11 +200,11 @@ export function setupApp(options?: {
       let event: WebSocketEvent
 
       try {
-        event = message.json() as WebSocketEvent
+        event = superjsonParse<WebSocketEvent>(message.text())
       }
       catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
-        send(peer, RESPONSES.error(`invalid JSON, error: ${errorMessage}`, instanceId))
+        send(peer, RESPONSES.error(`invalid message, error: ${errorMessage}`, instanceId))
 
         return
       }
@@ -245,10 +245,15 @@ export function setupApp(options?: {
             return
           }
 
+          const authPeer = peers.get(peer.id)
+          // Skip duplicate auth response if already authenticated (e.g. auto-auth on connect)
+          if (authPeer?.authenticated) {
+            return
+          }
+
           send(peer, RESPONSES.authenticated(instanceId, event.metadata?.event.id))
-          const p = peers.get(peer.id)
-          if (p) {
-            p.authenticated = true
+          if (authPeer) {
+            authPeer.authenticated = true
           }
 
           sendRegistrySync(peer, event.metadata?.event.id)

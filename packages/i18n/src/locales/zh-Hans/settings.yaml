@@ -395,6 +395,26 @@ pages:
             title: 模型
       title: 意识
     description: 思维，视觉，言语综合，游戏等
+    embedding:
+      title: 向量化
+      description: 文本向量化，用于记忆语义搜索
+      sections:
+        provider:
+          title: 向量化供应商
+          description: 选择用于记忆向量化的供应商
+        model:
+          title: 向量化模型
+          description: 输入要使用的向量化模型 ID
+          placeholder: '例如 openai/text-embedding-3-small'
+          hint: '请从供应商文档中查找向量化模型 ID，并在此输入完整的模型 ID。'
+          save: 保存
+          saving: 保存中...
+      status:
+        configured: 向量化已配置
+        not_configured: 向量化未配置
+      no_providers_title: 未配置向量化供应商
+      no_providers_description: 点击此处配置支持向量化的供应商（OpenRouter 或通义千问）
+      info: 向量化模型将文本转换为向量表示，用于记忆系统中的语义搜索。配置供应商和模型以启用记忆向量化和智能回忆。
     gaming-factorio:
       description: 一起玩 Factorio！
       title: 异星工厂 Factorio

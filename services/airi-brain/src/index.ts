@@ -72,6 +72,10 @@ async function main(): Promise<void> {
       // Embedding
       'embedding:config:update',
       'embedding:config:status',
+      'embedding:models:list',
+      'embedding:models:result',
+      'embedding:model:validate',
+      'embedding:model:validated',
       // Persona Template
       'persona:template:set',
       // Todo

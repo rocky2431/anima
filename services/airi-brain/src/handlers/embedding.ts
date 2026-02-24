@@ -54,6 +54,124 @@ export function registerEmbeddingHandler(
     pushStatus(client, config)
   })
 
+  // Proxy embedding model listing (browser can't call these endpoints due to CORS)
+  client.onEvent('embedding:models:list', async (event) => {
+    const { provider, apiKey, baseURL } = event.data as { provider: string, apiKey: string, baseURL: string }
+    log.withFields({ provider }).log('Embedding models list requested')
+
+    try {
+      let base = (baseURL || '').trim()
+      if (base && !base.endsWith('/'))
+        base += '/'
+
+      const headers = { Authorization: `Bearer ${apiKey}` }
+
+      // Strategy 1: Try dedicated /embeddings/models endpoint (OpenRouter)
+      const embeddingsUrl = new URL('embeddings/models', base)
+      const embeddingsResponse = await fetch(embeddingsUrl, { headers }).catch(() => null)
+
+      if (embeddingsResponse?.ok) {
+        const json = await embeddingsResponse.json() as { data?: Array<{ id: string, name?: string, description?: string, context_length?: number }> }
+        const models = (json.data ?? []).map(m => ({
+          id: m.id,
+          name: m.name || m.id,
+          provider,
+          description: m.description || '',
+          contextLength: m.context_length || 0,
+        }))
+
+        if (models.length > 0) {
+          client.send({ type: 'embedding:models:result', data: { provider, models } })
+          log.withFields({ provider, count: models.length, source: 'embeddings/models' }).log('Embedding models listed')
+          return
+        }
+      }
+
+      // Strategy 2: Fall back to /models and filter by ID pattern (DashScope, etc.)
+      const modelsUrl = new URL('models', base)
+      const modelsResponse = await fetch(modelsUrl, { headers })
+
+      if (!modelsResponse.ok) {
+        client.send({
+          type: 'embedding:models:result',
+          data: { provider, models: [], error: `HTTP ${modelsResponse.status}` },
+        })
+        return
+      }
+
+      const modelsJson = await modelsResponse.json() as { data?: Array<{ id: string, name?: string, description?: string, context_length?: number }> }
+      const allModels = modelsJson.data ?? []
+      const embeddingModels = allModels
+        .filter(m => m.id.toLowerCase().includes('embed'))
+        .map(m => ({
+          id: m.id,
+          name: m.name || m.id,
+          provider,
+          description: m.description || '',
+          contextLength: m.context_length || 0,
+        }))
+
+      client.send({ type: 'embedding:models:result', data: { provider, models: embeddingModels } })
+      log.withFields({ provider, count: embeddingModels.length, source: 'models (filtered)' }).log('Embedding models listed')
+    }
+    catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      log.withFields({ provider, error: msg }).log('Failed to list embedding models')
+      client.send({
+        type: 'embedding:models:result',
+        data: { provider, models: [], error: msg },
+      })
+    }
+  })
+
+  // Validate embedding model by sending a real embedding request
+  client.onEvent('embedding:model:validate', async (event) => {
+    const { provider, apiKey, baseURL, model } = event.data as { provider: string, apiKey: string, baseURL: string, model: string }
+    log.withFields({ provider, model }).log('Embedding model validation requested')
+
+    try {
+      let base = (baseURL || '').trim()
+      if (base && !base.endsWith('/'))
+        base += '/'
+
+      const url = new URL('embeddings', base)
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          input: 'test',
+        }),
+      })
+
+      if (!response.ok) {
+        const body = await response.text().catch(() => '')
+        let errorMsg = `HTTP ${response.status}`
+        try {
+          const parsed = JSON.parse(body) as { error?: { message?: string } }
+          if (parsed.error?.message)
+            errorMsg = parsed.error.message
+        }
+        catch { /* use HTTP status */ }
+
+        log.withFields({ provider, model, error: errorMsg }).log('Embedding model validation failed')
+        client.send({ type: 'embedding:model:validated', data: { success: false, error: errorMsg } })
+        return
+      }
+
+      log.withFields({ provider, model }).log('Embedding model validation succeeded')
+      client.send({ type: 'embedding:model:validated', data: { success: true } })
+    }
+    catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      log.withFields({ provider, model, error: msg }).log('Embedding model validation error')
+      client.send({ type: 'embedding:model:validated', data: { success: false, error: msg } })
+    }
+  })
+
   // Push initial status after a short delay (same pattern as vision)
   setTimeout(() => pushStatus(client, persisted), 1000)
 }

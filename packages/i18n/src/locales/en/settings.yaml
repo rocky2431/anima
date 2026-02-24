@@ -427,6 +427,26 @@ pages:
             title: Model
       title: Consciousness
     description: Thinking, vision, speech synthesis, gaming, etc.
+    embedding:
+      title: Embedding
+      description: Text embedding for memory vectorization and semantic search
+      sections:
+        provider:
+          title: Embedding Provider
+          description: Select an embedding-capable provider for memory vectorization
+        model:
+          title: Embedding Model
+          description: Enter the embedding model ID to use
+          placeholder: 'e.g. openai/text-embedding-3-small'
+          hint: "Find embedding model IDs from your provider's documentation and enter the exact model ID here."
+          save: Save
+          saving: Saving...
+      status:
+        configured: Embedding configured
+        not_configured: Embedding not configured
+      no_providers_title: No Embedding Providers Configured
+      no_providers_description: Click here to set up an embedding-capable provider (OpenRouter or DashScope)
+      info: Embedding models convert text into vector representations for semantic search in the memory system. Configure a provider and model to enable memory vectorization and intelligent recall.
     gaming-factorio:
       description: Playing Factorio!
       title: Factorio
