@@ -8,8 +8,6 @@ import { useChannelsStore } from '../stores/modules/channels'
 import { useConsciousnessStore } from '../stores/modules/consciousness'
 import { useDesktopShellStore } from '../stores/modules/desktop-shell'
 import { useDiscordStore } from '../stores/modules/discord'
-import { useFactorioStore } from '../stores/modules/gaming-factorio'
-import { useMinecraftStore } from '../stores/modules/gaming-minecraft'
 import { useHearingStore } from '../stores/modules/hearing'
 import { useMcpModuleStore } from '../stores/modules/mcp'
 import { useSpeechStore } from '../stores/modules/speech'
@@ -37,8 +35,6 @@ export function useModulesList() {
   const hearingStore = useHearingStore()
   const discordStore = useDiscordStore()
   const twitterStore = useTwitterStore()
-  const minecraftStore = useMinecraftStore()
-  const factorioStore = useFactorioStore()
   const mcpStore = useMcpModuleStore()
   const visionStore = useVisionStore()
   const desktopShellStore = useDesktopShellStore()
@@ -83,24 +79,6 @@ export function useModulesList() {
       category: 'essential',
     },
     {
-      id: 'memory-short-term',
-      name: t('settings.pages.modules.memory-short-term.title'),
-      description: t('settings.pages.modules.memory-short-term.description'),
-      icon: 'i-solar:bookmark-bold-duotone',
-      to: '/settings/modules/memory-short-term',
-      configured: false,
-      category: 'essential',
-    },
-    {
-      id: 'memory-long-term',
-      name: t('settings.pages.modules.memory-long-term.title'),
-      description: t('settings.pages.modules.memory-long-term.description'),
-      icon: 'i-solar:book-bookmark-bold-duotone',
-      to: '/settings/modules/memory-long-term',
-      configured: false,
-      category: 'essential',
-    },
-    {
       id: 'messaging-discord',
       name: t('settings.pages.modules.messaging-discord.title'),
       description: t('settings.pages.modules.messaging-discord.description'),
@@ -117,23 +95,6 @@ export function useModulesList() {
       to: '/settings/modules/x',
       configured: twitterStore.configured,
       category: 'messaging',
-    },
-    {
-      id: 'gaming-minecraft',
-      name: t('settings.pages.modules.gaming-minecraft.title'),
-      description: t('settings.pages.modules.gaming-minecraft.description'),
-      iconColor: 'i-vscode-icons:file-type-minecraft',
-      to: '/settings/modules/gaming-minecraft',
-      configured: minecraftStore.configured,
-      category: 'gaming',
-    },
-    {
-      id: 'gaming-factorio',
-      name: t('settings.pages.modules.gaming-factorio.title'),
-      description: t('settings.pages.modules.gaming-factorio.description'),
-      to: '/settings/modules/gaming-factorio',
-      configured: factorioStore.configured,
-      category: 'gaming',
     },
     {
       id: 'mcp-server',
@@ -188,7 +149,6 @@ export function useModulesList() {
   const categoryNames = computed(() => ({
     essential: t('settings.pages.modules.categories.essential'),
     messaging: t('settings.pages.modules.categories.messaging'),
-    gaming: t('settings.pages.modules.categories.gaming'),
   }))
 
   // TODO(Makito): We can make this a reactive value from a synthetic store.

@@ -211,6 +211,15 @@ pages:
       habit: Habit
       goal: Goal
       emotion: Emotion
+    tabs:
+      long_term: Memory Store
+      context_window: Context Window
+    context:
+      sources: sources
+      entries: entries
+      auto_refresh: Auto-refreshes every 2s
+      empty: No context data in the current window
+      empty_hint: Context entries will appear here as modules provide data
   todo:
     title: Todos
     description: Smart todos and task management

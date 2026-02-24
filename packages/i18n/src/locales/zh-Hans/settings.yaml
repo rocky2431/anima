@@ -183,6 +183,15 @@ pages:
       habit: 习惯
       goal: 目标
       emotion: 情感
+    tabs:
+      long_term: 记忆库
+      context_window: 上下文窗口
+    context:
+      sources: 个来源
+      entries: 条记录
+      auto_refresh: 每 2 秒自动刷新
+      empty: 当前上下文窗口暂无数据
+      empty_hint: 各模块提供数据后，上下文记录将显示在这里
   todo:
     title: 待办事项
     description: 智能待办和任务管理

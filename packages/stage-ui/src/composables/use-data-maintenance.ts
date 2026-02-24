@@ -10,8 +10,6 @@ import { useMcpStore } from '../stores/mcp'
 import { useAiriCardStore } from '../stores/modules/airi-card'
 import { useConsciousnessStore } from '../stores/modules/consciousness'
 import { useDiscordStore } from '../stores/modules/discord'
-import { useFactorioStore } from '../stores/modules/gaming-factorio'
-import { useMinecraftStore } from '../stores/modules/gaming-minecraft'
 import { useHearingStore } from '../stores/modules/hearing'
 import { useSpeechStore } from '../stores/modules/speech'
 import { useTwitterStore } from '../stores/modules/twitter'
@@ -32,8 +30,6 @@ export function useDataMaintenance() {
   const consciousnessStore = useConsciousnessStore()
   const twitterStore = useTwitterStore()
   const discordStore = useDiscordStore()
-  const factorioStore = useFactorioStore()
-  const minecraftStore = useMinecraftStore()
   const mcpStore = useMcpStore()
   const onboardingStore = useOnboardingStore()
   const airiCardStore = useAiriCardStore()
@@ -54,8 +50,6 @@ export function useDataMaintenance() {
     consciousnessStore.resetState()
     twitterStore.resetState()
     discordStore.resetState()
-    factorioStore.resetState()
-    minecraftStore.resetState()
   }
 
   function deleteAllChatSessions() {
