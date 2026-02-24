@@ -1108,6 +1108,21 @@ interface VisionStatusEvent {
   }
 }
 
+// ─── LLM Events ──────────────────────────────────────────────────────────
+
+export interface LlmConfigUpdateEvent {
+  provider: string
+  apiKey: string
+  baseURL: string
+  model: string
+}
+
+export interface LlmConfigStatusEvent {
+  configured: boolean
+  provider?: string
+  model?: string
+}
+
 // ─── Embedding Events ─────────────────────────────────────────────────────
 
 export interface EmbeddingConfigUpdateEvent {
@@ -1169,6 +1184,8 @@ interface PersonaTemplateSetEvent {
   templateId: string
 }
 
+export const llmConfigUpdate = defineEventa<LlmConfigUpdateEvent>('llm:config:update')
+export const llmConfigStatus = defineEventa<LlmConfigStatusEvent>('llm:config:status')
 export const visionConfigUpdate = defineEventa<VisionConfigUpdateEvent>('vision:config:update')
 export const visionStatus = defineEventa<VisionStatusEvent>('vision:status')
 export const embeddingConfigUpdate = defineEventa<EmbeddingConfigUpdateEvent>('embedding:config:update')
@@ -1393,6 +1410,13 @@ export interface ProtocolEvents<C = undefined> {
   'providers:configs:sync': ProvidersConfigsSyncEvent
   'providers:configs:request': ProvidersConfigsRequestEvent
   'providers:configs:data': ProvidersConfigsDataEvent
+
+  // LLM
+  'llm:config:update': LlmConfigUpdateEvent
+  'llm:config:status': LlmConfigStatusEvent
+
+  // Activity Summary Trigger
+  'activity:summary:trigger': { _placeholder?: never }
 
   // Persona Template
   'persona:template:set': PersonaTemplateSetEvent

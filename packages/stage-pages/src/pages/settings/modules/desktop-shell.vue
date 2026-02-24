@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useActivityModuleStore } from '@proj-airi/stage-ui/stores/modules/activity'
 import { useDesktopShellStore } from '@proj-airi/stage-ui/stores/modules/desktop-shell'
 import { FieldCheckbox, FieldRange } from '@proj-airi/ui'
 import { storeToRefs } from 'pinia'
@@ -7,6 +8,8 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const store = useDesktopShellStore()
+const activityStore = useActivityModuleStore()
+const { summaryStatus, highlights: summaryHighlights } = storeToRefs(activityStore)
 const {
   windowPollingEnabled,
   windowPollingIntervalMs,
@@ -183,6 +186,44 @@ const shortcuts = computed(() => [
               <div class="text-xs text-neutral-500">
                 {{ $t('settings.pages.modules.desktop-shell.feature_shortcuts') }}
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Summary -->
+        <div class="border-t border-neutral-200 pt-4 dark:border-neutral-700">
+          <h3 class="mb-3 text-sm text-neutral-500 font-medium dark:text-neutral-400">
+            {{ $t('settings.pages.modules.desktop-shell.activity_summary') }}
+          </h3>
+          <button
+            type="button"
+            :disabled="summaryStatus === 'running'"
+            class="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200"
+            :class="[
+              summaryStatus === 'running'
+                ? 'bg-neutral-200 text-neutral-400 dark:bg-neutral-700 dark:text-neutral-500 cursor-not-allowed'
+                : 'bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 cursor-pointer',
+            ]"
+            @click="activityStore.triggerSummary()"
+          >
+            <div v-if="summaryStatus === 'running'" class="animate-spin">
+              <div i-solar:spinner-line-duotone />
+            </div>
+            <div v-else i-solar:document-text-bold-duotone />
+            {{ summaryStatus === 'running'
+              ? $t('settings.pages.modules.desktop-shell.generating_summary')
+              : $t('settings.pages.modules.desktop-shell.generate_summary')
+            }}
+          </button>
+
+          <!-- Summary highlights -->
+          <div v-if="summaryHighlights.length > 0" class="mt-3 space-y-1">
+            <div
+              v-for="(highlight, idx) in summaryHighlights"
+              :key="idx"
+              class="rounded-lg bg-white px-3 py-2 text-sm text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-400"
+            >
+              {{ highlight }}
             </div>
           </div>
         </div>

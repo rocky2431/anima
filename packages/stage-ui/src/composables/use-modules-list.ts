@@ -10,6 +10,7 @@ import { useDesktopShellStore } from '../stores/modules/desktop-shell'
 import { useDiscordStore } from '../stores/modules/discord'
 import { useEmbeddingStore } from '../stores/modules/embedding'
 import { useHearingStore } from '../stores/modules/hearing'
+import { useLlmStore } from '../stores/modules/llm'
 import { useMcpModuleStore } from '../stores/modules/mcp'
 import { useSpeechStore } from '../stores/modules/speech'
 import { useTwitterStore } from '../stores/modules/twitter'
@@ -40,6 +41,7 @@ export function useModulesList() {
   const visionStore = useVisionStore()
   const desktopShellStore = useDesktopShellStore()
   const embeddingStore = useEmbeddingStore()
+  const llmStore = useLlmStore()
   const channelsStore = useChannelsStore()
   const beatSyncState = ref<BeatSyncDetectorState>()
 
@@ -87,6 +89,15 @@ export function useModulesList() {
       icon: 'i-solar:graph-new-bold-duotone',
       to: '/settings/modules/embedding',
       configured: embeddingStore.configured,
+      category: 'essential',
+    },
+    {
+      id: 'llm',
+      name: t('settings.pages.modules.llm.title'),
+      description: t('settings.pages.modules.llm.description'),
+      icon: 'i-solar:cpu-bolt-bold-duotone',
+      to: '/settings/modules/llm',
+      configured: llmStore.configured,
       category: 'essential',
     },
     {

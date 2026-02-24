@@ -415,6 +415,26 @@ pages:
       no_providers_title: 未配置向量化供应商
       no_providers_description: 点击此处配置支持向量化的供应商（OpenRouter 或通义千问）
       info: 向量化模型将文本转换为向量表示，用于记忆系统中的语义搜索。配置供应商和模型以启用记忆向量化和智能回忆。
+    llm:
+      title: 大语言模型
+      description: 用于每日总结、记忆提取和智能功能的语言模型
+      sections:
+        provider:
+          title: LLM 供应商
+          description: 选择用于大脑智能功能的对话供应商
+        model:
+          title: LLM 模型
+          description: 输入要使用的 LLM 模型 ID
+          placeholder: '例如 openai/gpt-4o-mini'
+          hint: '请从供应商文档中查找模型 ID，并在此输入完整的模型 ID。'
+          save: 保存
+          saving: 保存中...
+      status:
+        configured: LLM 已配置
+        not_configured: LLM 未配置
+      no_providers_title: 未配置对话供应商
+      no_providers_description: 点击此处先配置一个支持对话的供应商
+      info: 大语言模型驱动每日活动总结、记忆提取、智能提示等智能功能。配置供应商和模型以启用这些大脑能力。
     gaming-factorio:
       description: 一起玩 Factorio！
       title: 异星工厂 Factorio
@@ -557,6 +577,9 @@ pages:
         quick_voice: 快速语音输入
         send_clipboard: 发送剪贴板到 AI
         lock_screen: 锁屏感知
+      activity_summary: 活动总结
+      generate_summary: 立即生成总结
+      generating_summary: 生成中...
     channels:
       description: Slack、WhatsApp、邮件、飞书、钉钉消息
       title: 频道

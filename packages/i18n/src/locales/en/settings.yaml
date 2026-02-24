@@ -447,6 +447,26 @@ pages:
       no_providers_title: No Embedding Providers Configured
       no_providers_description: Click here to set up an embedding-capable provider (OpenRouter or DashScope)
       info: Embedding models convert text into vector representations for semantic search in the memory system. Configure a provider and model to enable memory vectorization and intelligent recall.
+    llm:
+      title: LLM
+      description: Language model for daily summaries, memory extraction, and smart features
+      sections:
+        provider:
+          title: LLM Provider
+          description: Select a chat-capable provider for brain intelligence features
+        model:
+          title: LLM Model
+          description: Enter the LLM model ID to use
+          placeholder: 'e.g. openai/gpt-4o-mini'
+          hint: "Find model IDs from your provider's documentation and enter the exact model ID here."
+          save: Save
+          saving: Saving...
+      status:
+        configured: LLM configured
+        not_configured: LLM not configured
+      no_providers_title: No Chat Providers Configured
+      no_providers_description: Click here to set up a chat-capable provider first
+      info: The LLM powers daily activity summaries, memory extraction, smart tips, and other intelligence features. Configure a provider and model to enable these brain capabilities.
     gaming-factorio:
       description: Playing Factorio!
       title: Factorio
@@ -592,6 +612,9 @@ pages:
         quick_voice: Quick voice input
         send_clipboard: Send clipboard to AI
         lock_screen: Lock screen awareness
+      activity_summary: Activity Summary
+      generate_summary: Generate Summary Now
+      generating_summary: Generating...
     channels:
       description: Slack, WhatsApp, Email, Feishu, DingTalk messaging
       title: Channels

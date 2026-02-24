@@ -28,12 +28,33 @@ export const useActivityModuleStore = defineStore('activity-module', () => {
     todaySummary.value = summary ? { ...summary } : null
   }
 
+  const summaryStatus = ref<'idle' | 'running' | 'completed' | 'error'>('idle')
+
   function requestHistory(date?: string, limit?: number): void {
     const serverChannel = useModsServerChannelStore()
     serverChannel.send({
       type: 'activity:history:request',
       data: { date, limit },
     })
+  }
+
+  let summaryTimeout: ReturnType<typeof setTimeout> | null = null
+
+  function triggerSummary(): void {
+    summaryStatus.value = 'running'
+    const serverChannel = useModsServerChannelStore()
+    serverChannel.send({
+      type: 'activity:summary:trigger',
+      data: {},
+    })
+
+    // Reset to error if no response within 60s
+    if (summaryTimeout)
+      clearTimeout(summaryTimeout)
+    summaryTimeout = setTimeout(() => {
+      if (summaryStatus.value === 'running')
+        summaryStatus.value = 'error'
+    }, 60_000)
   }
 
   /**
@@ -52,6 +73,13 @@ export const useActivityModuleStore = defineStore('activity-module', () => {
     disposers.value.push(
       serverChannel.onEvent('activity:summary', (event) => {
         setSummary(event.data)
+        if (summaryStatus.value === 'running') {
+          summaryStatus.value = 'completed'
+          if (summaryTimeout) {
+            clearTimeout(summaryTimeout)
+            summaryTimeout = null
+          }
+        }
       }),
     )
   }
@@ -76,7 +104,9 @@ export const useActivityModuleStore = defineStore('activity-module', () => {
     highlights,
     setActivities,
     setSummary,
+    summaryStatus,
     requestHistory,
+    triggerSummary,
     initialize,
     dispose,
     resetState,

@@ -15,6 +15,8 @@ const WINDOW_POLL_INTERVAL_MS = 10_000
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let lastAppName = ''
 let lastWindowTitle = ''
+let lastSwitchTime = Date.now()
+let lastEventId = ''
 
 /**
  * Register desktop-shell handler for airi-brain.
@@ -46,23 +48,34 @@ export function registerDesktopShellHandler(client: Client, brainStore: BrainSto
         lastAppName = info.appName
         lastWindowTitle = info.windowTitle
 
+        const now = Date.now()
+        const duration = now - lastSwitchTime
+
+        // Back-fill duration on the previous event
+        if (lastEventId && duration > 0) {
+          brainStore.updateActivityEventDuration(lastEventId, duration)
+        }
+
+        const newId = nanoid()
         brainStore.insertActivityEvent({
-          id: nanoid(),
+          id: newId,
           appName: info.appName,
           windowTitle: info.windowTitle,
           description: `Active: ${info.appName} — ${info.windowTitle}`,
           durationMs: 0,
-          timestamp: Date.now(),
+          timestamp: now,
         })
+        lastEventId = newId
+        lastSwitchTime = now
 
         client.send({
           type: 'activity:state',
           data: {
             activities: [{
-              timestamp: Date.now(),
+              timestamp: now,
               app: info.appName,
               description: `Active: ${info.appName} — ${info.windowTitle}`,
-              durationMs: 0,
+              durationMs: duration,
             }],
           },
         })

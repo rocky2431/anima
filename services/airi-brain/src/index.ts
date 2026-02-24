@@ -5,18 +5,21 @@ import { homedir, platform } from 'node:os'
 import { resolve } from 'node:path'
 
 import { Format, LogLevel, setGlobalFormat, setGlobalLogLevel, useLogg } from '@guiiai/logg'
-import { DocumentStore } from '@proj-airi/context-engine'
+import { DocumentStore, VectorStore } from '@proj-airi/context-engine'
 import { Client } from '@proj-airi/server-sdk'
 
 import { registerActivityHandler } from './handlers/activity'
 import { disposeDesktopShellHandler, registerDesktopShellHandler } from './handlers/desktop-shell'
 import { registerEmbeddingHandler } from './handlers/embedding'
+import { registerEveningPipeline } from './handlers/evening-pipeline'
+import { registerLlmHandler } from './handlers/llm'
 import { registerMemoryHandler } from './handlers/memory'
 import { disposePersonaHandler, registerPersonaHandler } from './handlers/persona'
 import { registerProvidersHandler } from './handlers/providers'
 import { registerSkillsHandler } from './handlers/skills'
 import { registerTodoHandler } from './handlers/todo'
 import { disposeVisionHandler, registerVisionHandler } from './handlers/vision'
+import { createPipeline, rebuildPipeline } from './pipeline'
 import { createBrainProviders } from './providers'
 import { BrainStore } from './store'
 
@@ -70,6 +73,9 @@ async function main(): Promise<void> {
       // Vision
       'vision:config:update',
       'vision:status',
+      // LLM
+      'llm:config:update',
+      'llm:config:status',
       // Embedding
       'embedding:config:update',
       'embedding:config:status',
@@ -103,6 +109,8 @@ async function main(): Promise<void> {
       'providers:configs:sync',
       'providers:configs:request',
       'providers:configs:data',
+      // Activity Summary
+      'activity:summary:trigger',
     ],
   })
 
@@ -122,8 +130,42 @@ async function main(): Promise<void> {
     registerPersonaHandler(client, documentStore, brainStore)
     registerVisionHandler(client, brainStore)
     registerEmbeddingHandler(client, brainStore, providers)
+    registerLlmHandler(client, brainStore, providers)
     registerProvidersHandler(client, brainStore)
     registerDesktopShellHandler(client, brainStore)
+
+    // Initialize VectorStore + Pipeline (async, non-blocking)
+    VectorStore.create(dataDir).then(async (vectorStore) => {
+      log.log('VectorStore created', { dataDir })
+
+      const pipelineRef = { current: await createPipeline({ vectorStore, documentStore, providers }) }
+
+      // Register evening pipeline for daily summaries
+      registerEveningPipeline(brainStore, pipelineRef, client)
+
+      // Rebuild pipeline when LLM or embedding config changes (debounced)
+      let rebuildTimer: ReturnType<typeof setTimeout> | null = null
+      function scheduleRebuild(): void {
+        if (rebuildTimer)
+          clearTimeout(rebuildTimer)
+        rebuildTimer = setTimeout(() => {
+          rebuildTimer = null
+          rebuildPipeline(pipelineRef.current, { documentStore, providers })
+            .then((rebuilt) => { pipelineRef.current = rebuilt })
+            .catch((err) => {
+              const msg = err instanceof Error ? err.message : String(err)
+              log.withFields({ error: msg }).warn('Pipeline rebuild failed')
+            })
+        }, 200)
+      }
+      client.onEvent('llm:config:update', scheduleRebuild)
+      client.onEvent('embedding:config:update', scheduleRebuild)
+
+      log.log('Pipeline initialized')
+    }).catch((err) => {
+      const msg = err instanceof Error ? err.message : String(err)
+      log.withFields({ error: msg }).warn('Failed to initialize VectorStore/Pipeline — memory features disabled')
+    })
 
     log.log('All handlers registered — airi-brain is ready')
   })

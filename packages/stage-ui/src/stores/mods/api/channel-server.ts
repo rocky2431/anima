@@ -62,6 +62,9 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
     // Vision
     'vision:config:update',
     'vision:status',
+    // LLM
+    'llm:config:update',
+    'llm:config:status',
     // Embedding
     'embedding:config:update',
     'embedding:config:status',
@@ -75,6 +78,8 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
     'providers:configs:data',
     // Persona Template
     'persona:template:set',
+    // Activity Summary
+    'activity:summary:trigger',
   ]
 
   async function initialize(options?: { token?: string, possibleEvents?: Array<keyof WebSocketEvents> }) {

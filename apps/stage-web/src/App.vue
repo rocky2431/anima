@@ -11,6 +11,7 @@ import { useAiriCardStore } from '@proj-airi/stage-ui/stores/modules/airi-card'
 import { useContextDisplayStore } from '@proj-airi/stage-ui/stores/modules/context-display'
 import { useDesktopShellStore } from '@proj-airi/stage-ui/stores/modules/desktop-shell'
 import { useEmbeddingStore } from '@proj-airi/stage-ui/stores/modules/embedding'
+import { useLlmStore } from '@proj-airi/stage-ui/stores/modules/llm'
 import { useMemoryModuleStore } from '@proj-airi/stage-ui/stores/modules/memory'
 import { usePersonaModuleStore } from '@proj-airi/stage-ui/stores/modules/persona'
 import { useProviderSyncStore } from '@proj-airi/stage-ui/stores/modules/provider-sync'
@@ -53,6 +54,7 @@ const personaStore = usePersonaModuleStore()
 const contextDisplayStore = useContextDisplayStore()
 const desktopShellStore = useDesktopShellStore()
 const embeddingStore = useEmbeddingStore()
+const llmStore = useLlmStore()
 const providerSyncStore = useProviderSyncStore()
 
 const primaryColor = computed(() => {
@@ -111,6 +113,7 @@ onMounted(async () => {
   contextDisplayStore.initialize()
   desktopShellStore.initialize()
   embeddingStore.initialize()
+  llmStore.initialize()
 
   await displayModelsStore.loadDisplayModelsFromIndexedDB()
   await settingsStore.initializeStageModel()
@@ -126,6 +129,7 @@ onUnmounted(() => {
   contextDisplayStore.dispose()
   desktopShellStore.dispose()
   embeddingStore.dispose()
+  llmStore.dispose()
   providerSyncStore.dispose()
 })
 

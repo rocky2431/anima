@@ -5,6 +5,7 @@ import { computed, nextTick, ref } from 'vue'
 import { useActivityModuleStore } from './modules/activity'
 import { useContextDisplayStore } from './modules/context-display'
 import { useEmbeddingStore } from './modules/embedding'
+import { useLlmStore } from './modules/llm'
 import { useMemoryModuleStore } from './modules/memory'
 import { usePersonaModuleStore } from './modules/persona'
 import { useSkillsModuleStore } from './modules/skills'
@@ -118,6 +119,14 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     }
     catch (err) {
       console.error('Failed to initialize embedding module:', err)
+    }
+
+    try {
+      useLlmStore().initialize()
+      enabledModules.push('llm')
+    }
+    catch (err) {
+      console.error('Failed to initialize llm module:', err)
     }
 
     console.info('[Onboarding] Auto-enabled modules:', enabledModules.join(', '))

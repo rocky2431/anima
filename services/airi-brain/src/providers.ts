@@ -129,3 +129,20 @@ export function createEmbeddingHandle(config: EmbeddingConfig): EmbeddingModelHa
     }),
   }
 }
+
+/**
+ * Create or update the LLM provider handle at runtime from
+ * frontend-supplied configuration.  Returns the new handle.
+ */
+export function createLlmHandle(config: LlmConfig): LlmModelHandle {
+  const cfg = { ...config }
+  log.log('LLM provider updated at runtime', { provider: cfg.provider, model: cfg.model })
+  return {
+    config: cfg,
+    requestDefaults: () => ({
+      apiKey: cfg.apiKey,
+      baseURL: cfg.baseURL,
+      model: cfg.model,
+    }),
+  }
+}

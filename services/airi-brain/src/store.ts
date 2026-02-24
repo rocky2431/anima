@@ -16,6 +16,13 @@ export interface ActivitySummary {
   totalWorkDurationMs: number
 }
 
+export interface LlmConfig {
+  provider: string
+  apiKey: string
+  baseURL: string
+  model: string
+}
+
 export interface VisionConfig {
   enabled: boolean
   intervalMs: number
@@ -104,6 +111,17 @@ export class BrainStore {
       );
 
       INSERT OR IGNORE INTO embedding_config (singleton, provider, api_key, base_url, model)
+      VALUES (1, '', '', '', '');
+
+      CREATE TABLE IF NOT EXISTS llm_config (
+        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+        provider TEXT NOT NULL DEFAULT '',
+        api_key TEXT NOT NULL DEFAULT '',
+        base_url TEXT NOT NULL DEFAULT '',
+        model TEXT NOT NULL DEFAULT ''
+      );
+
+      INSERT OR IGNORE INTO llm_config (singleton, provider, api_key, base_url, model)
       VALUES (1, '', '', '', '');
 
       CREATE TABLE IF NOT EXISTS provider_configs (
@@ -332,5 +350,33 @@ export class BrainStore {
     }
 
     return { configs, added }
+  }
+
+  // --- LLM Config ---
+
+  setLlmConfig(config: LlmConfig): void {
+    const stmt = this.db.prepare(`
+      UPDATE llm_config SET
+        provider = ?,
+        api_key = ?,
+        base_url = ?,
+        model = ?
+      WHERE singleton = 1
+    `)
+    stmt.run(config.provider, config.apiKey, config.baseURL, config.model)
+  }
+
+  getLlmConfig(): LlmConfig {
+    const stmt = this.db.prepare(
+      'SELECT provider, api_key AS apiKey, base_url AS baseURL, model FROM llm_config WHERE singleton = 1',
+    )
+    return stmt.get() as LlmConfig
+  }
+
+  // --- Activity Event Duration ---
+
+  updateActivityEventDuration(id: string, durationMs: number): void {
+    const stmt = this.db.prepare('UPDATE activity_events SET duration_ms = ? WHERE id = ?')
+    stmt.run(durationMs, id)
   }
 }
