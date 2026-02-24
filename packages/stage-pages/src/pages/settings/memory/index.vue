@@ -3,50 +3,14 @@ import type { ContextMessage } from '@proj-airi/stage-ui/types/chat'
 
 import { MemoryManager } from '@proj-airi/stage-ui/components'
 import { useChatContextStore } from '@proj-airi/stage-ui/stores/chat/context-store'
-import { useMemoryModuleStore } from '@proj-airi/stage-ui/stores/modules/memory'
-import { useUnifiedProvidersStore } from '@proj-airi/stage-ui/stores/unified-providers'
 import { useIntervalFn } from '@vueuse/core'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
 // Tab state
 const activeTab = ref<'long-term' | 'context'>('long-term')
-
-// Embedding config
-const memoryStore = useMemoryModuleStore()
-const unifiedStore = useUnifiedProvidersStore()
-
-const embeddingProviderOptions = computed(() =>
-  unifiedStore.embeddingProviders
-    .filter(p => p.configured)
-    .map(p => ({ id: p.id, name: p.localizedName || p.name })),
-)
-
-const embeddingModelOptions = ref<Array<{ id: string, name: string }>>([])
-const isLoadingModels = ref(false)
-
-watch(() => memoryStore.embeddingProvider, async (providerId) => {
-  embeddingModelOptions.value = []
-  if (!providerId)
-    return
-
-  isLoadingModels.value = true
-  const models = await unifiedStore.fetchModelsForProvider(providerId, 'embedding')
-  embeddingModelOptions.value = models.map(m => ({ id: m.id, name: m.name || m.id }))
-  isLoadingModels.value = false
-}, { immediate: true })
-
-function onEmbeddingProviderChange(providerId: string): void {
-  memoryStore.embeddingProvider = providerId
-  memoryStore.embeddingModel = ''
-}
-
-function onEmbeddingModelChange(model: string): void {
-  memoryStore.embeddingModel = model
-  memoryStore.sendEmbeddingConfig()
-}
 
 // Context window (short-term) state
 const contextStore = useChatContextStore()
@@ -132,75 +96,6 @@ function truncate(text: string, max: number): string {
         {{ t('settings.pages.memory.tabs.context_window') }}
       </div>
     </button>
-  </div>
-
-  <!-- Embedding configuration -->
-  <div v-if="activeTab === 'long-term'" class="mb-4 rounded-xl bg-neutral-50 p-4 dark:bg-[rgba(0,0,0,0.3)]">
-    <div class="mb-3 flex items-center gap-2">
-      <div class="i-solar:graph-new-bold-duotone text-lg" />
-      <span class="text-sm font-semibold">{{ t('settings.pages.memory.embedding.title') }}</span>
-      <span
-        :class="[
-          'ml-auto rounded-full px-2 py-0.5 text-xs',
-          memoryStore.embeddingConfigured
-            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-            : 'bg-neutral-200 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400',
-        ]"
-      >
-        {{ memoryStore.embeddingConfigured
-          ? t('settings.pages.memory.embedding.status.configured')
-          : t('settings.pages.memory.embedding.status.not_configured')
-        }}
-      </span>
-    </div>
-    <p class="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
-      {{ t('settings.pages.memory.embedding.description') }}
-    </p>
-
-    <div class="flex flex-col gap-3 sm:flex-row">
-      <!-- Provider select -->
-      <div class="flex-1">
-        <label class="mb-1 block text-xs text-neutral-500 font-medium">
-          {{ t('settings.pages.memory.embedding.provider') }}
-        </label>
-        <select
-          :value="memoryStore.embeddingProvider"
-          class="w-full border border-neutral-200 rounded-lg bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
-          @change="onEmbeddingProviderChange(($event.target as HTMLSelectElement).value)"
-        >
-          <option value="">
-            {{ t('settings.pages.memory.embedding.select_provider') }}
-          </option>
-          <option v-for="p in embeddingProviderOptions" :key="p.id" :value="p.id">
-            {{ p.name }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Model select -->
-      <div class="flex-1">
-        <label class="mb-1 block text-xs text-neutral-500 font-medium">
-          {{ t('settings.pages.memory.embedding.model') }}
-        </label>
-        <select
-          :value="memoryStore.embeddingModel"
-          :disabled="!memoryStore.embeddingProvider || isLoadingModels"
-          class="w-full border border-neutral-200 rounded-lg bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 disabled:opacity-50"
-          @change="onEmbeddingModelChange(($event.target as HTMLSelectElement).value)"
-        >
-          <option value="">
-            {{ isLoadingModels ? '...' : t('settings.pages.memory.embedding.select_model') }}
-          </option>
-          <option v-for="m in embeddingModelOptions" :key="m.id" :value="m.id">
-            {{ m.name }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <p v-if="embeddingProviderOptions.length === 0" class="mt-2 text-xs text-amber-600 dark:text-amber-400">
-      {{ t('settings.pages.memory.embedding.hint') }}
-    </p>
   </div>
 
   <!-- Long-term memory tab -->

@@ -1,4 +1,4 @@
-import type { ModelInfo, UnifiedProviderMetadata } from '../types'
+import type { UnifiedProviderMetadata } from '../types'
 
 import { isUrl } from '@proj-airi/stage-shared'
 
@@ -10,25 +10,6 @@ function normalizeBaseUrl(value: string): string {
   if (base && !base.endsWith('/'))
     base += '/'
   return base
-}
-
-async function fetchEmbeddingModels(apiKey: string, baseUrl: string): Promise<ModelInfo[]> {
-  const url = new URL('embeddings/models', baseUrl)
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  })
-  if (!response.ok)
-    return []
-
-  const json = await response.json() as { data?: Array<{ id: string, name?: string, description?: string, context_length?: number }> }
-  return (json.data ?? []).map(model => ({
-    id: model.id,
-    name: model.name || model.id,
-    provider: 'openrouter',
-    description: model.description || '',
-    contextLength: model.context_length || 0,
-    deprecated: false,
-  }))
 }
 
 export const openrouterProvider: UnifiedProviderMetadata = {
@@ -77,9 +58,10 @@ export const openrouterProvider: UnifiedProviderMetadata = {
       if (!apiKey || !baseUrl)
         return []
 
-      if (capability === 'embedding') {
-        return fetchEmbeddingModels(apiKey, baseUrl)
-      }
+      // Embedding model listing is handled via backend proxy (CORS bypass)
+      // See embedding store's loadModelsForProvider → embedding:models:list event
+      if (capability === 'embedding')
+        return []
 
       const models = await listModels({ apiKey, baseURL: baseUrl })
       return models.map(model => ({

@@ -1,12 +1,6 @@
-import type { ModelInfo, UnifiedProviderMetadata } from '../types'
+import type { UnifiedProviderMetadata } from '../types'
 
 import { createOpenAI } from '../../../libs/ai/create-provider'
-
-const DASHSCOPE_EMBEDDING_MODELS: ModelInfo[] = [
-  { id: 'text-embedding-v4', name: 'Text Embedding v4 (Qwen3, recommended)', provider: 'dashscope', description: '100+ languages, 8192 tokens, variable dimensions', contextLength: 8192 },
-  { id: 'text-embedding-v3', name: 'Text Embedding v3', provider: 'dashscope', description: '50+ languages, 8192 tokens, variable dimensions', contextLength: 8192 },
-  { id: 'text-embedding-v2', name: 'Text Embedding v2', provider: 'dashscope', description: '10 languages, 2048 tokens, 1536 dimensions', contextLength: 2048 },
-]
 
 function normalizeBaseUrl(value: string): string {
   let base = value.trim()
@@ -47,9 +41,9 @@ export const dashscopeProvider: UnifiedProviderMetadata = {
   },
   operations: {
     listModels: async (config, capability) => {
-      if (capability === 'embedding') {
-        return DASHSCOPE_EMBEDDING_MODELS
-      }
+      // Embedding model listing is handled via backend proxy (CORS bypass)
+      if (capability === 'embedding')
+        return []
 
       const apiKey = (config.apiKey as string || '').trim()
       const baseUrl = normalizeBaseUrl(config.baseUrl as string || '')
