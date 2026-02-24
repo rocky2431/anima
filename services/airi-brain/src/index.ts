@@ -10,6 +10,7 @@ import { Client } from '@proj-airi/server-sdk'
 
 import { registerActivityHandler } from './handlers/activity'
 import { disposeDesktopShellHandler, registerDesktopShellHandler } from './handlers/desktop-shell'
+import { registerEmbeddingHandler } from './handlers/embedding'
 import { registerMemoryHandler } from './handlers/memory'
 import { disposePersonaHandler, registerPersonaHandler } from './handlers/persona'
 import { registerSkillsHandler } from './handlers/skills'
@@ -51,7 +52,8 @@ async function main(): Promise<void> {
   const brainStore = new BrainStore(documentStore.getDatabase())
 
   // Initialize LLM/Embedding provider configuration
-  const providers = createBrainProviders()
+  // Use mutable binding so handlers can update providers at runtime
+  const providers = createBrainProviders() as ReturnType<typeof createBrainProviders>
 
   log.withFields({ url, tokenPresent: !!env.AIRI_TOKEN, dataDir, dbPath, llmConfigured: !!providers.llm, embeddingConfigured: !!providers.embedding }).log('Starting airi-brain bridge')
 
@@ -67,6 +69,9 @@ async function main(): Promise<void> {
       // Vision
       'vision:config:update',
       'vision:status',
+      // Embedding
+      'embedding:config:update',
+      'embedding:config:status',
       // Persona Template
       'persona:template:set',
       // Todo
@@ -107,6 +112,7 @@ async function main(): Promise<void> {
     registerSkillsHandler(client, brainStore)
     registerPersonaHandler(client, documentStore, brainStore)
     registerVisionHandler(client, brainStore)
+    registerEmbeddingHandler(client, brainStore, providers)
     registerDesktopShellHandler(client, brainStore)
 
     log.log('All handlers registered — airi-brain is ready')

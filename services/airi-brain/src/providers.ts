@@ -112,3 +112,20 @@ export function createBrainProviders(): BrainProviders {
 
   return { llm, embedding, llmConfig, embeddingConfig }
 }
+
+/**
+ * Create or update the embedding provider handle at runtime from
+ * frontend-supplied configuration.  Returns the new handle.
+ */
+export function createEmbeddingHandle(config: EmbeddingConfig): EmbeddingModelHandle {
+  const cfg = { ...config }
+  log.log('Embedding provider updated at runtime', { provider: cfg.provider, model: cfg.model })
+  return {
+    config: cfg,
+    requestDefaults: () => ({
+      apiKey: cfg.apiKey,
+      baseURL: cfg.baseURL,
+      model: cfg.model,
+    }),
+  }
+}

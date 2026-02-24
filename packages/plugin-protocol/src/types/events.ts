@@ -1108,6 +1108,21 @@ interface VisionStatusEvent {
   }
 }
 
+// ─── Embedding Events ─────────────────────────────────────────────────────
+
+export interface EmbeddingConfigUpdateEvent {
+  provider: string
+  apiKey: string
+  baseURL: string
+  model: string
+}
+
+export interface EmbeddingConfigStatusEvent {
+  configured: boolean
+  provider?: string
+  model?: string
+}
+
 // ─── Persona Template Events ───────────────────────────────────────────────
 
 interface PersonaTemplateSetEvent {
@@ -1116,6 +1131,8 @@ interface PersonaTemplateSetEvent {
 
 export const visionConfigUpdate = defineEventa<VisionConfigUpdateEvent>('vision:config:update')
 export const visionStatus = defineEventa<VisionStatusEvent>('vision:status')
+export const embeddingConfigUpdate = defineEventa<EmbeddingConfigUpdateEvent>('embedding:config:update')
+export const embeddingConfigStatus = defineEventa<EmbeddingConfigStatusEvent>('embedding:config:status')
 export const personaTemplateSet = defineEventa<PersonaTemplateSetEvent>('persona:template:set')
 
 // Thanks to:
@@ -1316,6 +1333,10 @@ export interface ProtocolEvents<C = undefined> {
   // Vision
   'vision:config:update': VisionConfigUpdateEvent
   'vision:status': VisionStatusEvent
+
+  // Embedding
+  'embedding:config:update': EmbeddingConfigUpdateEvent
+  'embedding:config:status': EmbeddingConfigStatusEvent
 
   // Persona Template
   'persona:template:set': PersonaTemplateSetEvent

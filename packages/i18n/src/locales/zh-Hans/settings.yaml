@@ -186,6 +186,17 @@ pages:
     tabs:
       long_term: 记忆库
       context_window: 上下文窗口
+    embedding:
+      title: Embedding 模型
+      description: 选择用于记忆向量化和语义搜索的 Embedding 模型
+      provider: 服务来源
+      model: 模型
+      select_provider: 选择服务来源
+      select_model: 选择模型
+      status:
+        configured: Embedding 已配置
+        not_configured: Embedding 未配置
+      hint: 请先在服务来源页面配置一个支持 Embedding 的服务来源
     context:
       sources: 个来源
       entries: 条记录

@@ -24,6 +24,13 @@ export interface VisionConfig {
   vlmModel?: string
 }
 
+export interface EmbeddingConfig {
+  provider: string
+  apiKey: string
+  baseURL: string
+  model: string
+}
+
 export interface VisionStats {
   total: number
   uniqueCount: number
@@ -87,6 +94,17 @@ export class BrainStore {
 
       INSERT OR IGNORE INTO vision_stats (singleton, total, unique_count, duplicates)
       VALUES (1, 0, 0, 0);
+
+      CREATE TABLE IF NOT EXISTS embedding_config (
+        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+        provider TEXT NOT NULL DEFAULT '',
+        api_key TEXT NOT NULL DEFAULT '',
+        base_url TEXT NOT NULL DEFAULT '',
+        model TEXT NOT NULL DEFAULT ''
+      );
+
+      INSERT OR IGNORE INTO embedding_config (singleton, provider, api_key, base_url, model)
+      VALUES (1, '', '', '', '');
     `)
   }
 
@@ -246,5 +264,26 @@ export class BrainStore {
       'SELECT total, unique_count AS uniqueCount, duplicates FROM vision_stats WHERE singleton = 1',
     )
     return stmt.get() as VisionStats
+  }
+
+  // --- Embedding Config ---
+
+  setEmbeddingConfig(config: EmbeddingConfig): void {
+    const stmt = this.db.prepare(`
+      UPDATE embedding_config SET
+        provider = ?,
+        api_key = ?,
+        base_url = ?,
+        model = ?
+      WHERE singleton = 1
+    `)
+    stmt.run(config.provider, config.apiKey, config.baseURL, config.model)
+  }
+
+  getEmbeddingConfig(): EmbeddingConfig {
+    const stmt = this.db.prepare(
+      'SELECT provider, api_key AS apiKey, base_url AS baseURL, model FROM embedding_config WHERE singleton = 1',
+    )
+    return stmt.get() as EmbeddingConfig
   }
 }

@@ -1,10 +1,11 @@
 import type { MemoryCategory, MemoryEntryUI } from '../../types/memory'
 
-import { useDebounceFn } from '@vueuse/core'
+import { useDebounceFn, useLocalStorage } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { useModsServerChannelStore } from '../mods/api/channel-server'
+import { useUnifiedProvidersStore } from '../unified-providers'
 
 export interface MemorySearchResult extends MemoryEntryUI {
   score: number
@@ -18,6 +19,11 @@ export const useMemoryModuleStore = defineStore('memory-module', () => {
   const searchResults = ref<MemorySearchResult[]>([])
   const isSearching = ref(false)
   const disposers = ref<Array<() => void>>([])
+
+  // Embedding configuration
+  const embeddingProvider = useLocalStorage('settings/memory/embedding-provider', '')
+  const embeddingModel = useLocalStorage('settings/memory/embedding-model', '')
+  const embeddingConfigured = ref(false)
 
   const filteredMemories = computed(() => {
     // When actively searching, use server search results
@@ -84,6 +90,32 @@ export const useMemoryModuleStore = defineStore('memory-module', () => {
     })
   }, 300)
 
+  function sendEmbeddingConfig(): void {
+    const providerId = embeddingProvider.value
+    const model = embeddingModel.value
+    if (!providerId || !model)
+      return
+
+    const unifiedStore = useUnifiedProvidersStore()
+    const config = unifiedStore.getProviderConfig(providerId)
+    if (!config)
+      return
+
+    const apiKey = (config.apiKey ?? config['api-key'] ?? '') as string
+    const baseURL = (config.baseUrl ?? config['base-url'] ?? '') as string
+
+    const serverChannel = useModsServerChannelStore()
+    serverChannel.send({
+      type: 'embedding:config:update',
+      data: {
+        provider: providerId,
+        apiKey,
+        baseURL,
+        model,
+      },
+    })
+  }
+
   /**
    * Initialize WebSocket subscriptions and request initial data.
    */
@@ -112,6 +144,21 @@ export const useMemoryModuleStore = defineStore('memory-module', () => {
       }),
     )
 
+    disposers.value.push(
+      serverChannel.onEvent('embedding:config:status', (event) => {
+        const { configured, provider, model } = event.data as {
+          configured: boolean
+          provider?: string
+          model?: string
+        }
+        embeddingConfigured.value = configured
+        if (configured && provider)
+          embeddingProvider.value = provider
+        if (configured && model)
+          embeddingModel.value = model
+      }),
+    )
+
     // Watch searchQuery and trigger debounced backend search
     const stopWatch = watch(searchQuery, (query) => {
       if (query.trim()) {
@@ -123,6 +170,11 @@ export const useMemoryModuleStore = defineStore('memory-module', () => {
 
     // Request initial list from backend
     serverChannel.send({ type: 'memory:list', data: { memories: [] } })
+
+    // Send embedding config if already configured
+    if (embeddingProvider.value && embeddingModel.value) {
+      sendEmbeddingConfig()
+    }
   }
 
   function dispose(): void {
@@ -139,6 +191,9 @@ export const useMemoryModuleStore = defineStore('memory-module', () => {
     selectedMemory.value = null
     searchResults.value = []
     isSearching.value = false
+    embeddingProvider.value = ''
+    embeddingModel.value = ''
+    embeddingConfigured.value = false
   }
 
   return {
@@ -150,6 +205,13 @@ export const useMemoryModuleStore = defineStore('memory-module', () => {
     isSearching,
     filteredMemories,
     memoryCount,
+
+    // Embedding
+    embeddingProvider,
+    embeddingModel,
+    embeddingConfigured,
+    sendEmbeddingConfig,
+
     setMemories,
     deleteMemory,
     selectMemory,

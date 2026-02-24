@@ -214,6 +214,17 @@ pages:
     tabs:
       long_term: Memory Store
       context_window: Context Window
+    embedding:
+      title: Embedding Model
+      description: Select the embedding model used for memory vectorization and semantic search
+      provider: Provider
+      model: Model
+      select_provider: Select a provider
+      select_model: Select a model
+      status:
+        configured: Embedding configured
+        not_configured: Embedding not configured
+      hint: Configure an embedding-capable provider in the Providers page first
     context:
       sources: sources
       entries: entries
