@@ -1,9 +1,35 @@
-import type { UnifiedProviderMetadata } from '../types'
+import type { ModelInfo, UnifiedProviderMetadata } from '../types'
 
 import { isUrl } from '@proj-airi/stage-shared'
 
 import { createOpenRouter } from '../../../libs/ai/create-provider'
 import { listModels } from '../../../libs/ai/list-models'
+
+function normalizeBaseUrl(value: string): string {
+  let base = value.trim()
+  if (base && !base.endsWith('/'))
+    base += '/'
+  return base
+}
+
+async function fetchEmbeddingModels(apiKey: string, baseUrl: string): Promise<ModelInfo[]> {
+  const url = new URL('embeddings/models', baseUrl)
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  })
+  if (!response.ok)
+    return []
+
+  const json = await response.json() as { data?: Array<{ id: string, name?: string, description?: string, context_length?: number }> }
+  return (json.data ?? []).map(model => ({
+    id: model.id,
+    name: model.name || model.id,
+    provider: 'openrouter',
+    description: model.description || '',
+    contextLength: model.context_length || 0,
+    deprecated: false,
+  }))
+}
 
 export const openrouterProvider: UnifiedProviderMetadata = {
   id: 'openrouter',
@@ -45,11 +71,15 @@ export const openrouterProvider: UnifiedProviderMetadata = {
     ),
   },
   operations: {
-    listModels: async (config) => {
+    listModels: async (config, capability) => {
       const apiKey = (config.apiKey as string || '').trim()
       const baseUrl = normalizeBaseUrl(config.baseUrl as string || '')
       if (!apiKey || !baseUrl)
         return []
+
+      if (capability === 'embedding') {
+        return fetchEmbeddingModels(apiKey, baseUrl)
+      }
 
       const models = await listModels({ apiKey, baseURL: baseUrl })
       return models.map(model => ({
@@ -104,11 +134,4 @@ export const openrouterProvider: UnifiedProviderMetadata = {
       return { errors: [], reason: '', valid: true }
     },
   },
-}
-
-function normalizeBaseUrl(value: string): string {
-  let base = value.trim()
-  if (base && !base.endsWith('/'))
-    base += '/'
-  return base
 }

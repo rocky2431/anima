@@ -1,6 +1,7 @@
 import type { UnifiedProviderMetadata } from '../types'
 
 import { aliyunProvider } from './aliyun'
+import { dashscopeProvider } from './dashscope'
 import { deepgramProvider } from './deepgram'
 import { elevenlabsProvider } from './elevenlabs'
 import { kokoroLocalProvider } from './kokoro-local'
@@ -25,6 +26,7 @@ import { webSpeechApiProvider } from './web-speech-api'
 export const unifiedProviders: Record<string, UnifiedProviderMetadata> = {
   // Primary
   [openrouterProvider.id]: openrouterProvider,
+  [dashscopeProvider.id]: dashscopeProvider,
 
   // Enhancement — Speech
   [elevenlabsProvider.id]: elevenlabsProvider,
@@ -72,6 +74,7 @@ export function getUnifiedProvidersByCapability(cap: keyof UnifiedProviderMetada
 // Re-export individual providers for direct access
 export {
   aliyunProvider,
+  dashscopeProvider,
   deepgramProvider,
   elevenlabsProvider,
   kokoroLocalProvider,
