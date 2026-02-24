@@ -20,8 +20,8 @@ const unifiedStore = useUnifiedProvidersStore()
 
 const embeddingProviderOptions = computed(() =>
   unifiedStore.embeddingProviders
-    .filter(p => unifiedStore.configuredProviders.includes(p.id))
-    .map(p => ({ id: p.id, name: p.name })),
+    .filter(p => p.configured)
+    .map(p => ({ id: p.id, name: p.localizedName || p.name })),
 )
 
 const embeddingModelOptions = ref<Array<{ id: string, name: string }>>([])
