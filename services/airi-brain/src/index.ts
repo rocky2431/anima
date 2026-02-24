@@ -13,6 +13,7 @@ import { disposeDesktopShellHandler, registerDesktopShellHandler } from './handl
 import { registerEmbeddingHandler } from './handlers/embedding'
 import { registerMemoryHandler } from './handlers/memory'
 import { disposePersonaHandler, registerPersonaHandler } from './handlers/persona'
+import { registerProvidersHandler } from './handlers/providers'
 import { registerSkillsHandler } from './handlers/skills'
 import { registerTodoHandler } from './handlers/todo'
 import { disposeVisionHandler, registerVisionHandler } from './handlers/vision'
@@ -98,6 +99,10 @@ async function main(): Promise<void> {
       'skills:list',
       'skills:toggle',
       'skills:toggled',
+      // Provider Config Sync
+      'providers:configs:sync',
+      'providers:configs:request',
+      'providers:configs:data',
     ],
   })
 
@@ -117,6 +122,7 @@ async function main(): Promise<void> {
     registerPersonaHandler(client, documentStore, brainStore)
     registerVisionHandler(client, brainStore)
     registerEmbeddingHandler(client, brainStore, providers)
+    registerProvidersHandler(client, brainStore)
     registerDesktopShellHandler(client, brainStore)
 
     log.log('All handlers registered — airi-brain is ready')

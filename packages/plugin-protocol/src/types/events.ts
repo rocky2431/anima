@@ -1147,6 +1147,22 @@ export interface EmbeddingModelValidatedEvent {
   error?: string
 }
 
+// ─── Provider Config Sync Events ────────────────────────────────────────────
+
+interface ProvidersConfigsSyncEvent {
+  configs: Record<string, Record<string, unknown>>
+  added: Record<string, boolean>
+}
+
+interface ProvidersConfigsRequestEvent {
+  _placeholder?: never
+}
+
+interface ProvidersConfigsDataEvent {
+  configs: Record<string, Record<string, unknown>>
+  added: Record<string, boolean>
+}
+
 // ─── Persona Template Events ───────────────────────────────────────────────
 
 interface PersonaTemplateSetEvent {
@@ -1161,6 +1177,9 @@ export const embeddingModelsList = defineEventa<EmbeddingModelsListEvent>('embed
 export const embeddingModelsResult = defineEventa<EmbeddingModelsResultEvent>('embedding:models:result')
 export const embeddingModelValidate = defineEventa<EmbeddingModelValidateEvent>('embedding:model:validate')
 export const embeddingModelValidated = defineEventa<EmbeddingModelValidatedEvent>('embedding:model:validated')
+export const providersConfigsSync = defineEventa<ProvidersConfigsSyncEvent>('providers:configs:sync')
+export const providersConfigsRequest = defineEventa<ProvidersConfigsRequestEvent>('providers:configs:request')
+export const providersConfigsData = defineEventa<ProvidersConfigsDataEvent>('providers:configs:data')
 export const personaTemplateSet = defineEventa<PersonaTemplateSetEvent>('persona:template:set')
 
 // Thanks to:
@@ -1369,6 +1388,11 @@ export interface ProtocolEvents<C = undefined> {
   'embedding:models:result': EmbeddingModelsResultEvent
   'embedding:model:validate': EmbeddingModelValidateEvent
   'embedding:model:validated': EmbeddingModelValidatedEvent
+
+  // Provider Config Sync
+  'providers:configs:sync': ProvidersConfigsSyncEvent
+  'providers:configs:request': ProvidersConfigsRequestEvent
+  'providers:configs:data': ProvidersConfigsDataEvent
 
   // Persona Template
   'persona:template:set': PersonaTemplateSetEvent

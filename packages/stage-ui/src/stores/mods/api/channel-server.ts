@@ -69,6 +69,10 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
     'embedding:models:result',
     'embedding:model:validate',
     'embedding:model:validated',
+    // Provider Config Sync
+    'providers:configs:sync',
+    'providers:configs:request',
+    'providers:configs:data',
     // Persona Template
     'persona:template:set',
   ]

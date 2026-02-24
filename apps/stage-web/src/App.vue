@@ -9,9 +9,11 @@ import { useContextBridgeStore } from '@proj-airi/stage-ui/stores/mods/api/conte
 import { useActivityModuleStore } from '@proj-airi/stage-ui/stores/modules/activity'
 import { useAiriCardStore } from '@proj-airi/stage-ui/stores/modules/airi-card'
 import { useContextDisplayStore } from '@proj-airi/stage-ui/stores/modules/context-display'
+import { useDesktopShellStore } from '@proj-airi/stage-ui/stores/modules/desktop-shell'
 import { useEmbeddingStore } from '@proj-airi/stage-ui/stores/modules/embedding'
 import { useMemoryModuleStore } from '@proj-airi/stage-ui/stores/modules/memory'
 import { usePersonaModuleStore } from '@proj-airi/stage-ui/stores/modules/persona'
+import { useProviderSyncStore } from '@proj-airi/stage-ui/stores/modules/provider-sync'
 import { useSkillsModuleStore } from '@proj-airi/stage-ui/stores/modules/skills'
 import { useTodoModuleStore } from '@proj-airi/stage-ui/stores/modules/todo'
 import { useOnboardingStore } from '@proj-airi/stage-ui/stores/onboarding'
@@ -49,7 +51,9 @@ const activityStore = useActivityModuleStore()
 const skillsStore = useSkillsModuleStore()
 const personaStore = usePersonaModuleStore()
 const contextDisplayStore = useContextDisplayStore()
+const desktopShellStore = useDesktopShellStore()
 const embeddingStore = useEmbeddingStore()
+const providerSyncStore = useProviderSyncStore()
 
 const primaryColor = computed(() => {
   return isDark.value
@@ -98,12 +102,14 @@ onMounted(async () => {
   characterOrchestratorStore.initialize()
 
   // Initialize brain-connected module stores (after WS is connected)
+  providerSyncStore.initialize()
   todoStore.initialize()
   memoryStore.initialize()
   activityStore.initialize()
   skillsStore.initialize()
   personaStore.initialize()
   contextDisplayStore.initialize()
+  desktopShellStore.initialize()
   embeddingStore.initialize()
 
   await displayModelsStore.loadDisplayModelsFromIndexedDB()
@@ -118,7 +124,9 @@ onUnmounted(() => {
   skillsStore.dispose()
   personaStore.dispose()
   contextDisplayStore.dispose()
+  desktopShellStore.dispose()
   embeddingStore.dispose()
+  providerSyncStore.dispose()
 })
 
 // Handle first-time setup events

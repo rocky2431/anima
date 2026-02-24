@@ -105,6 +105,13 @@ export class BrainStore {
 
       INSERT OR IGNORE INTO embedding_config (singleton, provider, api_key, base_url, model)
       VALUES (1, '', '', '', '');
+
+      CREATE TABLE IF NOT EXISTS provider_configs (
+        provider_id TEXT PRIMARY KEY,
+        config_json TEXT NOT NULL DEFAULT '{}',
+        added INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL DEFAULT 0
+      );
     `)
   }
 
@@ -285,5 +292,45 @@ export class BrainStore {
       'SELECT provider, api_key AS apiKey, base_url AS baseURL, model FROM embedding_config WHERE singleton = 1',
     )
     return stmt.get() as EmbeddingConfig
+  }
+
+  // --- Provider Configs ---
+
+  setProviderConfigs(configs: Record<string, Record<string, unknown>>, added: Record<string, boolean>): void {
+    const upsert = this.db.prepare(`
+      INSERT INTO provider_configs (provider_id, config_json, added, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(provider_id) DO UPDATE SET
+        config_json = excluded.config_json,
+        added = excluded.added,
+        updated_at = excluded.updated_at
+    `)
+
+    const now = Date.now()
+    const run = this.db.transaction(() => {
+      for (const [providerId, config] of Object.entries(configs)) {
+        const hasCredentials = Object.values(config).some(v => typeof v === 'string' && v.length > 0)
+        if (!hasCredentials)
+          continue
+        upsert.run(providerId, JSON.stringify(config), added[providerId] ? 1 : 0, now)
+      }
+    })
+    run()
+  }
+
+  getProviderConfigs(): { configs: Record<string, Record<string, unknown>>, added: Record<string, boolean> } {
+    const stmt = this.db.prepare('SELECT provider_id, config_json, added FROM provider_configs')
+    const rows = stmt.all() as Array<{ provider_id: string, config_json: string, added: number }>
+
+    const configs: Record<string, Record<string, unknown>> = {}
+    const added: Record<string, boolean> = {}
+
+    for (const row of rows) {
+      configs[row.provider_id] = JSON.parse(row.config_json) as Record<string, unknown>
+      if (row.added === 1)
+        added[row.provider_id] = true
+    }
+
+    return { configs, added }
   }
 }
