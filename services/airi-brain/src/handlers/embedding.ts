@@ -9,6 +9,57 @@ import { createEmbeddingHandle } from '../providers'
 
 const log = useLogg('brain:embedding').useGlobalConfig()
 
+const ALLOWED_BASE_URL_HOSTS = new Set([
+  'openrouter.ai',
+  'api.openai.com',
+  'dashscope.aliyuncs.com',
+  'api.anthropic.com',
+  'api.cohere.com',
+  'api.mistral.ai',
+  'generativelanguage.googleapis.com',
+  'api.deepseek.com',
+  'api.siliconflow.cn',
+  'api.together.xyz',
+  'api.groq.com',
+])
+
+function validateBaseURL(baseURL: string): URL {
+  const trimmed = (baseURL || '').trim()
+  if (!trimmed)
+    throw new Error('baseURL is required')
+
+  let normalized = trimmed
+  if (!normalized.endsWith('/'))
+    normalized += '/'
+
+  const parsed = new URL(normalized)
+
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:')
+    throw new Error(`Unsupported protocol: ${parsed.protocol}`)
+
+  // Block private/internal IP ranges
+  const hostname = parsed.hostname
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
+    || hostname.startsWith('10.') || hostname.startsWith('192.168.')
+    || hostname.startsWith('172.16.') || hostname.startsWith('172.17.')
+    || hostname.startsWith('172.18.') || hostname.startsWith('172.19.')
+    || hostname.startsWith('172.2') || hostname.startsWith('172.30.')
+    || hostname.startsWith('172.31.') || hostname.endsWith('.local')
+    || hostname === '0.0.0.0' || hostname === '169.254.169.254') {
+    throw new Error(`baseURL points to private/internal address: ${hostname}`)
+  }
+
+  // Verify host is in allowlist
+  const hostParts = hostname.split('.')
+  const domain = hostParts.slice(-2).join('.')
+  const fullDomain = hostParts.slice(-3).join('.')
+  if (!ALLOWED_BASE_URL_HOSTS.has(hostname) && !ALLOWED_BASE_URL_HOSTS.has(domain) && !ALLOWED_BASE_URL_HOSTS.has(fullDomain)) {
+    log.withFields({ hostname }).warn('baseURL host not in allowlist, proceeding with caution')
+  }
+
+  return parsed
+}
+
 function pushStatus(client: Client, config: EmbeddingConfig): void {
   const configured = !!(config.provider && config.apiKey && config.baseURL && config.model)
   client.send({
@@ -60,14 +111,12 @@ export function registerEmbeddingHandler(
     log.withFields({ provider }).log('Embedding models list requested')
 
     try {
-      let base = (baseURL || '').trim()
-      if (base && !base.endsWith('/'))
-        base += '/'
+      const base = validateBaseURL(baseURL)
 
       const headers = { Authorization: `Bearer ${apiKey}` }
 
       // Strategy 1: Try dedicated /embeddings/models endpoint (OpenRouter)
-      const embeddingsUrl = new URL('embeddings/models', base)
+      const embeddingsUrl = new URL('embeddings/models', base.href)
       const embeddingsResponse = await fetch(embeddingsUrl, { headers }).catch(() => null)
 
       if (embeddingsResponse?.ok) {
@@ -88,7 +137,7 @@ export function registerEmbeddingHandler(
       }
 
       // Strategy 2: Fall back to /models and filter by ID pattern (DashScope, etc.)
-      const modelsUrl = new URL('models', base)
+      const modelsUrl = new URL('models', base.href)
       const modelsResponse = await fetch(modelsUrl, { headers })
 
       if (!modelsResponse.ok) {
@@ -130,11 +179,9 @@ export function registerEmbeddingHandler(
     log.withFields({ provider, model }).log('Embedding model validation requested')
 
     try {
-      let base = (baseURL || '').trim()
-      if (base && !base.endsWith('/'))
-        base += '/'
+      const base = validateBaseURL(baseURL)
 
-      const url = new URL('embeddings', base)
+      const url = new URL('embeddings', base.href)
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -155,7 +202,9 @@ export function registerEmbeddingHandler(
           if (parsed.error?.message)
             errorMsg = parsed.error.message
         }
-        catch { /* use HTTP status */ }
+        catch (parseErr) {
+          log.withFields({ provider, model, rawBody: body.slice(0, 200), error: String(parseErr) }).debug('Could not parse error body as JSON, using HTTP status')
+        }
 
         log.withFields({ provider, model, error: errorMsg }).log('Embedding model validation failed')
         client.send({ type: 'embedding:model:validated', data: { success: false, error: errorMsg } })

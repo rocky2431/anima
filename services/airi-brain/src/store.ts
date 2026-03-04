@@ -1,5 +1,9 @@
 import type Database from 'better-sqlite3'
 
+import { useLogg } from '@guiiai/logg'
+
+const log = useLogg('brain:store').useGlobalConfig()
+
 export interface ActivityEvent {
   id: string
   appName: string
@@ -53,7 +57,12 @@ export class BrainStore {
 
   constructor(db: Database.Database) {
     this.db = db
-    this.initTables()
+    try {
+      this.initTables()
+    }
+    catch (err) {
+      throw new Error('BrainStore initialization failed', { cause: err })
+    }
   }
 
   private initTables(): void {
@@ -222,11 +231,22 @@ export class BrainStore {
     const row = stmt.get(date) as { date: string, highlights: string, breakdown: string, totalWorkDurationMs: number } | undefined
     if (!row)
       return null
-    return {
-      date: row.date,
-      highlights: JSON.parse(row.highlights) as string[],
-      breakdown: JSON.parse(row.breakdown) as ActivitySummary['breakdown'],
-      totalWorkDurationMs: row.totalWorkDurationMs,
+    try {
+      return {
+        date: row.date,
+        highlights: JSON.parse(row.highlights) as string[],
+        breakdown: JSON.parse(row.breakdown) as ActivitySummary['breakdown'],
+        totalWorkDurationMs: row.totalWorkDurationMs,
+      }
+    }
+    catch (err) {
+      log.withFields({ date, error: String(err) }).warn('Corrupted activity summary data, returning empty defaults')
+      return {
+        date: row.date,
+        highlights: [],
+        breakdown: [],
+        totalWorkDurationMs: row.totalWorkDurationMs,
+      }
     }
   }
 
@@ -344,9 +364,14 @@ export class BrainStore {
     const added: Record<string, boolean> = {}
 
     for (const row of rows) {
-      configs[row.provider_id] = JSON.parse(row.config_json) as Record<string, unknown>
-      if (row.added === 1)
-        added[row.provider_id] = true
+      try {
+        configs[row.provider_id] = JSON.parse(row.config_json) as Record<string, unknown>
+        if (row.added === 1)
+          added[row.provider_id] = true
+      }
+      catch (err) {
+        log.withFields({ providerId: row.provider_id, error: String(err) }).warn('Corrupted provider config, skipping row')
+      }
     }
 
     return { configs, added }

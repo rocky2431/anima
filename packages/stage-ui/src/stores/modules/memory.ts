@@ -5,7 +5,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 
 import { useModsServerChannelStore } from '../mods/api/channel-server'
-import { useUnifiedProvidersStore } from '../unified-providers'
+import { useEmbeddingStore } from './embedding'
 
 export interface MemorySearchResult extends MemoryEntryUI {
   score: number
@@ -91,29 +91,8 @@ export const useMemoryModuleStore = defineStore('memory-module', () => {
   }, 300)
 
   function sendEmbeddingConfig(): void {
-    const providerId = embeddingProvider.value
-    const model = embeddingModel.value
-    if (!providerId || !model)
-      return
-
-    const unifiedStore = useUnifiedProvidersStore()
-    const config = unifiedStore.getProviderConfig(providerId)
-    if (!config)
-      return
-
-    const apiKey = (config.apiKey ?? config['api-key'] ?? '') as string
-    const baseURL = (config.baseUrl ?? config['base-url'] ?? '') as string
-
-    const serverChannel = useModsServerChannelStore()
-    serverChannel.send({
-      type: 'embedding:config:update',
-      data: {
-        provider: providerId,
-        apiKey,
-        baseURL,
-        model,
-      },
-    })
+    const embeddingStore = useEmbeddingStore()
+    embeddingStore.sendEmbeddingConfig()
   }
 
   /**

@@ -173,7 +173,6 @@ export function useModulesList() {
     messaging: t('settings.pages.modules.categories.messaging'),
   }))
 
-  // TODO(Makito): We can make this a reactive value from a synthetic store.
   onMounted(() => {
     getBeatSyncState().then(initialState => beatSyncState.value = initialState)
     const removeListener = listenBeatSyncStateChange(newState => beatSyncState.value = { ...newState })

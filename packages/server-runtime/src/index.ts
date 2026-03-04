@@ -41,7 +41,7 @@ function createServerEventMetadata(serverInstanceId: string, parentId?: string):
   }
 }
 
-// pre-stringified responses, make sure to use the `send` helper function to send them
+// Response factory functions. Use the `send` helper to serialize and transmit.
 const RESPONSES = {
   authenticated: (serverInstanceId: string, parentId?: string) => ({
     type: 'module:authenticated',

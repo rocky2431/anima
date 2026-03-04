@@ -9,10 +9,11 @@ import type { BrainProviders } from './providers'
 export function createLlmProviderAdapter(providers: BrainProviders): LlmProvider | null {
   if (!providers.llm)
     return null
-  const handle = providers.llm
   return {
     async generateText({ system, prompt }) {
-      const { apiKey, baseURL, model } = handle.requestDefaults()
+      if (!providers.llm)
+        throw new Error('LLM provider was cleared after adapter creation')
+      const { apiKey, baseURL, model } = providers.llm.requestDefaults()
       const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`
       const url = new URL('chat/completions', base)
       const response = await fetch(url, {
@@ -34,10 +35,16 @@ export function createLlmProviderAdapter(providers: BrainProviders): LlmProvider
         throw new Error(`LLM generateText failed: HTTP ${response.status} — ${body}`)
       }
       const json = await response.json() as { choices?: Array<{ message?: { content?: string } }> }
-      return json.choices?.[0]?.message?.content ?? ''
+      const content = json.choices?.[0]?.message?.content
+      if (content == null) {
+        throw new Error(`LLM returned no content: choices=${JSON.stringify(json.choices?.length ?? 0)}`)
+      }
+      return content
     },
     async generateStructured<T>({ system, prompt, schemaDescription }: { system: string, prompt: string, schemaDescription: string }) {
-      const { apiKey, baseURL, model } = handle.requestDefaults()
+      if (!providers.llm)
+        throw new Error('LLM provider was cleared after adapter creation')
+      const { apiKey, baseURL, model } = providers.llm.requestDefaults()
       const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`
       const url = new URL('chat/completions', base)
       const response = await fetch(url, {
@@ -78,15 +85,16 @@ export function createLlmProviderAdapter(providers: BrainProviders): LlmProvider
 export function createEmbeddingProviderAdapter(providers: BrainProviders): EmbeddingProvider | null {
   if (!providers.embedding)
     return null
-  const handle = providers.embedding
-  let cachedDimension = 1536
+  let cachedDimension = 0
 
   return {
     get dimension() {
       return cachedDimension
     },
     async embed(text: string) {
-      const { apiKey, baseURL, model } = handle.requestDefaults()
+      if (!providers.embedding)
+        throw new Error('Embedding provider was cleared after adapter creation')
+      const { apiKey, baseURL, model } = providers.embedding.requestDefaults()
       const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`
       const url = new URL('embeddings', base)
       const response = await fetch(url, {
@@ -103,8 +111,10 @@ export function createEmbeddingProviderAdapter(providers: BrainProviders): Embed
       }
       const json = await response.json() as { data?: Array<{ embedding?: number[] }> }
       const embedding = json.data?.[0]?.embedding ?? []
-      if (embedding.length > 0)
-        cachedDimension = embedding.length
+      if (embedding.length === 0) {
+        throw new Error('Embedding API returned empty vector')
+      }
+      cachedDimension = embedding.length
       return embedding
     },
   }

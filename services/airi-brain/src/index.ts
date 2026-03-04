@@ -164,7 +164,8 @@ async function main(): Promise<void> {
       log.log('Pipeline initialized')
     }).catch((err) => {
       const msg = err instanceof Error ? err.message : String(err)
-      log.withFields({ error: msg }).warn('Failed to initialize VectorStore/Pipeline — memory features disabled')
+      log.withFields({ error: msg }).error('Failed to initialize VectorStore/Pipeline — memory features disabled')
+      // VectorStore init failed — memory features unavailable (logged at error level above)
     })
 
     log.log('All handlers registered — airi-brain is ready')
@@ -173,11 +174,21 @@ async function main(): Promise<void> {
   // Graceful shutdown
   async function gracefulShutdown(signal: string): Promise<void> {
     log.log(`Received ${signal}, shutting down...`)
-    disposePersonaHandler()
-    disposeVisionHandler()
-    disposeDesktopShellHandler()
-    client.close()
-    documentStore.close()
+    const disposers = [
+      { name: 'persona', fn: disposePersonaHandler },
+      { name: 'vision', fn: disposeVisionHandler },
+      { name: 'desktop-shell', fn: disposeDesktopShellHandler },
+      { name: 'client', fn: () => client.close() },
+      { name: 'documentStore', fn: () => documentStore.close() },
+    ]
+    for (const { name, fn } of disposers) {
+      try {
+        fn()
+      }
+      catch (err) {
+        log.withFields({ name, error: String(err) }).warn('Cleanup failed during shutdown')
+      }
+    }
     process.exit(0)
   }
 

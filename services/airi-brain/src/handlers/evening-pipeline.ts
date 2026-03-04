@@ -106,7 +106,8 @@ export function registerEveningPipeline(
     }
     catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      log.withFields({ error: msg }).warn('Evening pipeline failed')
+      log.withFields({ error: msg }).error('Evening pipeline failed')
+      // Error logged above; no frontend event sent since ActivitySummaryEvent schema doesn't include error field
     }
   }
 
