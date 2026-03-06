@@ -66,6 +66,12 @@
 - `skillsGetContext` 事件调用 buildSkillsContext()，修复"从未被调用"问题
 
 ### P3-4: Context Engine 升级为实时对话参与
+- `plugins/airi-plugin-context-engine/` — definePlugin 包装 DocumentStore 只读访问
+- 注册 P3-2 Anima MCP Server 的 provider 事件处理器（animaMemorySearch/animaMemoryRecent/animaDailySummary/animaGetUserContext）
+- 暴露自有 invoke 事件供其他插件直接消费（contextEngineMemorySearch/contextEngineMemoryRecent/contextEngineDailySummary/contextEngineUserContext）
+- 数据来源：与 Brain 服务共享 SQLite DB（WAL 模式并发读写），Context Engine 插件只读、Brain 负责写入
+- 每日总结从 BrainStore 的 activity_summaries 表读取，表不存在时优雅降级
+- 用户上下文从 DocumentStore 聚合：intimacy、profile facts、relationships、recent conversations
 
 ## 状态
 
@@ -79,4 +85,4 @@
 - [x] Phase 3: P3-1 MCP Hub native plugin
 - [x] Phase 3: P3-3 Skill Registry native plugin + buildSkillsContext 集成
 - [x] Phase 3: P3-2 集成 Anima MCP Server
-- [ ] Phase 3: P3-4 Context Engine 升级
+- [x] Phase 3: P3-4 Context Engine 升级（插件化 + P3-2 bridge + 只读 DocumentStore）

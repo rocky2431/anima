@@ -3016,6 +3016,31 @@ importers:
         specifier: ^3.1.8
         version: 3.2.1(typescript@5.9.3)
 
+  plugins/airi-plugin-context-engine:
+    dependencies:
+      '@moeru/eventa':
+        specifier: 'catalog:'
+        version: 1.0.0-alpha.14(electron@40.0.0)(h3@2.0.1-rc.5(crossws@0.4.3(srvx@0.10.1)))
+      '@proj-airi/airi-plugin-anima-mcp-server':
+        specifier: workspace:*
+        version: link:../airi-plugin-anima-mcp-server
+      '@proj-airi/context-engine':
+        specifier: workspace:*
+        version: link:../../packages/context-engine
+      '@proj-airi/mcp-hub':
+        specifier: workspace:*
+        version: link:../../packages/mcp-hub
+      '@proj-airi/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
+      better-sqlite3:
+        specifier: 'catalog:'
+        version: 12.6.2
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: 'catalog:'
+        version: 7.6.13
+
   plugins/airi-plugin-homeassistant:
     dependencies:
       '@guiiai/logg':
