@@ -6,11 +6,12 @@ import { useLive2d } from '@proj-airi/stage-ui-live2d'
 import { useChatOrchestratorStore } from '../stores/chat'
 import { useChatSessionStore } from '../stores/chat/session-store'
 import { useDisplayModelsStore } from '../stores/display-models'
-import { useMcpStore } from '../stores/mcp'
 import { useAiriCardStore } from '../stores/modules/airi-card'
 import { useConsciousnessStore } from '../stores/modules/consciousness'
 import { useDiscordStore } from '../stores/modules/discord'
 import { useHearingStore } from '../stores/modules/hearing'
+import { useMcpModuleStore } from '../stores/modules/mcp'
+import { useSkillsModuleStore } from '../stores/modules/skills'
 import { useSpeechStore } from '../stores/modules/speech'
 import { useTwitterStore } from '../stores/modules/twitter'
 import { useOnboardingStore } from '../stores/onboarding'
@@ -30,7 +31,8 @@ export function useDataMaintenance() {
   const consciousnessStore = useConsciousnessStore()
   const twitterStore = useTwitterStore()
   const discordStore = useDiscordStore()
-  const mcpStore = useMcpStore()
+  const mcpStore = useMcpModuleStore()
+  const skillsStore = useSkillsModuleStore()
   const onboardingStore = useOnboardingStore()
   const airiCardStore = useAiriCardStore()
 
@@ -50,6 +52,7 @@ export function useDataMaintenance() {
     consciousnessStore.resetState()
     twitterStore.resetState()
     discordStore.resetState()
+    skillsStore.resetState()
   }
 
   function deleteAllChatSessions() {
