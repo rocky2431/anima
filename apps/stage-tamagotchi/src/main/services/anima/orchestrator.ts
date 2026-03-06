@@ -4,7 +4,7 @@ import type {
   ProcessedScreenshotContext,
   ScreenshotProvider,
   VlmProvider,
-} from '@proj-airi/context-engine'
+} from '@anase/context-engine'
 import type {
   AnimaEmotionPayload,
   AppCategory,
@@ -17,10 +17,10 @@ import type {
   ProactiveResponse,
   TriggerCondition,
   TriggerInput,
-} from '@proj-airi/persona-engine'
+} from '@anase/persona-engine'
 
 import { useLogg } from '@guiiai/logg'
-import { ActivityMonitor, ScreenshotPipeline } from '@proj-airi/context-engine'
+import { ActivityMonitor, ScreenshotPipeline } from '@anase/context-engine'
 import {
   ALL_TRIGGERS,
   applyScoreChange,
@@ -35,7 +35,7 @@ import {
   recordIgnore,
   recordTrigger,
   recordUserInteraction,
-} from '@proj-airi/persona-engine'
+} from '@anase/persona-engine'
 
 /**
  * Event emitted when the persona engine decides to speak proactively.

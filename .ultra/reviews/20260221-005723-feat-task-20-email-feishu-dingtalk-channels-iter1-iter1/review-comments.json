@@ -1,0 +1,107 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260221-005723-feat-task-20-email-feishu-dingtalk-channels-iter1-iter1",
+  "timestamp": "2026-02-21T01:02:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/email/index.ts",
+      "packages/channels-extra/src/feishu/index.ts",
+      "packages/channels-extra/src/dingtalk/index.ts",
+      "packages/channels-extra/src/__tests__/email/email-channel.test.ts",
+      "packages/channels-extra/src/__tests__/feishu/feishu-channel.test.ts",
+      "packages/channels-extra/src/__tests__/dingtalk/dingtalk-channel.test.ts"
+    ],
+    "total_lines_analyzed": 1509,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "Missing JSDoc on exported EmailChannelDeps interface",
+      "file": "packages/channels-extra/src/email/index.ts",
+      "line": 37,
+      "line_end": 40,
+      "code_snippet": "export interface EmailChannelDeps {\n  createImapClient: () => ImapClient\n  createSmtpTransport: () => SmtpTransport\n}",
+      "description": "The project convention is JSDoc on all exported interfaces and functions. EmailChannelDeps is exported and serves as the dependency injection contract for EmailChannel, but has no documentation explaining what implementations should provide or when consumers need to supply it.",
+      "suggestion": "Add JSDoc explaining the interface purpose, e.g.: /** Dependencies for EmailChannel. Callers must supply factory functions that create IMAP and SMTP clients configured with credentials from EmailConfig. */"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "Missing JSDoc on exported FeishuChannelDeps interface",
+      "file": "packages/channels-extra/src/feishu/index.ts",
+      "line": 42,
+      "line_end": 45,
+      "code_snippet": "export interface FeishuChannelDeps {\n  createClient: () => FeishuClient\n  createWsClient: () => FeishuWsClient\n}",
+      "description": "Same convention gap as EmailChannelDeps. This exported interface is the DI contract for FeishuChannel but lacks any JSDoc explaining what the factory functions should return or how they map to the @larksuiteoapi/node-sdk.",
+      "suggestion": "Add JSDoc: /** Dependencies for FeishuChannel. Supply factories wrapping @larksuiteoapi/node-sdk Client and WSClient instances. */"
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "missing-jsdoc",
+      "title": "Missing JSDoc on exported DingTalkChannelDeps interface",
+      "file": "packages/channels-extra/src/dingtalk/index.ts",
+      "line": 35,
+      "line_end": 38,
+      "code_snippet": "export interface DingTalkChannelDeps {\n  createStreamClient: () => StreamClient\n  sendViaWebhook?: WebhookSender\n}",
+      "description": "Same convention gap. DingTalkChannelDeps is the DI contract but has no JSDoc. The optional sendViaWebhook field is especially non-obvious -- a consumer would not know it defaults to a fetch-based implementation without reading the source.",
+      "suggestion": "Add JSDoc: /** Dependencies for DingTalkChannel. Supply a factory for dingtalk-stream's DWClient. Optionally override sendViaWebhook (defaults to fetch-based POST to session webhook URL). */"
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "missing-public-method-docs",
+      "title": "Public Channel methods lack JSDoc across all three channels",
+      "file": "packages/channels-extra/src/email/index.ts",
+      "line": 86,
+      "line_end": 86,
+      "code_snippet": "async connect(): Promise<void> {\n  ...\nasync disconnect(): Promise<void> {\n  ...\nonMessage(handler: MessageHandler): () => void {",
+      "description": "The Channel interface defines connect(), disconnect(), sendMessage(), onMessage(), and onStatusChange(). Only DingTalkChannel.sendMessage and DingTalkChannel.getSessionWebhook have JSDoc. The other public methods across all three channel classes are undocumented. While the method names are self-describing, the error semantics (throws on missing deps, sets status to 'error') and return value semantics (onMessage/onStatusChange return unsubscribe functions) are worth documenting for consumers.",
+      "suggestion": "Add minimal JSDoc to at least connect() (documents the deps requirement and error state transition) and onMessage() (documents the unsubscribe pattern) on the Channel interface in types.ts, or on each implementation."
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Inline comment restates obvious code in test helper",
+      "file": "packages/channels-extra/src/__tests__/feishu/feishu-channel.test.ts",
+      "line": 252,
+      "line_end": 252,
+      "code_snippet": "// Extract the registered handler from the event dispatcher",
+      "description": "This comment restates what the immediately following line of code does (casting eventDispatcher and reading _handlers). The code is straightforward enough that the comment adds maintenance cost without significant comprehension benefit.",
+      "suggestion": "Remove the comment. The code is self-documenting: the cast to { _handlers?: Map<...> } and the .get() call clearly extract the handler."
+    }
+  ],
+  "positive_observations": [
+    "All three test files include proper Test Double rationale comments with clear justification for why real infrastructure cannot be used in CI, as required by CLAUDE.md.",
+    "Class-level JSDoc on all three channel classes is concise and accurately describes the communication protocol used.",
+    "DingTalk sendMessage has a well-written JSDoc with an accurate @param description clarifying that target is a session webhook URL.",
+    "No forbidden patterns (TODO, FIXME, HACK, PLACEHOLDER, TEMP) found in any of the six files.",
+    "The DingTalk test file includes a helpful fixture comment explaining the obfuscated webhook URL construction pattern."
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

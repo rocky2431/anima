@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { ChatHistoryItem } from '@proj-airi/stage-ui/types/chat'
+import type { ChatHistoryItem } from '@anase/stage-ui/types/chat'
 
-import { ChatHistory } from '@proj-airi/stage-ui/components'
-import { useChatOrchestratorStore } from '@proj-airi/stage-ui/stores/chat'
-import { useChatSessionStore } from '@proj-airi/stage-ui/stores/chat/session-store'
-import { useChatStreamStore } from '@proj-airi/stage-ui/stores/chat/stream-store'
-import { useDeferredMount } from '@proj-airi/ui'
+import { ChatHistory } from '@anase/stage-ui/components'
+import { useChatOrchestratorStore } from '@anase/stage-ui/stores/chat'
+import { useChatSessionStore } from '@anase/stage-ui/stores/chat/session-store'
+import { useChatStreamStore } from '@anase/stage-ui/stores/chat/stream-store'
+import { useDeferredMount } from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 

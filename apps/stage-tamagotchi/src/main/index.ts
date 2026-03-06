@@ -3,8 +3,8 @@ import { env, platform } from 'node:process'
 
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { Format, LogLevel, setGlobalFormat, setGlobalLogLevel, useLogg } from '@guiiai/logg'
-import { initScreenCaptureForMain } from '@proj-airi/electron-screen-capture/main'
-import { Client } from '@proj-airi/server-sdk'
+import { initScreenCaptureForMain } from '@anase/electron-screen-capture/main'
+import { Client } from '@anase/server-sdk'
 import { app, ipcMain } from 'electron'
 import { noop } from 'es-toolkit'
 import { createLoggLogger, injeca } from 'injeca'
@@ -15,8 +15,8 @@ import icon from '../../resources/icon.png?asset'
 import { openDebugger, setupDebugger } from './app/debugger'
 import { emitAppBeforeQuit, emitAppReady, emitAppWindowAllClosed } from './libs/bootkit/lifecycle'
 import { setElectronMainDirname } from './libs/electron/location'
-import { setupServerChannelHandlers } from './services/airi/channel-server'
-import { setupPluginHost } from './services/airi/plugins'
+import { setupServerChannelHandlers } from './services/anase/channel-server'
+import { setupPluginHost } from './services/anase/plugins'
 import { setupAiServices } from './services/anima/setup-ai-services'
 import { setupBridge } from './services/anima/setup-bridge'
 import { setupChannels } from './services/anima/setup-channels'
@@ -61,7 +61,7 @@ if (isLinux) {
   // NOTICE: we need UseOzonePlatform, WaylandWindowDecorations for working on Wayland.
   // Partially related to https://github.com/electron/electron/issues/41551, since X11 is deprecating now,
   // we can safely remove the feature flags for Electron once they made it default supported.
-  // Fixes: https://github.com/moeru-ai/airi/issues/757
+  // Fixes: https://github.com/rocky2431/anima/issues/757
   // Ref: https://github.com/mmaura/poe2linuxcompanion/blob/90664607a147ea5ccea28df6139bd95fb0ebab0e/electron/main/index.ts#L28-L46
   if (env.XDG_SESSION_TYPE === 'wayland') {
     app.commandLine.appendSwitch('enable-features', 'GlobalShortcutsPortal')
@@ -72,7 +72,7 @@ if (isLinux) {
 }
 
 app.dock?.setIcon(icon)
-electronApp.setAppUserModelId('ai.moeru.airi')
+electronApp.setAppUserModelId('app.anase')
 
 initScreenCaptureForMain()
 
@@ -104,7 +104,7 @@ app.whenReady().then(async () => {
           bridgeClient = new Client({
             name: 'anima-bridge',
             url: wsUrl,
-            token: env.AIRI_TOKEN ?? 'abcd',
+            token: env.ANASE_TOKEN ?? 'abcd',
             possibleEvents: ['persona:proactive:trigger'],
           })
         }

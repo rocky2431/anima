@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button, Checkbox, TransitionVertical } from '@proj-airi/ui'
+import { Button, Checkbox, TransitionVertical } from '@anase/ui'
 import { refDebounced, useDark, useMouseInElement } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'

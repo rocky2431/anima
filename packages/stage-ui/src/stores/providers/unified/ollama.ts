@@ -1,6 +1,6 @@
 import type { ModelInfo, UnifiedProviderMetadata, ValidationResult } from '../types'
 
-import { isUrl } from '@proj-airi/stage-shared'
+import { isUrl } from '@anase/stage-shared'
 
 import { createOllama } from '../../../libs/ai/create-provider'
 import { listModels } from '../../../libs/ai/list-models'

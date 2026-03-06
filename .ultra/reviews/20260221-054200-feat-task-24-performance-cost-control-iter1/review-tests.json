@@ -1,0 +1,113 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260221-054200-feat-task-24-performance-cost-control-iter1",
+  "timestamp": "2026-02-21T05:42:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/__tests__/model-router.test.ts",
+      "packages/context-engine/src/__tests__/dedup-stats.test.ts",
+      "packages/context-engine/src/__tests__/performance-benchmark.test.ts",
+      "packages/context-engine/src/processing/model-router.ts",
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 1133,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 4, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "Missing test: getProvider local-to-lightweight fallback path",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 179,
+      "line_end": 181,
+      "code_snippet": "case 'local':\n  return this.providers.local ?? this.providers.lightweight",
+      "description": "The getProvider method has a fallback from local to lightweight when local is undefined (line 180). However, there is no test that exercises this specific fallback path. The existing test 'falls back to lightweight when local is not available for classification' tests the resolveTier logic which already routes to 'lightweight' when no local provider exists, so the ?? fallback in getProvider is never reached. If an override forces tier='local' but no local provider is configured, the ?? fallback would be the only safety net, and it is untested.",
+      "suggestion": "Add a test: configure routingOverrides to force classification to 'local' tier, but do not provide a local provider. Verify that the call falls back to the lightweight provider and succeeds. Example:\n\nit('falls back to lightweight when override routes to local but local is absent', async () => {\n  const lightweight = createTrackingProvider('lightweight')\n  const standard = createTrackingProvider('standard')\n  const router = new ModelRouter({\n    providers: { lightweight, standard },\n    routingOverrides: { classification: 'local' },\n  })\n  await router.generateStructured({ system: 'Classify this', prompt: 'x', schemaDescription: '{}' })\n  expect(lightweight.calls).toHaveLength(1)\n})",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "Incomplete error path coverage for ModelRouter",
+      "file": "packages/context-engine/src/__tests__/model-router.test.ts",
+      "line": 308,
+      "line_end": 331,
+      "code_snippet": "it('propagates provider errors with routing context', async () => {\n  ...\n  await expect(...).rejects.toThrow('Model overloaded')\n})",
+      "description": "The error handling section has only one test case (provider throws Error). Missing error scenarios: (1) provider throws non-Error (string, undefined), (2) provider returns a rejected promise with a typed error, (3) error from standard provider (current test only fails the lightweight provider). These paths exercise different code branches since generateText and generateStructured both delegate to different providers.",
+      "suggestion": "Add at least one more error test: a failing standard provider (for generation/summarization tasks) to verify errors propagate from both tiers. Example:\n\nit('propagates errors from standard provider on generation tasks', async () => {\n  const lightweight = createTrackingProvider('lightweight')\n  const failingStandard: LlmProvider = {\n    async generateText() { throw new Error('Rate limited') },\n    async generateStructured() { throw new Error('Rate limited') },\n  }\n  const router = new ModelRouter({ providers: { lightweight, standard: failingStandard } })\n  await expect(router.generateText({ system: 'Generate report', prompt: 'data' })).rejects.toThrow('Rate limited')\n})",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "Missing test: classifyTask with ambiguous/multi-keyword prompts",
+      "file": "packages/context-engine/src/__tests__/model-router.test.ts",
+      "line": 31,
+      "line_end": 67,
+      "code_snippet": "describe('classifyTask (pure function)', () => {\n  it('classifies prompts with \"classify\" keyword as classification', () => {\n    ...\n  })\n  ...\n})",
+      "description": "classifyTask is a pure function with keyword-priority-based classification, but no test verifies behavior when a prompt contains keywords from multiple categories. For example, 'Classify and summarize the entities' contains keywords for classification, summarization, and extraction. The implementation has a specific priority order (classification > extraction > summarization > generation), which is a critical business decision that should be explicitly tested as a boundary condition.",
+      "suggestion": "Add tests for ambiguous prompts to verify priority order:\n\nit('prioritizes classification over summarization when both keywords present', () => {\n  expect(classifyTask('Classify and summarize the user activity')).toBe('classification')\n})\n\nit('prioritizes classification over extraction when both keywords present', () => {\n  expect(classifyTask('Classify and extract entities from the text')).toBe('classification')\n})\n\nit('prioritizes extraction over summarization when both keywords present', () => {\n  expect(classifyTask('Extract a summary of named entities')).toBe('extraction')\n})",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "fragile-assertion",
+      "title": "Performance benchmark memory assertions are vacuously true",
+      "file": "packages/context-engine/src/__tests__/performance-benchmark.test.ts",
+      "line": 23,
+      "line_end": 84,
+      "code_snippet": "expect(overheadMB).toBeLessThan(100)\n...\nexpect(overheadMB).toBeLessThan(500)",
+      "description": "The memory budget tests assert that creating a ModelRouter + DeduplicationTracker uses less than 100MB (lightweight) or 500MB (full). These objects consist of a few counters and function references -- they use kilobytes at most. The assertions will never fail because the actual overhead is ~0.001-0.1MB, making the thresholds 1000x-500000x too generous. Additionally, RSS measurements are inherently noisy (GC timing, V8 heap growth) and can show negative overhead. These tests provide false confidence about memory budgets without actually enforcing meaningful constraints.",
+      "suggestion": "Either tighten the bounds to realistic values (e.g., <1MB for lightweight, <5MB for full) or replace RSS-based tests with a design-level assertion that verifies no large buffers or caches are created. Alternatively, document that these are smoke tests for the overall system memory budget (including the test runner itself) and adjust the description accordingly. If the intent is to guard against accidentally adding large data structures, consider testing object size directly:\n\nexpect(overheadMB).toBeLessThan(1) // ModelRouter + tracker should be kilobytes",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "test-quality",
+      "subcategory": "test-organization",
+      "title": "Interface compliance test is trivially weak",
+      "file": "packages/context-engine/src/__tests__/model-router.test.ts",
+      "line": 333,
+      "line_end": 345,
+      "code_snippet": "describe('integration with ContextMerger', () => {\n  it('ModelRouter implements LlmProvider interface', () => {\n    ...\n    expect(typeof router.generateText).toBe('function')\n    expect(typeof router.generateStructured).toBe('function')\n  })\n})",
+      "description": "This test checks that ModelRouter has generateText and generateStructured methods by verifying their typeof is 'function'. This is already guaranteed by TypeScript's 'implements LlmProvider' clause at compile time. The test name says 'integration with ContextMerger' but does not actually test integration with ContextMerger -- it is a type-level assertion dressed as an integration test.",
+      "suggestion": "Either remove this test (TypeScript already enforces interface compliance at compile time) or make it a real integration test that instantiates a ContextMerger with a ModelRouter and verifies end-to-end behavior:\n\nit('can be used as LlmProvider in ContextMerger', async () => {\n  const router = new ModelRouter({ providers: { lightweight, standard } })\n  const merger = new ContextMerger({ llmProvider: router, ... })\n  const result = await merger.merge([source1, source2])\n  expect(result).toBeDefined()\n  expect(router.getStats().totalCalls).toBeGreaterThan(0)\n})"
+    }
+  ],
+  "positive_observations": [
+    "Test doubles for LlmProvider use proper '// Test Double rationale:' comment convention, correctly identifying LLM providers as external API boundaries",
+    "No vi.fn(), vi.mock(), jest.fn(), or jest.mock() violations detected -- all test doubles are hand-crafted interface implementations",
+    "classifyTask (Functional Core) is tested as a pure function with direct instantiation, no mocks needed -- correct testing approach",
+    "DeduplicationTracker tests include excellent boundary conditions: zero comparisons, all duplicates, all unique, and reset behavior",
+    "dedup-stats.test.ts includes a real integration test using sharp image processing with computePHash, testing real image similarity detection rather than mocked values",
+    "Routing stats tests verify state accumulation and reset behavior thoroughly",
+    "Test structure separates pure function tests from routing behavior tests cleanly"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

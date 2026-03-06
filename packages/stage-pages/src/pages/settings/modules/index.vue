@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { IconStatusItem, RippleGrid } from '@proj-airi/stage-ui/components'
-import { useModulesList } from '@proj-airi/stage-ui/composables/use-modules-list'
-import { useRippleGridState } from '@proj-airi/stage-ui/composables/use-ripple-grid-state'
+import { IconStatusItem, RippleGrid } from '@anase/stage-ui/components'
+import { useModulesList } from '@anase/stage-ui/composables/use-modules-list'
+import { useRippleGridState } from '@anase/stage-ui/composables/use-ripple-grid-state'
 
 const { modulesList } = useModulesList()
 const { lastClickedIndex, setLastClickedIndex } = useRippleGridState()

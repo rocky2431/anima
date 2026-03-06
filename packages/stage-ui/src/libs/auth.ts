@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/auth'
 
 export type OAuthProvider = 'google' | 'github'
 
-export const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://airi-api.moeru.ai'
+export const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://api.anase.app'
 
 export const authClient = createAuthClient({
   baseURL: SERVER_URL,

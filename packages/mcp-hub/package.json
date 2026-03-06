@@ -1,18 +1,18 @@
 {
-  "name": "@proj-airi/mcp-hub",
+  "name": "@anase/mcp-hub",
   "type": "module",
   "version": "0.8.4",
   "private": true,
   "description": "MCP Hub: Multi-server registry, client management, unified transport factory",
   "author": {
-    "name": "Moeru AI Project AIRI Team",
-    "email": "airi@moeru.ai",
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
     "url": "https://github.com/moeru-ai"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/moeru-ai/airi.git",
+    "url": "https://github.com/rocky2431/anima.git",
     "directory": "packages/mcp-hub"
   },
   "exports": {

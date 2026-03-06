@@ -1,0 +1,16 @@
+{
+  "name": "@anase/anase-plugin-mcp-hub",
+  "type": "module",
+  "version": "0.8.4",
+  "private": true,
+  "description": "MCP Hub plugin: wraps McpHub as a native plugin with tool aggregation capability",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@moeru/eventa": "catalog:",
+    "@anase/mcp-hub": "workspace:*",
+    "@anase/plugin-sdk": "workspace:*"
+  }
+}

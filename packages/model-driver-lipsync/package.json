@@ -1,5 +1,5 @@
 {
-  "name": "@proj-airi/model-driver-lipsync",
+  "name": "@anase/model-driver-lipsync",
   "type": "module",
   "version": "0.8.4",
   "private": true,

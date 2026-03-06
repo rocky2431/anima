@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useChannelsStore } from '@proj-airi/stage-ui/stores/modules/channels'
-import { FieldCheckbox } from '@proj-airi/ui'
+import { useChannelsStore } from '@anase/stage-ui/stores/modules/channels'
+import { FieldCheckbox } from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -37,7 +37,7 @@ const channels = computed<ChannelInfo[]>(() => [
     iconColor: 'text-[#4A154B]',
     enabled: slackEnabled.value,
     description: t('settings.pages.modules.channels.slack.description'),
-    envHint: 'AIRI_SLACK_BOT_TOKEN + AIRI_SLACK_APP_TOKEN',
+    envHint: 'ANASE_SLACK_BOT_TOKEN + ANASE_SLACK_APP_TOKEN',
   },
   {
     id: 'whatsapp',
@@ -55,7 +55,7 @@ const channels = computed<ChannelInfo[]>(() => [
     iconColor: 'text-blue-500',
     enabled: emailEnabled.value,
     description: t('settings.pages.modules.channels.email.description'),
-    envHint: 'AIRI_EMAIL_IMAP_HOST + AIRI_EMAIL_SMTP_HOST',
+    envHint: 'ANASE_EMAIL_IMAP_HOST + ANASE_EMAIL_SMTP_HOST',
   },
   {
     id: 'feishu',
@@ -64,7 +64,7 @@ const channels = computed<ChannelInfo[]>(() => [
     iconColor: 'text-blue-600',
     enabled: feishuEnabled.value,
     description: t('settings.pages.modules.channels.feishu.description'),
-    envHint: 'AIRI_FEISHU_APP_ID + AIRI_FEISHU_APP_SECRET',
+    envHint: 'ANASE_FEISHU_APP_ID + ANASE_FEISHU_APP_SECRET',
   },
   {
     id: 'dingtalk',
@@ -73,7 +73,7 @@ const channels = computed<ChannelInfo[]>(() => [
     iconColor: 'text-blue-500',
     enabled: dingtalkEnabled.value,
     description: t('settings.pages.modules.channels.dingtalk.description'),
-    envHint: 'AIRI_DINGTALK_APP_KEY + AIRI_DINGTALK_APP_SECRET',
+    envHint: 'ANASE_DINGTALK_APP_KEY + ANASE_DINGTALK_APP_SECRET',
   },
 ])
 </script>

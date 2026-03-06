@@ -1,6 +1,6 @@
 import type { ModelInfo, ProgressInfo, SpeechProvider, UnifiedProviderMetadata, VoiceInfo } from '../types'
 
-import { isStageTamagotchi } from '@proj-airi/stage-shared'
+import { isStageTamagotchi } from '@anase/stage-shared'
 import { isWebGPUSupported } from 'gpuu/webgpu'
 
 import { getKokoroWorker } from '../../../workers/kokoro'

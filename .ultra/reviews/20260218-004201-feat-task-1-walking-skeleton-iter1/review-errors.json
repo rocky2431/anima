@@ -1,0 +1,97 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260218-004201-feat-task-1-walking-skeleton-iter1",
+  "timestamp": "2026-02-18T00:50:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/activity/duration.ts",
+      "packages/context-engine/src/activity/activity-context.ts",
+      "packages/context-engine/src/capture/screenshot.ts",
+      "packages/persona-engine/src/proactive-trigger.ts",
+      "packages/persona-engine/src/emotion-state-machine.ts",
+      "packages/persona-engine/src/response-generator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/context-engine.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts"
+    ],
+    "total_lines_analyzed": 259,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch-io",
+      "title": "Electron desktopCapturer.getSources() called without try/catch",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/context-engine.ts",
+      "line": 12,
+      "line_end": 15,
+      "code_snippet": "const sources = await desktopCapturer.getSources({\n  types: ['screen'],\n  thumbnailSize: { width: 1920, height: 1080 },\n})",
+      "description": "desktopCapturer.getSources() is an Electron platform API that can throw on permission denial (macOS screen recording permission), when no display server is available, or on other OS-level failures. This async I/O call has no try/catch protection. An unhandled rejection will propagate up and crash the caller with no diagnostic context.",
+      "suggestion": "Wrap the desktopCapturer call in try/catch. Log the error with context (e.g., 'Screenshot capture failed') using the project's structured logger, then either re-throw a typed error (e.g., CaptureError) or return a Result type. Example:\ntry {\n  const sources = await desktopCapturer.getSources({...})\n  ...\n} catch (error) {\n  log.error('Screenshot capture failed', { error })\n  throw new CaptureError('desktopCapturer.getSources failed', { cause: error })\n}",
+      "claude_md_rule": "error_handling.rules.global_exception_handler"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "error-converted-to-invalid-state",
+      "title": "No-source condition returns empty Buffer instead of signaling error",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/context-engine.ts",
+      "line": 17,
+      "line_end": 19,
+      "code_snippet": "const primarySource = sources[0]\nif (!primarySource) {\n  return Buffer.alloc(0)\n}",
+      "description": "When desktopCapturer returns no screen sources (e.g., permission denied on macOS, headless environment, or unexpected platform behavior), the provider silently returns an empty Buffer. This converts a real error condition into an invalid state: downstream consumers (ScreenshotCapture, any vision/LLM pipeline) will receive a 0-byte buffer and either produce garbage results or fail in confusing ways far from the root cause. This matches the forbidden pattern 'catch (e) { return null }' -- converting an error to invalid state.",
+      "suggestion": "Throw a descriptive error when no sources are available: if (!primarySource) { throw new Error('No screen sources available from desktopCapturer. Check screen recording permissions.') }. Alternatively, use a Result type to explicitly represent the failure case and force callers to handle it.",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch-io",
+      "title": "ScreenshotCapture.capture() has no error handling for provider",
+      "file": "packages/context-engine/src/capture/screenshot.ts",
+      "line": 17,
+      "line_end": 23,
+      "code_snippet": "async capture(): Promise<ScreenshotResult> {\n  const buffer = await this.provider.capture()\n  return {\n    buffer,\n    timestamp: Date.now(),\n  }\n}",
+      "description": "ScreenshotCapture.capture() awaits an external I/O provider (this.provider.capture()) with no error handling. While this is the Imperative Shell and the provider is injected, this class is the boundary wrapper -- it should catch provider errors and add diagnostic context (which provider failed, what operation was attempted) before letting them propagate. Currently a provider failure produces a raw, context-free stack trace.",
+      "suggestion": "Add try/catch to wrap the provider call and re-throw with added context:\ntry {\n  const buffer = await this.provider.capture()\n  return { buffer, timestamp: Date.now() }\n} catch (error) {\n  throw new Error('Screenshot capture failed', { cause: error })\n}",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "optional-chaining-hiding-errors",
+      "title": "Optional chaining silently falls through on unrecognized trigger",
+      "file": "packages/persona-engine/src/response-generator.ts",
+      "line": 33,
+      "line_end": 34,
+      "code_snippet": "const templates = RESPONSE_TEMPLATES[trigger.triggerName]\nconst message = templates?.[emotion] ?? templates?.neutral ?? DEFAULT_MESSAGE",
+      "description": "When trigger.triggerName is not found in RESPONSE_TEMPLATES, 'templates' is undefined and the chain silently falls through to DEFAULT_MESSAGE. While fallback behavior is fine for known-unknown states, this also silently hides the case where a new trigger is added but its templates are missing -- a programmer error that should be caught during development. There is no logging or warning when falling through, making it hard to notice missing template configurations.",
+      "suggestion": "Add a warning log when templates are not found for a trigger name:\nif (!templates) {\n  console.warn(`No response templates for trigger '${trigger.triggerName}', using default`)\n}\nOr use the project's structured logger. This preserves the fallback behavior while making missing templates observable.",
+      "claude_md_rule": "error_handling.rules.include_context"
+    }
+  ],
+  "positive_observations": [
+    "Pure Functional Core functions (duration.ts, activity-context.ts, proactive-trigger.ts, emotion-state-machine.ts) are correctly designed as pure input-output functions with no I/O, making error handling straightforward and testable",
+    "persona-engine.ts (Imperative Shell) uses structured logging via @guiiai/logg with context fields when triggers fire",
+    "Clean separation between Functional Core (pure computation) and Imperative Shell (I/O) means error handling concerns are correctly concentrated at the shell boundary"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

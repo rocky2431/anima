@@ -7,7 +7,7 @@ import type {
   ModuleIdentity as ProtocolModuleIdentity,
   ModulePhase as ProtocolModulePhase,
   PluginIdentity as ProtocolPluginIdentity,
-} from '@proj-airi/plugin-protocol/types'
+} from '@anase/plugin-protocol/types'
 import type { ActorRefFrom } from 'xstate'
 
 import type { definePlugin } from '../plugin'
@@ -39,7 +39,7 @@ import {
   modulePrepared,
   moduleStatus,
   registryModulesSync,
-} from '@proj-airi/plugin-protocol/types'
+} from '@anase/plugin-protocol/types'
 import {
   literal,
   object,
@@ -385,7 +385,7 @@ export type ModuleCompatibilityResult = ProtocolEvents['module:compatibility:res
 
 export interface ManifestV1 {
   apiVersion: 'v1'
-  kind: 'manifest.plugin.airi.moeru.ai'
+  kind: 'manifest.plugin.anase.app'
   name: string
   entrypoints: {
     default?: string
@@ -397,7 +397,7 @@ export interface ManifestV1 {
 
 export const manifestV1Schema = object({
   apiVersion: literal('v1'),
-  kind: literal('manifest.plugin.airi.moeru.ai'),
+  kind: literal('manifest.plugin.anase.app'),
   name: string(),
   entrypoints: object({
     default: optional(string()),

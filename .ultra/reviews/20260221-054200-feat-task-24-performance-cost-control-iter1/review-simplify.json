@@ -1,0 +1,94 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260221-054200-feat-task-24-performance-cost-control-iter1",
+  "timestamp": "2026-02-21T05:42:30.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/model-router.ts",
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/model-router.test.ts",
+      "packages/context-engine/src/__tests__/dedup-stats.test.ts",
+      "packages/context-engine/src/__tests__/performance-benchmark.test.ts"
+    ],
+    "total_lines_analyzed": 1133,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "generateText and generateStructured share identical routing logic",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 135,
+      "line_end": 158,
+      "code_snippet": "async generateText(options) {\n  const taskType = classifyTask(options.system)\n  const tier = resolveTier(taskType, this.hasLocal, this.overrides)\n  const provider = this.getProvider(tier)\n  this.tierCalls[tier]++\n  this.taskCalls[taskType]++\n  return provider.generateText(options)\n}",
+      "description": "Both generateText (lines 135-144) and generateStructured (lines 146-159) perform the same 4-step routing sequence: classifyTask -> resolveTier -> getProvider -> increment stats. The only differences are (1) classifyTask receives an optional schemaDescription in generateStructured, and (2) they delegate to different provider methods. This is a 6-line near-duplicate block.",
+      "suggestion": "BEFORE:\nasync generateText(options) {\n  const taskType = classifyTask(options.system)\n  const tier = resolveTier(taskType, this.hasLocal, this.overrides)\n  const provider = this.getProvider(tier)\n  this.tierCalls[tier]++\n  this.taskCalls[taskType]++\n  return provider.generateText(options)\n}\nasync generateStructured<T>(options) {\n  const taskType = classifyTask(options.system, options.schemaDescription)\n  const tier = resolveTier(taskType, this.hasLocal, this.overrides)\n  const provider = this.getProvider(tier)\n  this.tierCalls[tier]++\n  this.taskCalls[taskType]++\n  return provider.generateStructured<T>(options)\n}\n\nAFTER:\nprivate route(system: string, schemaDescription?: string): LlmProvider {\n  const taskType = classifyTask(system, schemaDescription)\n  const tier = resolveTier(taskType, this.hasLocal, this.overrides)\n  this.tierCalls[tier]++\n  this.taskCalls[taskType]++\n  return this.getProvider(tier)\n}\nasync generateText(options) {\n  return this.route(options.system).generateText(options)\n}\nasync generateStructured<T>(options) {\n  return this.route(options.system, options.schemaDescription).generateStructured<T>(options)\n}\n\nWHY: Extracting a private route() method eliminates 5 duplicated lines across the two methods and centralizes the routing + stats logic in one place, making future changes (e.g., adding logging or error wrapping) single-point."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "simplification",
+      "subcategory": "near-duplicate-test-setup",
+      "title": "Test setup (createTrackingProvider + new ModelRouter) repeated 12 times",
+      "file": "packages/context-engine/src/__tests__/model-router.test.ts",
+      "line": 70,
+      "line_end": 230,
+      "code_snippet": "const lightweight = createTrackingProvider('lightweight')\nconst standard = createTrackingProvider('standard')\nconst router = new ModelRouter({\n  providers: { lightweight, standard },\n})",
+      "description": "The 4-line pattern of creating lightweight + standard tracking providers and a ModelRouter appears in 10 of 14 test cases (lines 71-75, 88-92, 105-109, 121-125, 174-179, 194-199, 213-216, 235-239, 255-259, 293-296). This is well above the 3-occurrence threshold for extraction. The 3-provider variant (with local) appears in 3 more tests.",
+      "suggestion": "BEFORE:\nit('routes classification tasks to lightweight provider', async () => {\n  const lightweight = createTrackingProvider('lightweight')\n  const standard = createTrackingProvider('standard')\n  const router = new ModelRouter({ providers: { lightweight, standard } })\n  ...\n})\n\nAFTER:\nfunction createRouter(opts?: { local?: boolean, overrides?: ... }) {\n  const lightweight = createTrackingProvider('lightweight')\n  const standard = createTrackingProvider('standard')\n  const local = opts?.local ? createTrackingProvider('local') : undefined\n  const router = new ModelRouter({\n    providers: { lightweight, standard, local },\n    routingOverrides: opts?.overrides,\n  })\n  return { router, lightweight, standard, local }\n}\n\nit('routes classification tasks to lightweight provider', async () => {\n  const { router, lightweight, standard } = createRouter()\n  ...\n})\n\nWHY: A test factory function eliminates ~40 lines of repeated setup and makes the intent of each test case clearer by highlighting what differs (local provider, overrides) rather than what is always the same."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "naming-clarity",
+      "title": "Magic number 5 in areSimilar default threshold",
+      "file": "packages/context-engine/src/capture/phash.ts",
+      "line": 72,
+      "line_end": 72,
+      "code_snippet": "export function areSimilar(\n  hash1: string,\n  hash2: string,\n  threshold = 5,\n): boolean {",
+      "description": "The default threshold of 5 in areSimilar is a magic number. It represents 'maximum Hamming distance for similarity on a 64-bit hash' but is not given a named constant. The codebase already defines HASH_SIZE = 8 as a named constant in the same file; threshold deserves similar treatment.",
+      "suggestion": "BEFORE:\nexport function areSimilar(\n  hash1: string,\n  hash2: string,\n  threshold = 5,\n): boolean {\n\nAFTER:\n/** Max Hamming distance (out of 64 bits) to consider two pHashes similar */\nconst DEFAULT_SIMILARITY_THRESHOLD = 5\n\nexport function areSimilar(\n  hash1: string,\n  hash2: string,\n  threshold = DEFAULT_SIMILARITY_THRESHOLD,\n): boolean {\n\nWHY: Named constant makes the meaning of '5' self-documenting and matches the project convention of using named constants over magic numbers (HASH_SIZE = 8 already follows this pattern in the same file)."
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "simplification",
+      "subcategory": "test-image-generation-duplication",
+      "title": "Image pixel generation loops repeated 3 times in dedup-stats test",
+      "file": "packages/context-engine/src/__tests__/dedup-stats.test.ts",
+      "line": 109,
+      "line_end": 148,
+      "code_snippet": "const pixels1 = Buffer.alloc(width * height * 3)\nfor (let y = 0; y < height; y++) {\n  for (let x = 0; x < width; x++) {\n    const i = (y * width + x) * 3\n    pixels1[i] = Math.floor((x / width) * 50)\n    ...\n  }\n}",
+      "description": "The beforeAll block generates 3 test images using nearly identical nested loops (lines 109-148). Each loop iterates pixels and sets RGB values with only the color values differing. Per CLAUDE.md clarity principles, three similar lines are acceptable over premature abstraction, but here it is 3 blocks of 8+ lines each (~24 lines of near-identical structure). A helper would reduce this to ~12 lines total.",
+      "suggestion": "BEFORE:\nconst pixels1 = Buffer.alloc(width * height * 3)\nfor (let y = 0; y < height; y++) {\n  for (let x = 0; x < width; x++) {\n    const i = (y * width + x) * 3\n    pixels1[i] = Math.floor((x / width) * 50)\n    pixels1[i + 1] = Math.floor((x / width) * 50)\n    pixels1[i + 2] = Math.floor((x / width) * 80)\n  }\n}\n// ...repeated twice more with different values...\n\nAFTER:\nfunction makeGradient(w: number, h: number, rgb: (x: number, y: number, w: number, h: number) => [number, number, number]): Buffer {\n  const pixels = Buffer.alloc(w * h * 3)\n  for (let y = 0; y < h; y++) {\n    for (let x = 0; x < w; x++) {\n      const i = (y * w + x) * 3\n      const [r, g, b] = rgb(x, y, w, h)\n      pixels[i] = r; pixels[i + 1] = g; pixels[i + 2] = b\n    }\n  }\n  return pixels\n}\n\nconst pixels1 = makeGradient(64, 64, (x, _, w) => [\n  Math.floor((x / w) * 50), Math.floor((x / w) * 50), Math.floor((x / w) * 80)\n])\n\nWHY: Eliminates 3 nearly identical 8-line loops by extracting the common iteration structure into a helper, keeping each image definition as a clear one-liner."
+    }
+  ],
+  "positive_observations": [
+    "classifyTask is a well-structured pure function with clear keyword-based classification and a safe default fallback to 'generation'",
+    "ModelRouter follows the project's Functional Core / Imperative Shell pattern: pure classifyTask + resolveTier functions with a stateful class shell",
+    "DeduplicationTracker is impressively simple (3 methods, 2 counters) with correct edge-case handling for zero comparisons",
+    "Named constants HASH_SIZE, CLASSIFICATION_KEYWORDS etc. follow project convention for avoiding magic values",
+    "All functions are well under 30 lines, matching the project's established complexity thresholds",
+    "Test Double rationale comments are present in all test files, following project convention"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

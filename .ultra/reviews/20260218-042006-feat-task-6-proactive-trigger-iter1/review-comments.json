@@ -1,0 +1,109 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260218-042006-feat-task-6-proactive-trigger-iter1",
+  "timestamp": "2026-02-18T04:22:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/persona-engine/src/proactive-trigger.ts",
+      "packages/persona-engine/src/do-not-disturb.ts",
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/index.ts",
+      "packages/persona-engine/src/__tests__/proactive-trigger.test.ts",
+      "packages/persona-engine/src/__tests__/do-not-disturb.test.ts",
+      "packages/persona-engine/src/__tests__/persona-engine.test.ts",
+      "packages/persona-engine/src/__tests__/response-generator.test.ts"
+    ],
+    "total_lines_analyzed": 1621,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 1, "P3": 4 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "redundant-alias-docs",
+      "title": "EmotionState alias JSDoc duplicates values that will rot",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 7,
+      "line_end": 12,
+      "code_snippet": "/**\n * Type alias so response-generator and proactive-trigger can refer to\n * emotion states without importing PersonaEmotion directly.\n * Values: idle, curious, caring, worried, sleepy, excited.\n */\nexport type EmotionState = PersonaEmotion",
+      "description": "The JSDoc for EmotionState explicitly lists all six values ('idle, curious, caring, worried, sleepy, excited') as prose. These values are already visible in the PersonaEmotion type definition 4 lines above. When the PersonaEmotion union changes, this comment will become stale. The comment also explains an internal aliasing rationale ('so response-generator and proactive-trigger can refer to emotion states without importing PersonaEmotion directly') but since EmotionState IS PersonaEmotion, consumers can import either -- the alias provides no decoupling benefit worth documenting.",
+      "suggestion": "Remove the enumerated values from the comment. Keep only the rationale line if desired: '/** Type alias for convenience across persona-engine modules. */'"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "redundant-constant-comment",
+      "title": "Time constant JSDoc comments restate the variable name",
+      "file": "packages/persona-engine/src/proactive-trigger.ts",
+      "line": 3,
+      "line_end": 17,
+      "code_snippet": "/** Two hours in milliseconds */\nexport const TWO_HOURS_MS = 2 * 60 * 60 * 1000\n\n/** Ninety minutes cooldown in milliseconds */\nexport const COOLDOWN_MS = 90 * 60 * 1000\n\n/** One hour in milliseconds */\nconst ONE_HOUR_MS = 60 * 60 * 1000\n\n/** Thirty minutes in milliseconds */\nconst THIRTY_MINUTES_MS = 30 * 60 * 1000\n\n/** Twenty-four hours in milliseconds */\nconst TWENTY_FOUR_HOURS_MS = 24 * ONE_HOUR_MS",
+      "description": "Five constants (TWO_HOURS_MS, COOLDOWN_MS, ONE_HOUR_MS, THIRTY_MINUTES_MS, TWENTY_FOUR_HOURS_MS) each have a JSDoc comment that restates what the variable name and expression already convey. For example, '/** Two hours in milliseconds */' on 'TWO_HOURS_MS = 2 * 60 * 60 * 1000' adds zero information. The names are self-documenting and the arithmetic expressions are trivially readable.",
+      "suggestion": "Remove these comments entirely. The variable names and expressions are self-documenting. The one exception is COOLDOWN_MS which could have a comment explaining which cooldown it is for (T03 rest-reminder default), but currently it just says 'Ninety minutes cooldown in milliseconds'."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "redundant-section-comment",
+      "title": "Section separator comments in proactive-trigger.ts are low-ROI",
+      "file": "packages/persona-engine/src/proactive-trigger.ts",
+      "line": 57,
+      "line_end": 57,
+      "code_snippet": "// --- T01: Morning Greeting ---\n...\n// --- T02: Noon Care ---\n...\n// --- T03: Rest Reminder ---",
+      "description": "Eleven section separator comments like '// --- T01: Morning Greeting ---' appear throughout the file. The trigger constants are already named T01_MORNING_GREETING, T02_NOON_CARE, etc., making the separators redundant. These separators also appear duplicated in the test file. While they provide minor visual structure, the maintenance cost of keeping them in sync with the constant names is not zero and the benefit is marginal in a file of this size (278 lines).",
+      "suggestion": "Consider removing the section separator comments. The constants are self-named and the file is short enough that IDE outline/folding provides equivalent navigation. If kept, they are harmless but provide negative ROI."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "comments",
+      "subcategory": "misleading-label",
+      "title": "do-not-disturb.test.ts section header '--- State Mutations ---' is inaccurate",
+      "file": "packages/persona-engine/src/__tests__/do-not-disturb.test.ts",
+      "line": 143,
+      "line_end": 143,
+      "code_snippet": "// --- State Mutations ---",
+      "description": "The section comment says 'State Mutations' but the functions tested (recordTrigger, recordIgnore, recordUserInteraction) all return new immutable state objects rather than mutating state. The DoNotDisturbState interface uses readonly fields. This comment could mislead a future maintainer into thinking these functions perform in-place mutation.",
+      "suggestion": "Rename to '// --- State Transitions ---' or '// --- State Updates ---' to accurately reflect the immutable return-new-state pattern."
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "comments",
+      "subcategory": "accuracy",
+      "title": "Test comment says '23 PM' instead of '23:00'",
+      "file": "packages/persona-engine/src/__tests__/do-not-disturb.test.ts",
+      "line": 41,
+      "line_end": 41,
+      "code_snippet": "it('handles boundary: 23 PM is quiet', () => {",
+      "description": "The test description says '23 PM' which is not a valid 12-hour time format. 23:00 is in 24-hour format. Using 'PM' with 23 is contradictory. This is a minor inaccuracy in a test name that could cause momentary confusion.",
+      "suggestion": "Change to 'handles boundary: 23:00 is quiet' for correctness."
+    }
+  ],
+  "positive_observations": [
+    "JSDoc on all exported interfaces and public functions in types.ts is thorough and accurate, with parameter-level inline docs on every TriggerInput field.",
+    "The evaluateTriggers() JSDoc accurately describes all parameters including the new cooldownMultiplier, and the description matches the implementation behavior.",
+    "Comments on TriggerCondition and TriggerResult correctly describe the discriminated union pattern and all fields match the implementation.",
+    "The DoNotDisturb function JSDoc comments (canTrigger, recordTrigger, recordIgnore, recordUserInteraction) accurately describe behavior, return values, and side effects.",
+    "The INTIMACY_ORDER comment correctly explains the purpose of the ordering array for comparison logic."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

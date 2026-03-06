@@ -1,0 +1,159 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260221-054200-feat-task-24-performance-cost-control-iter1",
+  "timestamp": "2026-02-21T05:42:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/model-router.ts",
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/model-router.test.ts",
+      "packages/context-engine/src/__tests__/dedup-stats.test.ts",
+      "packages/context-engine/src/__tests__/performance-benchmark.test.ts"
+    ],
+    "total_lines_analyzed": 1133,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 8,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 4, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "ModelRouter exported but has zero consumers outside tests",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 121,
+      "line_end": 187,
+      "code_snippet": "export class ModelRouter implements LlmProvider {\n  // ... (entire class)\n}\n// Also: classifyTask, ModelRouterOptions, etc. in index.ts",
+      "description": "ModelRouter, classifyTask, and all related types are exported from the package barrel (index.ts) but are not imported or used by any consumer in apps/ or other packages/. The only references are within the context-engine package itself (definition, tests, re-exports). This is orphan code -- it cannot be exercised from any live entry point (HTTP handler, Electron IPC, event listener, cron job). Deploying this change alone does nothing to the running application.",
+      "suggestion": "Wire ModelRouter into the orchestrator at apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts as a drop-in LlmProvider replacement. Until a consumer exists, this is dead code. Even a minimal integration (constructor wiring + one call path exercised in an integration test) would resolve this.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "DeduplicationTracker exported but has zero consumers outside tests",
+      "file": "packages/context-engine/src/capture/phash.ts",
+      "line": 94,
+      "line_end": 125,
+      "code_snippet": "export class DeduplicationTracker {\n  private _duplicates = 0\n  private _unique = 0\n  // ...\n}",
+      "description": "DeduplicationTracker is exported from the package barrel but not imported by any code outside the context-engine test files. ScreenshotPipeline (the intended consumer per the JSDoc) does not use it. No app-level code references it. This is orphan code -- the deduplication statistics this class produces cannot be observed at runtime.",
+      "suggestion": "Integrate DeduplicationTracker into ScreenshotPipeline so that every pHash comparison is tracked. Expose stats via a getter so the orchestrator or a settings panel can display dedup effectiveness. Without a live consumer, this class provides no value.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "architecture",
+      "subcategory": "in-memory-state",
+      "title": "ModelRouter routing stats stored only in memory, lost on restart",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 126,
+      "line_end": 127,
+      "code_snippet": "private tierCalls: Record<ModelTier, number> = { lightweight: 0, standard: 0, local: 0 }\nprivate taskCalls: Record<TaskType, number> = { classification: 0, extraction: 0, generation: 0, summarization: 0 }",
+      "description": "The routing statistics (callsByTier, callsByTaskType, estimatedSavingsRatio) exist only as in-memory counters on the ModelRouter instance. If the Electron app restarts, all cost-tracking data is lost. For a feature whose purpose is cost control and observability, non-persistent counters defeat the goal. The user cannot view historical cost trends or verify savings over time.",
+      "suggestion": "Persist routing stats to the existing SQLite store at meaningful intervals (e.g., on getStats() or periodically). At minimum, emit the stats to a structured log sink so they survive restarts. The persistence layer already exists in the context-engine (DocumentStore/VectorStore use SQLite).",
+      "claude_md_rule": "architecture.business_state_in_memory"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "silent-fallback",
+      "title": "Routing override to 'local' silently falls back to lightweight",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 96,
+      "line_end": 107,
+      "code_snippet": "if (overrides?.[taskType]) {\n  return overrides[taskType]!\n}\n// ...\ncase 'local':\n  return this.providers.local ?? this.providers.lightweight",
+      "description": "If a user configures routingOverrides: { summarization: 'local' } but does not provide a local provider, resolveTier returns 'local' and getProvider silently falls back to the lightweight provider. The caller has no way to know their explicit override was not honored. This violates fail-fast principles -- misconfiguration should be surfaced, not silently degraded.",
+      "suggestion": "Validate routingOverrides in the constructor: if any override targets 'local' but options.providers.local is undefined, throw an Error with a clear message. Alternatively, log a warning when getProvider falls back from local to lightweight.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "missing-logging",
+      "title": "ModelRouter has no structured logging for routing decisions",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 135,
+      "line_end": 158,
+      "code_snippet": "async generateText(options: { system: string, prompt: string }): Promise<string> {\n  const taskType = classifyTask(options.system)\n  const tier = resolveTier(taskType, this.hasLocal, this.overrides)\n  const provider = this.getProvider(tier)\n  this.tierCalls[tier]++\n  this.taskCalls[taskType]++\n  return provider.generateText(options)\n}",
+      "description": "ModelRouter makes routing decisions (task classification, tier selection) without any structured logging. For a cost-control component, observability of routing decisions is critical for debugging misclassifications and verifying cost savings. The existing pattern in the codebase uses @guiiai/logg (useLogg). Other context-engine classes lack logging too (context-merger has a TODO-like comment about it), but for a cost-control feature, this gap is more impactful.",
+      "suggestion": "Add structured logging at DEBUG level for each routing decision: { taskType, tier, system: options.system.slice(0, 80) }. Use @guiiai/logg useLogg pattern consistent with other packages in the monorepo.",
+      "claude_md_rule": "logging.required_fields"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "integration",
+      "subcategory": "horizontal-only",
+      "title": "Change is horizontal-only: no end-to-end path exercised",
+      "file": "packages/context-engine/src/index.ts",
+      "line": 24,
+      "line_end": 25,
+      "code_snippet": "export { classifyTask, ModelRouter } from './processing/model-router'\nexport type { ModelRouterOptions, ModelTier, RoutingStats, TaskType } from './processing/model-router'",
+      "description": "This task adds two new modules (ModelRouter, DeduplicationTracker) with unit tests and benchmark tests, but no vertical slice connects them to the running application. The orchestrator in apps/stage-tamagotchi still creates LlmProvider instances directly without ModelRouter. The ScreenshotPipeline still does not use DeduplicationTracker. No integration test proves the router works within the actual context merge pipeline. The change is entirely horizontal: new library code with no wiring to any entry point.",
+      "suggestion": "Deliver a minimal vertical slice: (1) Wire ModelRouter into the orchestrator as the LlmProvider passed to ContextMerger/EntityExtractor. (2) Wire DeduplicationTracker into ScreenshotPipeline. (3) Add one integration test proving a context merge flows through ModelRouter end-to-end.",
+      "claude_md_rule": "integration.vertical_slice"
+    },
+    {
+      "id": "review-code-007",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "error-handling",
+      "title": "ModelRouter does not add routing context to provider errors",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 135,
+      "line_end": 143,
+      "code_snippet": "async generateText(options: { system: string, prompt: string }): Promise<string> {\n  const taskType = classifyTask(options.system)\n  const tier = resolveTier(taskType, this.hasLocal, this.overrides)\n  const provider = this.getProvider(tier)\n  // ...\n  return provider.generateText(options)\n}",
+      "description": "When a downstream provider throws (e.g., 'Model overloaded'), the error propagates with no routing context. The test 'propagates provider errors with routing context' (line 309) is misleadingly named -- it only verifies the raw error propagates, not that routing context is added. Debugging which tier/provider failed in production requires manual correlation. The error_handling rules require 'include context in errors: what failed, why, what input caused it'.",
+      "suggestion": "Wrap the provider call in a try/catch that enriches the error: catch (error) { throw new Error(`ModelRouter: ${tier} provider failed for ${taskType} task: ${error.message}`, { cause: error }) }. Update the test name to match the actual behavior.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-code-008",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "code-quality",
+      "subcategory": "keyword-classification-fragility",
+      "title": "Keyword-based task classification is fragile and order-dependent",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 33,
+      "line_end": 71,
+      "code_snippet": "const CLASSIFICATION_KEYWORDS = ['classify', 'categorize', 'categorise', 'label', 'tag']\nconst EXTRACTION_KEYWORDS = ['extract', 'named entit', 'entity', 'entities']\n// ...\nexport function classifyTask(system: string, schemaDescription?: string): TaskType {",
+      "description": "The classifyTask function relies on substring matching against hardcoded keyword lists with priority ordering. A system prompt containing both 'classify' and 'extract' would always be classified as 'classification' due to check order. The keyword 'tag' could match unrelated words in prompts (e.g., 'vintage'). This is acceptable for an initial implementation but will become a maintenance burden as prompt templates evolve. The tests cover known prompts but not adversarial edge cases.",
+      "suggestion": "Consider this acceptable for now but add a comment documenting the priority semantics. For future iterations, a weighted scoring approach or a small classifier model would be more robust. At minimum, add test cases for prompts containing keywords from multiple categories to document the priority behavior.",
+      "claude_md_rule": "code_quality.boundary_conditions"
+    }
+  ],
+  "positive_observations": [
+    "Clean Functional Core / Imperative Shell separation: classifyTask and resolveTier are pure functions, ModelRouter is the imperative shell",
+    "Test doubles use the correct pattern with explicit 'Test Double rationale' comments for external LLM API boundaries",
+    "DeduplicationTracker handles division-by-zero gracefully (returns 0 when no comparisons)",
+    "ModelRouter implements LlmProvider interface enabling transparent drop-in usage",
+    "Good test coverage: pure function tests for classifyTask, routing behavior tests, stats tracking, error propagation, and performance benchmarks",
+    "The performance benchmark test validates sub-millisecond routing overhead and O(1) tracker operations",
+    "getProvider has a sensible fallback chain: local -> lightweight when local is unavailable"
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

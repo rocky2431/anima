@@ -1,0 +1,16 @@
+{
+  "name": "@anase/anase-plugin-skills",
+  "type": "module",
+  "version": "0.8.4",
+  "private": true,
+  "description": "Skills Engine plugin: wraps SkillRegistry and injects skill context into system prompts",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@moeru/eventa": "catalog:",
+    "@anase/plugin-sdk": "workspace:*",
+    "@anase/skills-engine": "workspace:*"
+  }
+}

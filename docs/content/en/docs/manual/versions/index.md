@@ -1,6 +1,6 @@
 ---
 title: Versions
-description: Different versions of AIRI and how to get them
+description: Different versions of Anase and how to get them
 ---
 
 <script setup>
@@ -8,7 +8,7 @@ import ReleaseDownloads from '../../../../../.vitepress/components/ReleaseDownlo
 import ReleasesList from '../../../../../.vitepress/components/ReleasesList.vue'
 </script>
 
-AIRI offers multiple release channels to suit different needs. Whether you want the most stable experience or the latest features, we've got you covered.
+Anase offers multiple release channels to suit different needs. Whether you want the most stable experience or the latest features, we've got you covered.
 
 ## Stable Releases & Pre-releases
 
@@ -43,9 +43,9 @@ Nightly builds are automatically generated every day from the latest `main` bran
 2. Click on the most recent successful run (indicated by a green checkmark ✓)
 3. Scroll down to the **Artifacts** section
 4. Download the build for your platform:
-   - **Windows**: `AIRI_*_x64_en-US.exe`
-   - **macOS (Intel)**: `AIRI_*_x64.dmg`
-   - **macOS (Apple Silicon)**: `AIRI_*_arm64.dmg`
+   - **Windows**: `ANASE_*_x64_en-US.exe`
+   - **macOS (Intel)**: `ANASE_*_x64.dmg`
+   - **macOS (Apple Silicon)**: `ANASE_*_arm64.dmg`
    - **Linux (x64)**: `airi_*_amd64.deb` or `airi-*.x86_64.rpm`
    - **Linux (ARM64)**: `airi_*_arm64.deb` or `airi-*.aarch64.rpm`
 

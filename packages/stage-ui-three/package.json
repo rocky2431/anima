@@ -1,17 +1,17 @@
 {
-  "name": "@proj-airi/stage-ui-three",
+  "name": "@anase/stage-ui-three",
   "type": "module",
   "private": true,
-  "description": "A collection of 3D scene components that used by Project AIRI",
+  "description": "A collection of 3D scene components that used by Project Anase",
   "author": {
-    "name": "Moeru AI Project AIRI Team",
-    "email": "airi@moeru.ai",
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
     "url": "https://github.com/moeru-ai"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/moeru-ai/airi.git",
+    "url": "https://github.com/rocky2431/anima.git",
     "directory": "packages/stage-ui-three"
   },
   "exports": {
@@ -27,8 +27,8 @@
     "@pixiv/three-vrm": "^3.4.5",
     "@pixiv/three-vrm-animation": "^3.4.5",
     "@pixiv/three-vrm-core": "^3.4.5",
-    "@proj-airi/stage-shared": "workspace:*",
-    "@proj-airi/ui": "workspace:*",
+    "@anase/stage-shared": "workspace:*",
+    "@anase/ui": "workspace:*",
     "@tresjs/cientos": "^5.2.3",
     "@tresjs/core": "^5.3.1",
     "@tresjs/post-processing": "^3.2.3",

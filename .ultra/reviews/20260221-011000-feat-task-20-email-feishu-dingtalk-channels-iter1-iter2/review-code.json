@@ -1,0 +1,115 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260221-011000-feat-task-20-email-feishu-dingtalk-channels-iter1-iter2",
+  "timestamp": "2026-02-21T01:15:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/dingtalk/index.ts",
+      "packages/channels-extra/src/email/index.ts",
+      "packages/channels-extra/src/feishu/index.ts",
+      "packages/channels-extra/src/index.ts",
+      "packages/channels-extra/src/types.ts",
+      "packages/channels-extra/src/__tests__/email/email-channel.test.ts",
+      "packages/channels-extra/src/__tests__/feishu/feishu-channel.test.ts",
+      "packages/channels-extra/src/__tests__/dingtalk/dingtalk-channel.test.ts"
+    ],
+    "total_lines_analyzed": 1805,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 4, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "forbidden-pattern",
+      "subcategory": "hardcoded-config",
+      "title": "Hardcoded email subject string",
+      "file": "packages/channels-extra/src/email/index.ts",
+      "line": 151,
+      "code_snippet": "subject: 'Message from Anima',",
+      "description": "The email subject is hardcoded to 'Message from Anima'. This should be configurable via EmailConfig or the MessageContent interface, allowing callers to customize per-message subjects. Hardcoded config values are a forbidden pattern per CLAUDE.md.",
+      "suggestion": "Add an optional 'subject' field to MessageContent or EmailConfig, and fall back to a default: `subject: content.subject ?? this.config.defaultSubject ?? 'Message from Anima'`",
+      "claude_md_rule": "forbidden_patterns.hardcoded_config"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "NIH-email-parsing",
+      "title": "Naive email body extraction ignores MIME encoding",
+      "file": "packages/channels-extra/src/email/index.ts",
+      "line": 225,
+      "line_end": 231,
+      "code_snippet": "private extractTextFromSource(source: Buffer): string {\n  const raw = source.toString('utf-8')\n  const headerBodySplit = raw.indexOf('\\r\\n\\r\\n')\n  if (headerBodySplit === -1)\n    return raw\n  return raw.slice(headerBodySplit + 4).trim()\n}",
+      "description": "The extractTextFromSource method splits raw email source at the first CRLF double-newline boundary and returns everything after it. This ignores MIME multipart structure, Content-Transfer-Encoding (base64, quoted-printable), character encoding headers, and attachments. For any non-trivial email, this will return garbled or incomplete text. This is a NIH (Not Invented Here) violation -- use a mature library like mailparser.",
+      "suggestion": "Replace with `import { simpleParser } from 'mailparser'` and use `const parsed = await simpleParser(source); return parsed.text ?? ''`. mailparser handles MIME, encoding, multipart, and attachments correctly.",
+      "claude_md_rule": "use_mature_libraries"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "architecture",
+      "subcategory": "fragile-sdk-coupling",
+      "title": "Feishu EventDispatcher relies on SDK internal _handlers Map",
+      "file": "packages/channels-extra/src/feishu/index.ts",
+      "line": 34,
+      "line_end": 36,
+      "code_snippet": "interface FeishuEventDispatcher {\n  _handlers: Map<string, (data: FeishuMessageEvent) => void>\n}",
+      "description": "The FeishuEventDispatcher interface depends on the _handlers property (prefixed with underscore, indicating internal/private SDK detail) of the @larksuiteoapi/node-sdk EventDispatcher class. If the SDK changes this internal structure in a minor or patch version, the channel will silently break -- the WebSocket client will start but no messages will be dispatched.",
+      "suggestion": "If the SDK exposes a public API for registering event handlers (e.g., EventDispatcher.register or constructor options), use that instead. If not, pin the SDK version and add a smoke test that verifies _handlers is populated after construction.",
+      "claude_md_rule": "architecture"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "integration",
+      "subcategory": "horizontal-only",
+      "title": "Three channels added with zero vertical integration",
+      "file": "packages/channels-extra/src/index.ts",
+      "line": 5,
+      "line_end": 12,
+      "code_snippet": "export { DingTalkChannel } from './dingtalk/index.js'\nexport { EmailChannel } from './email/index.js'\nexport { FeishuChannel } from './feishu/index.js'",
+      "description": "Email, Feishu, and DingTalk channels are exported from the package but no code in the monorepo imports or instantiates them. They are not wired to any entry point (HTTP handler, service registration, CLI command). This is a horizontal-only change -- three channels side by side but no end-to-end data path. Acknowledged as deferred to task-23 integration checkpoint, but flagged per integration-rules orphan detection policy.",
+      "suggestion": "Ensure task-23 integration checkpoint wires at least one of these channels to a live entry point and adds an integration test proving the message flow end-to-end.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "code-quality",
+      "subcategory": "eviction-strategy",
+      "title": "DingTalk session webhook eviction is FIFO, not LRU",
+      "file": "packages/channels-extra/src/dingtalk/index.ts",
+      "line": 196,
+      "line_end": 203,
+      "code_snippet": "private storeSessionWebhook(conversationId: string, url: string, expiresAt: number): void {\n  if (this.sessionWebhooks.size >= MAX_SESSION_WEBHOOKS) {\n    const oldestKey = this.sessionWebhooks.keys().next().value\n    if (oldestKey)\n      this.sessionWebhooks.delete(oldestKey)\n  }\n  this.sessionWebhooks.set(conversationId, { url, expiresAt })\n}",
+      "description": "The eviction strategy evicts the first-inserted key (FIFO via Map insertion order), not the least-recently-accessed key. getSessionWebhook does not re-insert entries to promote them. In practice this is adequate since incoming messages naturally refresh webhooks via storeSessionWebhook, but it is not true LRU. A minor naming/documentation clarification would help.",
+      "suggestion": "Either document the eviction as FIFO (not LRU), or have getSessionWebhook re-insert the entry to promote it: `this.sessionWebhooks.delete(conversationId); this.sessionWebhooks.set(conversationId, entry);`"
+    }
+  ],
+  "positive_observations": [
+    "P0 SSRF fix is correct and complete: isValidWebhookUrl validates both protocol (https:) and hostname against DINGTALK_ALLOWED_HOSTS allowlist, applied at both ingress (storeSessionWebhook) and egress (sendMessage).",
+    "All P1 fixes from previous review are properly implemented: error handling with contextual messages, type guards replacing unsafe casts, bounded collections with eviction, and error path tests for all three channels.",
+    "Consistent use of @guiiai/logg structured logging across all three channels -- no console.log in production code.",
+    "Constructor dependency injection pattern (createStreamClient, createImapClient, etc.) enables clean testability with proper Test Double rationale comments.",
+    "Email disconnect now uses individual try/catch/finally per resource, ensuring partial cleanup never leaks resources.",
+    "DingTalk handleBotMessage properly returns LATER status on parse errors, enabling retry by the stream protocol.",
+    "All three channels implement proper status lifecycle with error propagation and status handler notification with try/catch protection.",
+    "Test doubles are well-structured with helper factories (createMockStreamClient, createMockImapClient, etc.) that simulate realistic SDK behavior including event triggers."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 8
+  }
+}

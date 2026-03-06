@@ -1,0 +1,81 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260221-030900-feat-task-22-context-merger-iter1",
+  "timestamp": "2026-02-21T03:09:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/context-merger.ts",
+      "packages/context-engine/src/processing/entity-extractor.ts",
+      "packages/context-engine/src/processing/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/context-merger.test.ts",
+      "packages/context-engine/src/__tests__/entity-extractor.test.ts",
+      "packages/context-engine/src/__tests__/context-merger-utils.test.ts"
+    ],
+    "total_lines_analyzed": 1017,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 0, "P3": 3 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P3",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "duplicate-code-fragment",
+      "title": "Duplicate source-to-text mapping on lines 131 and 174",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 130,
+      "line_end": 132,
+      "code_snippet": "const combinedText = selected\n  .map(s => `[${s.source}] ${s.summary}`)\n  .join('\\n')",
+      "description": "The pattern `.map(s => \\`[${s.source}] ${s.summary}\\`).join('\\n')` appears identically at line 131 (in merge()) and line 174 (in generateSummary()). The merge method builds combinedText, then generateSummary rebuilds the exact same string from the same sources. This means generateSummary could accept the already-built combinedText string instead of rebuilding it.",
+      "suggestion": "BEFORE:\n// In merge():\nconst combinedText = selected\n  .map(s => `[${s.source}] ${s.summary}`)\n  .join('\\n')\nconst [extractedEntities, activityClassification, summary] = await Promise.all([\n  this.extractEntities(combinedText),\n  this.classifyActivity(combinedText),\n  this.generateSummary(selected),  // rebuilds the same string\n])\n\n// In generateSummary():\nprivate async generateSummary(sources: ContextSource[]): Promise<string> {\n  const sourceSummaries = sources\n    .map(s => `[${s.source}] ${s.summary}`)\n    .join('\\n')\n  return this.llm.generateText({ system: SUMMARY_SYSTEM_PROMPT, prompt: sourceSummaries })\n}\n\nAFTER:\n// In merge():\nconst combinedText = selected\n  .map(s => `[${s.source}] ${s.summary}`)\n  .join('\\n')\nconst [extractedEntities, activityClassification, summary] = await Promise.all([\n  this.extractEntities(combinedText),\n  this.classifyActivity(combinedText),\n  this.generateSummary(combinedText),  // reuse already-built text\n])\n\n// In generateSummary():\nprivate async generateSummary(combinedText: string): Promise<string> {\n  return this.llm.generateText({ system: SUMMARY_SYSTEM_PROMPT, prompt: combinedText })\n}\n\nWHY: Eliminates the duplicated map/join, reduces generateSummary to a single statement, and makes it clear all three LLM calls receive the same input text."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P3",
+      "confidence": 95,
+      "category": "simplification",
+      "subcategory": "dead-code",
+      "title": "Unreachable catch guard for empty-sources error",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 151,
+      "line_end": 156,
+      "code_snippet": "catch (cause) {\n  if (cause instanceof Error && cause.message === 'At least one context source is required') {\n    throw cause\n  }\n  throw new Error('Context merge failed', { cause })\n}",
+      "description": "The empty-sources guard (`throw new Error('At least one context source is required')`) is on line 121, which is BEFORE the try block starts on line 124. Therefore this error can never be caught by the catch block. The string comparison on line 152 is dead code -- it will never match.",
+      "suggestion": "BEFORE:\ncatch (cause) {\n  if (cause instanceof Error && cause.message === 'At least one context source is required') {\n    throw cause\n  }\n  throw new Error('Context merge failed', { cause })\n}\n\nAFTER:\ncatch (cause) {\n  throw new Error('Context merge failed', { cause })\n}\n\nWHY: The guard clause on line 120-122 is outside the try block, so its error can never reach the catch. Removing the dead branch makes the catch block simpler and avoids the fragile string-matching anti-pattern."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "simplification",
+      "subcategory": "trivial-wrapper",
+      "title": "extractEntities is a single-line passthrough method",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 159,
+      "line_end": 161,
+      "code_snippet": "private async extractEntities(text: string): Promise<ExtractedEntities> {\n  return this.entityExtractor.extract(text)\n}",
+      "description": "The private method `extractEntities` is a trivial single-line delegation to `this.entityExtractor.extract(text)`. Unlike `classifyActivity` and `generateSummary` which contain LLM call construction logic, this method adds no transformation, no error handling, and no additional parameters. It could be inlined at the call site for slightly less indirection.",
+      "suggestion": "BEFORE:\nconst [extractedEntities, activityClassification, summary] = await Promise.all([\n  this.extractEntities(combinedText),\n  this.classifyActivity(combinedText),\n  this.generateSummary(selected),\n])\n...\nprivate async extractEntities(text: string): Promise<ExtractedEntities> {\n  return this.entityExtractor.extract(text)\n}\n\nAFTER:\nconst [extractedEntities, activityClassification, summary] = await Promise.all([\n  this.entityExtractor.extract(combinedText),\n  this.classifyActivity(combinedText),\n  this.generateSummary(selected),\n])\n// Remove the extractEntities private method\n\nWHY: Reduces indirection. The EntityExtractor already has a clear interface; the passthrough wrapper adds no semantic value. This is a minor suggestion -- the wrapper is defensible if there are plans to add transformation logic later, but per YAGNI it can be removed now."
+    }
+  ],
+  "positive_observations": [
+    "Clean separation between pure Functional Core (deduplicateStrings, mergeKeywords, computeImportance, selectTopSources) and Imperative Shell (ContextMerger class), following the project's architecture conventions.",
+    "All functions are short and focused: the longest (merge) is ~38 lines, well under the 50-line threshold. Cyclomatic complexity is low (1-4) across all functions.",
+    "Named constants (DEFAULT_MAX_SOURCES, DEFAULT_IMPORTANCE, VALID_ACTIVITY_TYPES) used consistently instead of magic values.",
+    "Guard clauses and early returns are used effectively throughout (empty array checks, type validation fallback).",
+    "Good use of Promise.all for concurrent LLM calls, avoiding unnecessary sequential await chains.",
+    "Test files are well-organized with focused describe blocks and appropriate test double rationale comments for the LLM boundary."
+  ],
+  "metadata": {
+    "duration_ms": 20000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

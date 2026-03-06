@@ -1,6 +1,6 @@
 provider: github
 owner: moeru-ai
-repo: airi
+repo: anima
 updaterCacheDirName: electron-app-updater
 allowPrerelease: true
 channel: nightly

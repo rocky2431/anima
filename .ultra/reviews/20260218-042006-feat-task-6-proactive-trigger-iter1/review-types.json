@@ -1,0 +1,113 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260218-042006-feat-task-6-proactive-trigger-iter1",
+  "timestamp": "2026-02-18T04:22:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/proactive-trigger.ts",
+      "packages/persona-engine/src/do-not-disturb.ts",
+      "packages/persona-engine/src/index.ts",
+      "packages/persona-engine/src/response-generator.ts",
+      "packages/persona-engine/src/__tests__/proactive-trigger.test.ts",
+      "packages/persona-engine/src/__tests__/do-not-disturb.test.ts",
+      "packages/persona-engine/src/__tests__/persona-engine.test.ts",
+      "packages/persona-engine/src/__tests__/response-generator.test.ts"
+    ],
+    "total_lines_analyzed": 1653,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "encapsulation-inconsistency",
+      "title": "ProactiveResponse fields lack readonly modifiers",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 145,
+      "line_end": 152,
+      "code_snippet": "export interface ProactiveResponse {\n  message: string\n  emotion: EmotionState\n  triggerId: string\n}",
+      "description": "Encapsulation: 5/10, Expression: 7/10, Usefulness: 7/10, Enforcement: 5/10 (Aggregate: 6.0). Every other interface in types.ts uses readonly modifiers (TriggerInput, TriggerCondition, IntimacyState, DoNotDisturbConfig, DoNotDisturbState, AnimaEmotionPayload, PersonaTemplate), but ProactiveResponse has plain mutable fields. This breaks the immutability convention established throughout the Functional Core. Since ProactiveResponse is returned from generateResponse() and flows through the system, it should be immutable like all other data types.",
+      "suggestion": "Add readonly modifiers to all ProactiveResponse fields:\n\nexport interface ProactiveResponse {\n  readonly message: string\n  readonly emotion: EmotionState\n  readonly triggerId: string\n}"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "missing-invariant-enforcement",
+      "title": "DoNotDisturbConfig accepts invalid hour/count values",
+      "file": "packages/persona-engine/src/do-not-disturb.ts",
+      "line": 12,
+      "line_end": 21,
+      "code_snippet": "export function createDefaultConfig(): DoNotDisturbConfig {\n  return {\n    maxPerHour: 3,\n    maxPerDay: 15,\n    quietHoursStart: 23,\n    quietHoursEnd: 7,\n    consecutiveIgnoresForBackoff: 3,\n    backoffMultiplier: 1.5,\n  }\n}",
+      "description": "Encapsulation: 6/10, Expression: 4/10, Usefulness: 7/10, Enforcement: 3/10 (Aggregate: 5.0). The factory function createDefaultConfig() returns hardcoded valid values, but the DoNotDisturbConfig interface imposes no type-level or runtime constraints. A consumer can construct { maxPerHour: -1, quietHoursStart: 99, backoffMultiplier: 0 } which would cause subtle bugs (negative frequency limits, invalid hour comparisons, zero/negative backoff breaking progressive cooldown). Since DoNotDisturbConfig is a Functional Core type that controls behavior, the factory should validate invariants: hours in 0-23, counts > 0, backoffMultiplier > 1.0.",
+      "suggestion": "Add a validated factory function that enforces invariants:\n\nexport function createDoNotDisturbConfig(params: Partial<DoNotDisturbConfig> = {}): DoNotDisturbConfig {\n  const config = { ...createDefaultConfig(), ...params }\n  if (config.quietHoursStart < 0 || config.quietHoursStart > 23) throw new Error('quietHoursStart must be 0-23')\n  if (config.quietHoursEnd < 0 || config.quietHoursEnd > 23) throw new Error('quietHoursEnd must be 0-23')\n  if (config.maxPerHour < 1) throw new Error('maxPerHour must be >= 1')\n  if (config.maxPerDay < 1) throw new Error('maxPerDay must be >= 1')\n  if (config.backoffMultiplier <= 1.0) throw new Error('backoffMultiplier must be > 1.0')\n  return config\n}",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "TriggerInput hour/minute fields accept any number without validation",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 90,
+      "line_end": 93,
+      "code_snippet": "  readonly currentHour: number\n  readonly currentMinute: number",
+      "description": "Encapsulation: 6/10, Expression: 4/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.75). TriggerInput.currentHour should be 0-23 and currentMinute should be 0-59, but both are typed as plain number. Multiple trigger checks rely on these values being valid (T01 checks hour >= 6 && hour < 11, T02 converts to minutes for lunch time range, T05 checks for late night hours). Invalid values (e.g., hour = -1 or hour = 30) would silently produce wrong results. Since TriggerInput is the boundary type for external data entering the Functional Core, validation is critical here.",
+      "suggestion": "Since TypeScript cannot enforce numeric ranges at the type level without branded types, add a factory function with validation:\n\nexport function createTriggerInput(raw: TriggerInput): TriggerInput {\n  if (raw.currentHour < 0 || raw.currentHour > 23) throw new Error('currentHour must be 0-23')\n  if (raw.currentMinute < 0 || raw.currentMinute > 59) throw new Error('currentMinute must be 0-59')\n  if (raw.continuousWorkDurationMs < 0) throw new Error('continuousWorkDurationMs must be >= 0')\n  return raw\n}",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "Duration/timestamp fields use bare number without unit distinction",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 84,
+      "line_end": 112,
+      "code_snippet": "  readonly continuousWorkDurationMs: number\n  readonly previousFocusDurationMs: number\n  readonly timeSinceLastActivityMs: number",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 5/10 (Aggregate: 4.75). Multiple fields represent durations in milliseconds (continuousWorkDurationMs, previousFocusDurationMs, timeSinceLastActivityMs, cooldownMs) and timestamps (triggerTimestamps, lastTriggerTimes). All are typed as plain number. The 'Ms' suffix in field names is the only protection against unit confusion. A branded type like `type Milliseconds = number & { __brand: 'ms' }` would provide compile-time safety. This is a known codebase-wide pattern (previously flagged), kept at P3 since the naming convention provides adequate runtime clarity and the walking skeleton context reduces urgency.",
+      "suggestion": "Consider introducing branded types for time units in a future iteration:\n\ntype Milliseconds = number & { readonly __brand: unique symbol }\nexport function ms(value: number): Milliseconds { return value as Milliseconds }"
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "type-design",
+      "subcategory": "loose-key-typing",
+      "title": "evaluateTriggers lastTriggerTimes uses Record<string, number>",
+      "file": "packages/persona-engine/src/proactive-trigger.ts",
+      "line": 247,
+      "line_end": 247,
+      "code_snippet": "  lastTriggerTimes: Record<string, number>,",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 5/10 (Aggregate: 4.75). The lastTriggerTimes parameter accepts any string key, but it should only contain keys matching trigger IDs (T01-T11). Using Record<string, number> allows typos and invalid keys to pass silently. A more precise type would use the trigger ID as the key type. However, since trigger conditions are extensible (the function accepts any TriggerCondition[]), a fully constrained key type would be overly rigid.",
+      "suggestion": "Consider a type alias to document intent without over-constraining:\n\ntype TriggerTimesMap = Record<string, number>\n// Or if triggers become a closed set:\ntype TriggerId = `T${string}`\ntype TriggerTimesMap = Partial<Record<TriggerId, number>>"
+    }
+  ],
+  "positive_observations": [
+    "TriggerResult is a well-designed discriminated union that makes illegal states unrepresentable -- triggered:false cannot have triggerId/triggerName fields, and triggered:true requires all fields",
+    "All new interfaces (TriggerInput, TriggerCondition, DoNotDisturbConfig, DoNotDisturbState) use readonly modifiers consistently, establishing strong immutability conventions for Functional Core types",
+    "String literal unions (PersonaEmotion, IntimacyStage, TriggerPriority, AppCategory) provide excellent type safety -- invalid values are rejected at compile time",
+    "DoNotDisturbState uses immutable state transitions via pure factory functions (recordTrigger, recordIgnore, recordUserInteraction) -- textbook Functional Core pattern",
+    "TriggerCondition embeds a pure check function, cleanly separating trigger logic from evaluation infrastructure while keeping the type self-contained",
+    "TriggerInput is intentionally decoupled from context-engine's ActivityContext, maintaining clean module boundaries without cross-package type dependencies"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

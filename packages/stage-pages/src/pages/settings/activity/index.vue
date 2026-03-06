@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ActivityTimeline } from '@proj-airi/stage-ui/components'
+import { ActivityTimeline } from '@anase/stage-ui/components'
 </script>
 
 <template>

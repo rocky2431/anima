@@ -1,0 +1,65 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260221-030900-feat-task-22-context-merger-iter1",
+  "timestamp": "2026-02-21T03:09:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/context-merger.ts",
+      "packages/context-engine/src/processing/entity-extractor.ts",
+      "packages/context-engine/src/processing/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/context-merger.test.ts",
+      "packages/context-engine/src/__tests__/entity-extractor.test.ts",
+      "packages/context-engine/src/__tests__/context-merger-utils.test.ts"
+    ],
+    "total_lines_analyzed": 1017,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 2,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 0, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "comments",
+      "subcategory": "factual-accuracy",
+      "title": "Test description says 'weighted average' but code uses simple mean",
+      "file": "packages/context-engine/src/__tests__/context-merger.test.ts",
+      "line": 161,
+      "code_snippet": "it('computes importance as weighted average of source importances', async () => {",
+      "description": "The test name states 'weighted average' but the actual implementation in computeImportance() (context-merger.ts:72-81) computes a simple arithmetic mean: sum / count. A weighted average would weight each source differently (e.g., by recency or source type). The JSDoc on computeImportance correctly says 'average' without the 'weighted' qualifier. This discrepancy will mislead anyone reading the test into thinking the importance calculation accounts for per-source weights, when it does not.",
+      "suggestion": "Rename the test to: it('computes importance as arithmetic mean of source importances', ...) or simply it('computes importance as average of source importances', ...) to match the actual behavior and the JSDoc."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "long-term-value",
+      "title": "Hardcoded count '7 activity types' in JSDoc will rot if types change",
+      "file": "packages/context-engine/src/processing/types.ts",
+      "line": 2,
+      "code_snippet": "/**\n * 7 activity types for user context classification.\n * Used by ContextMerger to classify the user's current activity.\n */",
+      "description": "The JSDoc comment on the ActivityType union hardcodes the number '7'. If an activity type is added or removed in the future, the comment becomes silently incorrect. Numeric counts in comments are a classic rot vector.",
+      "suggestion": "Remove the count: change to 'Activity types for user context classification.' The union definition itself makes the count self-evident."
+    }
+  ],
+  "positive_observations": [
+    "All exported pure functions (deduplicateStrings, mergeKeywords, computeImportance, selectTopSources) have accurate JSDoc that explains behavior, edge cases, and defaults -- matches the project convention well.",
+    "Architectural section markers ('--- Pure functions (Functional Core) ---' and '--- ContextMerger (Imperative Shell) ---') provide useful structural orientation without restating code.",
+    "ContextMerger class JSDoc documents the full 6-step pipeline, giving readers a high-level overview before they dive into implementation. This is valuable 'why/how' documentation.",
+    "Test Double rationale comments in both test files follow the CLAUDE.md convention, clearly explaining why a stub is used instead of the real LLM service.",
+    "All ContextSource and MergedContext interface fields have concise, accurate JSDoc -- good for IDE tooltips and API consumers.",
+    "EntityExtractor JSDoc correctly identifies the class as Imperative Shell with external LLM dependency, aiding architectural understanding."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

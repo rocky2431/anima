@@ -1,0 +1,110 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260218-174800-feat-task-7-integration-checkpoint-iter1",
+  "timestamp": "2026-02-18T17:50:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/index.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 996,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 1, "P3": 3 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P1",
+      "confidence": 76,
+      "category": "code-quality",
+      "subcategory": "function-length",
+      "title": "createAnimaOrchestrator is 101 lines (just over 100-line threshold)",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 113,
+      "line_end": 213,
+      "code_snippet": "export function createAnimaOrchestrator(\n  deps: AnimaOrchestratorDeps,\n  config: AnimaOrchestratorConfig = {},\n): AnimaOrchestrator {\n  // ... 97 lines of body",
+      "description": "The createAnimaOrchestrator factory function spans lines 113-213 (101 lines total). Per the severity guide, functions exceeding 100 lines are P1. The function is internally well-structured with named inner functions (handleProcessedContext, handleScreenshotContext) and a clean returned object literal, so the cognitive complexity is lower than the raw line count suggests. The returned AnimaOrchestrator object alone is ~43 lines (lines 169-212) of mostly one-liner method delegates. This is borderline -- confidence is lower because the internal quality partially mitigates the length concern.",
+      "suggestion": "BEFORE:\nexport function createAnimaOrchestrator(\n  deps: AnimaOrchestratorDeps,\n  config: AnimaOrchestratorConfig = {},\n): AnimaOrchestrator {\n  const emotionActor = createEmotionActor()\n  let intimacy = createIntimacyState(...)\n  // ... inner functions ...\n  const pipeline = new ScreenshotPipeline({ ... })\n  const monitor = new ActivityMonitor({ ... })\n  return {\n    start() { ... },\n    stop() { ... },\n    // ... 10 more methods (~43 lines)\n  }\n}\n\nAFTER:\nExtract the pipeline/monitor construction into a helper, or extract handleProcessedContext as a standalone pure function that receives emotionActor and config as parameters:\n\nfunction createTriggerHandler(\n  emotionActor: ReturnType<typeof createEmotionActor>,\n  triggers: TriggerCondition[],\n  lastTriggerTimes: Record<string, number>,\n  config: AnimaOrchestratorConfig,\n) {\n  return (context: ProcessedContext): void => {\n    // ... current handleProcessedContext body\n  }\n}\n\nThis would reduce createAnimaOrchestrator to ~75 lines.\n\nWHY: The 101-line length is just over the threshold. The function's internal structure is clean, so this is a moderate concern. Extracting the trigger handler as a standalone function would also improve testability of the trigger-to-response logic independently.",
+      "claude_md_rule": "file_organization"
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "near-duplicate-code",
+      "title": "Near-duplicate PNG buffer generation blocks in test beforeAll",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "line": 20,
+      "line_end": 46,
+      "code_snippet": "const pixelsA = Buffer.alloc(width * height * 3)\nfor (let y = 0; y < height; y++) {\n  for (let x = 0; x < width; x++) {\n    const val = x < width / 2 ? 0 : 255\n    // ... identical pixel-setting code\n  }\n}",
+      "description": "Lines 20-32 and 34-46 contain near-identical PNG generation code (13 lines each, 26 total). The only difference is the split condition: `x < width / 2` (vertical split) vs `y < height / 2` (horizontal split). Everything else -- buffer allocation, nested loops, pixel assignment, sharp conversion -- is identical. This is a textbook case of extractable duplication (> 10 lines).",
+      "suggestion": "BEFORE:\nconst pixelsA = Buffer.alloc(width * height * 3)\nfor (let y = 0; y < height; y++) {\n  for (let x = 0; x < width; x++) {\n    const i = (y * width + x) * 3\n    const val = x < width / 2 ? 0 : 255\n    pixelsA[i] = val; pixelsA[i + 1] = val; pixelsA[i + 2] = val\n  }\n}\npngA = await sharp(pixelsA, { raw: { width, height, channels: 3 } }).png().toBuffer()\n// ... identical block for pngB with y < height / 2\n\nAFTER:\nasync function generateTestPng(\n  width: number,\n  height: number,\n  valueFn: (x: number, y: number) => number,\n): Promise<Buffer> {\n  const pixels = Buffer.alloc(width * height * 3)\n  for (let y = 0; y < height; y++) {\n    for (let x = 0; x < width; x++) {\n      const i = (y * width + x) * 3\n      const val = valueFn(x, y)\n      pixels[i] = val; pixels[i + 1] = val; pixels[i + 2] = val\n    }\n  }\n  return sharp(pixels, { raw: { width, height, channels: 3 } }).png().toBuffer()\n}\n\nbeforeAll(async () => {\n  pngA = await generateTestPng(64, 64, (x) => (x < 32 ? 0 : 255))\n  pngB = await generateTestPng(64, 64, (_x, y) => (y < 32 ? 0 : 255))\n})\n\nWHY: Reduces 26 lines to 16 (helper + 2 calls). The helper name and callback make the split-direction difference immediately visible. This pattern also exists in context-engine phash tests and could be shared as a test utility."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 88,
+      "category": "simplification",
+      "subcategory": "magic-numbers",
+      "title": "Inline time expressions should use named constants",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 156,
+      "line_end": 164,
+      "code_snippet": "intervalMs: config.screenshotIntervalMs ?? 60_000,\n...\naggregationIntervalMs: config.aggregationIntervalMs ?? 15 * 60 * 1000,\neventRetentionMs: config.eventRetentionMs ?? 3 * 60 * 60 * 1000,",
+      "description": "Three default time values are expressed as inline arithmetic (60_000, 15 * 60 * 1000, 3 * 60 * 60 * 1000). The test file already defines named constants (TWO_HOURS_MS, FOUR_MINUTES_MS) for the same pattern, showing the codebase prefers named time constants. The production code should follow the same convention for consistency and self-documentation.",
+      "suggestion": "BEFORE:\nintervalMs: config.screenshotIntervalMs ?? 60_000,\naggregationIntervalMs: config.aggregationIntervalMs ?? 15 * 60 * 1000,\neventRetentionMs: config.eventRetentionMs ?? 3 * 60 * 60 * 1000,\n\nAFTER:\nconst DEFAULT_SCREENSHOT_INTERVAL_MS = 60_000           // 1 minute\nconst DEFAULT_AGGREGATION_INTERVAL_MS = 15 * 60 * 1000  // 15 minutes\nconst DEFAULT_EVENT_RETENTION_MS = 3 * 60 * 60 * 1000   // 3 hours\n\n// Then use:\nintervalMs: config.screenshotIntervalMs ?? DEFAULT_SCREENSHOT_INTERVAL_MS,\naggregationIntervalMs: config.aggregationIntervalMs ?? DEFAULT_AGGREGATION_INTERVAL_MS,\neventRetentionMs: config.eventRetentionMs ?? DEFAULT_EVENT_RETENTION_MS,\n\nWHY: Named constants are self-documenting. A reader does not need to mentally compute '15 * 60 * 1000 = 900,000ms = 15 minutes'. Also makes it trivial to find and adjust defaults via search.",
+      "claude_md_rule": "code_quality"
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "simplification",
+      "subcategory": "test-boilerplate",
+      "title": "Repeated test setup pattern across 9+ test cases",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "line": 131,
+      "line_end": 168,
+      "code_snippet": "const screenshotProvider = new SequentialScreenshotProvider([pngA])\nconst vlmProvider = new StubVlmProvider()\nconst proactiveEvents: AnimaProactiveEvent[] = []\nconst orchestrator = createAnimaOrchestrator(\n  { screenshotProvider, vlmProvider },\n  { aggregationIntervalMs: 1000, initialIntimacyScore: 20, ... },\n)",
+      "description": "Nine test cases repeat an 8-12 line orchestrator setup block with minor variations (different intimacy scores, different VLM results, different buffers). While test readability benefits from explicit setup, the repetition here goes beyond 'three similar lines' -- it is 8-12 lines repeated 9 times (~90 lines of boilerplate). A factory helper with named options would preserve clarity while reducing noise. Each test also manually calls orchestrator.stop() rather than using afterEach cleanup.",
+      "suggestion": "BEFORE:\nit('fires rest-reminder...', () => {\n  const screenshotProvider = new SequentialScreenshotProvider([pngA])\n  const vlmProvider = new StubVlmProvider()\n  const proactiveEvents: AnimaProactiveEvent[] = []\n  const orchestrator = createAnimaOrchestrator(\n    { screenshotProvider, vlmProvider },\n    { aggregationIntervalMs: 1000, initialIntimacyScore: 20,\n      onProactiveResponse: (evt) => proactiveEvents.push(evt) },\n  )\n  // ... test body\n  orchestrator.stop()\n})\n\nAFTER:\nfunction createTestOrchestrator(opts: {\n  buffers?: Buffer[]; vlmResult?: Partial<VlmResult>;\n  intimacyScore?: number; aggregationMs?: number;\n} = {}) {\n  const screenshotProvider = new SequentialScreenshotProvider(opts.buffers ?? [pngA])\n  const vlmProvider = new StubVlmProvider(opts.vlmResult)\n  const proactiveEvents: AnimaProactiveEvent[] = []\n  const orchestrator = createAnimaOrchestrator(\n    { screenshotProvider, vlmProvider },\n    { aggregationIntervalMs: opts.aggregationMs ?? 1000,\n      initialIntimacyScore: opts.intimacyScore ?? 20,\n      onProactiveResponse: (evt) => proactiveEvents.push(evt) },\n  )\n  return { orchestrator, proactiveEvents, screenshotProvider, vlmProvider }\n}\n\nit('fires rest-reminder...', () => {\n  const { orchestrator, proactiveEvents } = createTestOrchestrator()\n  // ... test body\n  orchestrator.stop()\n})\n\nWHY: Reduces ~90 lines of test boilerplate to ~15 (helper + 9 one-line calls). Each test clearly shows only its unique configuration via named options. The helper also makes it easy to add new test parameters (e.g., custom triggers) without touching every test."
+    },
+    {
+      "id": "review-simplify-005",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "simplification",
+      "subcategory": "config-organization",
+      "title": "AnimaOrchestratorConfig mixes timing, state, and callback concerns",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 47,
+      "line_end": 57,
+      "code_snippet": "export interface AnimaOrchestratorConfig {\n  screenshotIntervalMs?: number\n  aggregationIntervalMs?: number\n  inactivityThresholdMs?: number\n  eventRetentionMs?: number\n  triggers?: readonly TriggerCondition[]\n  initialIntimacyScore?: number\n  onProactiveResponse?: (event: AnimaProactiveEvent) => void\n  onError?: (error: Error) => void\n}",
+      "description": "The config interface has 8 fields spanning three distinct concerns: timing configuration (4 fields), persona state initialization (2 fields), and event callbacks (2 fields). At 8 fields this is manageable now, but as the orchestrator evolves (e.g., adding LLM config, DND schedule config, memory system config), a flat config will become unwieldy. This is a preemptive observation.",
+      "suggestion": "No change required now. If this config grows beyond 10 fields, consider grouping:\n\ninterface AnimaOrchestratorConfig {\n  timing?: { screenshotIntervalMs?: number; aggregationIntervalMs?: number; ... }\n  persona?: { triggers?: readonly TriggerCondition[]; initialIntimacyScore?: number }\n  onProactiveResponse?: (event: AnimaProactiveEvent) => void\n  onError?: (error: Error) => void\n}\n\nWHY: Preemptive structural note. The current flat config is acceptable for 8 fields but is approaching the threshold where grouping improves navigability."
+    }
+  ],
+  "positive_observations": [
+    "Well-structured factory function using closure-based module pattern -- consistent with persona-engine's setupPersonaEngine approach",
+    "Clean separation of Imperative Shell (setup-orchestrator.ts with Electron/logging) from orchestration logic (orchestrator.ts with pure function dependencies)",
+    "Early return in handleProcessedContext keeps nesting to maximum depth 2",
+    "TRIGGER_EMOTION_MAP is a clean declarative lookup table rather than a switch statement",
+    "Test doubles are properly documented with 'Test Double rationale' comments explaining why each external dependency is stubbed",
+    "buildTriggerInput function cleanly documents which fields default to safe values and why (external systems not yet implemented)",
+    "Integration test covers the full pipeline end-to-end: screenshot -> VLM -> activity -> trigger -> emotion -> response -> UI event"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

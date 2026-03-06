@@ -4,7 +4,7 @@ import type {
   ModuleConfigPlan,
   ModuleConfigValidation,
   ModuleIdentity,
-} from '@proj-airi/plugin-protocol/types'
+} from '@anase/plugin-protocol/types'
 
 import {
   moduleConfigurationCommit,
@@ -16,7 +16,7 @@ import {
   moduleConfigurationValidateRequest,
   moduleConfigurationValidateResponse,
   moduleConfigurationValidateStatus,
-} from '@proj-airi/plugin-protocol/types'
+} from '@anase/plugin-protocol/types'
 
 export function createConfiguration(ctx: EventContext<any, any>) {
   return {

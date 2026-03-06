@@ -1,7 +1,7 @@
 import type { ChatStreamEvent, ContextMessage } from '../../../types/chat'
 import type { ChatProvider } from '../../providers/types'
 
-import { isStageTamagotchi, isStageWeb } from '@proj-airi/stage-shared'
+import { isStageTamagotchi, isStageWeb } from '@anase/stage-shared'
 import { useBroadcastChannel } from '@vueuse/core'
 import { Mutex } from 'es-toolkit'
 import { nanoid } from 'nanoid'

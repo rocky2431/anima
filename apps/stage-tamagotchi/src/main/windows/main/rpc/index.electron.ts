@@ -9,7 +9,7 @@ import { createContext } from '@moeru/eventa/adapters/electron/main'
 import { ipcMain } from 'electron'
 
 import { electronOpenChat, electronOpenMainDevtools, electronOpenSettings, noticeWindowEventa } from '../../../../shared/eventa'
-import { createWidgetsService } from '../../../services/airi/widgets'
+import { createWidgetsService } from '../../../services/anase/widgets'
 import { createAppService, createAutoUpdaterService, createScreenService, createWindowService } from '../../../services/electron'
 import { toggleWindowShow } from '../../shared'
 

@@ -1,0 +1,39 @@
+{
+  "name": "@anase/anase-brain",
+  "type": "module",
+  "private": true,
+  "description": "Brain bridge service - connects backend engines to server-runtime via WebSocket",
+  "author": {
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
+    "url": "https://github.com/moeru-ai"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rocky2431/anima.git",
+    "directory": "services/anase-brain"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file=.env --env-file-if-exists=.env.local src/index.ts",
+    "start": "tsx --env-file=.env --env-file-if-exists=.env.local src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "catalog:",
+    "@guiiai/logg": "catalog:",
+    "@anase/context-engine": "workspace:^",
+    "@anase/desktop-shell": "workspace:^",
+    "@anase/persona-engine": "workspace:^",
+    "@anase/server-sdk": "workspace:^",
+    "@anase/server-shared": "workspace:^",
+    "@anase/skills-engine": "workspace:^",
+    "ai": "catalog:",
+    "better-sqlite3": "catalog:",
+    "nanoid": "catalog:",
+    "tsx": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "catalog:"
+  }
+}

@@ -23,9 +23,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: [
       // Internal Packages
-      '@proj-airi/stage-ui/*',
-      '@proj-airi/drizzle-duckdb-wasm',
-      '@proj-airi/drizzle-duckdb-wasm/*',
+      '@anase/stage-ui/*',
+      '@anase/drizzle-duckdb-wasm',
+      '@anase/drizzle-duckdb-wasm/*',
 
       // Static Assets: Models, Images, etc.
       'public/assets/*',
@@ -49,12 +49,12 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@proj-airi/server-sdk': resolve(join(import.meta.dirname, '..', '..', 'packages', 'server-sdk', 'src')),
-      '@proj-airi/i18n': resolve(join(import.meta.dirname, '..', '..', 'packages', 'i18n', 'src')),
-      '@proj-airi/stage-ui': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-ui', 'src')),
-      '@proj-airi/stage-layouts': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-layouts', 'src')),
-      '@proj-airi/stage-pages': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-pages', 'src')),
-      '@proj-airi/stage-shared': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-shared', 'src')),
+      '@anase/server-sdk': resolve(join(import.meta.dirname, '..', '..', 'packages', 'server-sdk', 'src')),
+      '@anase/i18n': resolve(join(import.meta.dirname, '..', '..', 'packages', 'i18n', 'src')),
+      '@anase/stage-ui': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-ui', 'src')),
+      '@anase/stage-layouts': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-layouts', 'src')),
+      '@anase/stage-pages': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-pages', 'src')),
+      '@anase/stage-shared': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-shared', 'src')),
     },
   },
   server: {
@@ -139,7 +139,7 @@ export default defineConfig({
     Download('https://dist.ayaka.moe/vrm-models/VRoid-Hub/AvatarSample-B/AvatarSample_B.vrm', 'AvatarSample_B.vrm', 'vrm/models/AvatarSample-B', { parentDir: stageUIAssetsRoot, cacheDir: sharedCacheDir }),
 
     {
-      name: 'proj-airi:defines',
+      name: 'anase:defines',
       config(ctx) {
         const define: Record<string, any> = {
           'import.meta.env.RUNTIME_ENVIRONMENT': '\'capacitor\'',

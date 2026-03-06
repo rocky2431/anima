@@ -1,1 +1,1 @@
-console.warn('import @proj-airi/server-shared/types instead')
+console.warn('import @anase/server-shared/types instead')

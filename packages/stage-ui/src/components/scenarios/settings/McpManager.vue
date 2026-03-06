@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { McpServerUiConfig } from '../../../stores/modules/mcp'
 
-import { Button, FieldInput } from '@proj-airi/ui'
+import { Button, FieldInput } from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'

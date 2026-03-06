@@ -1,6 +1,6 @@
 import type { UnifiedProviderMetadata } from '../types'
 
-import { isStageTamagotchi } from '@proj-airi/stage-shared'
+import { isStageTamagotchi } from '@anase/stage-shared'
 import { isWebGPUSupported } from 'gpuu/webgpu'
 
 import { createOpenAI } from '../../../libs/ai/create-provider'
@@ -58,7 +58,7 @@ export const localPipelineProvider: UnifiedProviderMetadata = {
       if (!config.baseUrl) {
         return {
           errors: [new Error('Base URL is required.')],
-          reason: 'Base URL is required. This is likely a bug, report to developers on https://github.com/moeru-ai/airi/issues.',
+          reason: 'Base URL is required. This is likely a bug, report to developers on https://github.com/rocky2431/anima/issues.',
           valid: false,
         }
       }

@@ -70,7 +70,7 @@
     mkdir -p "$out/opt"
     cp -r dist/*-unpacked "$out/opt/AIRI"
     # The icon is actually 1500x1500... install it anyway
-    install -Dm644 resources/icon.png "$out/share/icons/hicolor/64x64/apps/airi.png"
+    install -Dm644 resources/icon.png "$out/share/icons/hicolor/64x64/apps/anase.png"
 
     # Patch the asar to include the assets
     cd "$out/opt/AIRI/resources"
@@ -79,7 +79,7 @@
     cp -r "$assets"/{vrm,live2d} app/out/renderer/assets
     asar pack app app.asar
 
-    makeWrapper "${electron}/bin/electron" "$out/bin/airi" \
+    makeWrapper "${electron}/bin/electron" "$out/bin/anase" \
       --add-flags "$out/opt/AIRI/resources/app.asar" \
       --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--enable-wayland-ime=true --wayland-text-input-version=3}}"
 

@@ -1,0 +1,99 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260218-020000-feat-task-3-screenshot-pipeline-iter1",
+  "timestamp": "2026-02-18T02:20:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "packages/context-engine/src/processing/screenshot-processor.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/phash.test.ts",
+      "packages/context-engine/src/__tests__/screenshot-pipeline.test.ts",
+      "packages/context-engine/src/__tests__/screenshot-processor.test.ts"
+    ],
+    "total_lines_analyzed": 831,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 2, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "Silent catch in tick() has no test and swallows all errors",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 91,
+      "line_end": 96,
+      "code_snippet": "catch {\n  // Pipeline errors are non-fatal: log and continue on next tick.\n  // In production, this would use a structured logger.\n  return false\n}",
+      "description": "The catch block in ScreenshotPipeline.tick() silently swallows all errors (capture failures, pHash failures, VLM failures) and returns false with no logging and no distinction from a dedup skip. There is no test in screenshot-pipeline.test.ts that verifies error behavior: what happens when screenshotProvider.capture() throws, when computePHash throws on corrupt data, or when vlmProvider.describeImage() throws. A caller receiving false cannot distinguish 'deduped' from 'crashed'. This violates the error-handling rules: catch without logging or re-throwing typed error. Additionally, the comment says 'this would use a structured logger' which is a TODO in disguise.",
+      "suggestion": "1. Add tests for each failure mode: (a) screenshotProvider.capture() rejects, (b) corrupt image causes computePHash to fail, (c) vlmProvider.describeImage() rejects. Verify tick() returns false (or a typed result that distinguishes dedup from error). 2. Replace the bare catch with at minimum a structured logger call. 3. Consider returning a discriminated union like { status: 'processed' | 'deduped' | 'error', error?: Error } instead of a boolean so callers can observe failures.",
+      "claude_md_rule": "error_handling.forbidden_patterns.catch_log_without_handling"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "computePHash not tested with invalid/corrupt image buffer",
+      "file": "packages/context-engine/src/__tests__/phash.test.ts",
+      "line": 29,
+      "line_end": 106,
+      "code_snippet": "describe('computePHash', () => {\n  it('returns a 64-character binary string', async () => {\n    ...\n  it('handles images of different sizes', async () => {",
+      "description": "The phash.test.ts tests cover valid images of various sizes and colors, but there is no test for invalid input: an empty buffer (Buffer.alloc(0)), a non-image buffer (Buffer.from('not-an-image')), or a truncated/corrupt PNG. Since computePHash calls sharp which will throw on invalid input, the test suite should document and verify this error behavior. The function has no try/catch, so sharp errors propagate uncaught -- this is fine if intentional, but it should be tested to lock in the contract.",
+      "suggestion": "Add boundary tests: (1) computePHash(Buffer.alloc(0)) should reject/throw with a meaningful error. (2) computePHash(Buffer.from('not-an-image')) should reject/throw. These tests document the error contract for callers (like ScreenshotPipeline.tick() which catches all errors).",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "hammingDistance not tested with empty strings",
+      "file": "packages/context-engine/src/__tests__/phash.test.ts",
+      "line": 108,
+      "line_end": 129,
+      "code_snippet": "describe('hammingDistance', () => {\n  it('returns 0 for identical hashes', () => {\n    const hash = '0'.repeat(64)\n  ...\n  it('throws on mismatched lengths', () => {\n    expect(() => hammingDistance('01', '011')).toThrow()\n  })",
+      "description": "The hammingDistance tests cover identical, single-bit-different, completely opposite, and length-mismatch cases. However, the empty string boundary is not tested: hammingDistance('', '') should return 0 (both empty, no differing bits). While this is a minor edge case since the function is always called with 64-char hashes in practice, testing empty inputs documents the contract. Also, the error test on line 127 does not verify the error message content -- it only checks that it throws.",
+      "suggestion": "Add: (1) expect(hammingDistance('', '')).toBe(0) to document the empty-string contract. (2) Update the throw test to verify the error message: expect(() => hammingDistance('01', '011')).toThrow('Hash length mismatch: 2 vs 3').",
+      "claude_md_rule": "testing.coverage_requirements"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "ScreenshotProcessor error wrapping test does not verify cause chain",
+      "file": "packages/context-engine/src/__tests__/screenshot-processor.test.ts",
+      "line": 82,
+      "line_end": 97,
+      "code_snippet": "it('wraps VLM provider errors with context', async () => {\n    const failingProvider: VlmProvider = {\n      async describeImage(): Promise<VlmResult> {\n        throw new Error('API rate limit exceeded')\n      },\n    }\n    ...\n    ).rejects.toThrow('Screenshot processing failed')\n  })",
+      "description": "The error wrapping test verifies the outer error message but does not verify the error cause chain. The ScreenshotProcessor uses `new Error('Screenshot processing failed', { cause: error })` which preserves the original error. The test should verify that error.cause contains the original 'API rate limit exceeded' error. Without this assertion, a regression that drops the cause (e.g., replacing with a plain `throw new Error('Screenshot processing failed')`) would not be caught. Compare with screenshot.test.ts which correctly uses `.rejects.toSatisfy()` to verify the cause chain.",
+      "suggestion": "Add cause chain verification similar to screenshot.test.ts:\n\nawait expect(\n  processor.process({ buffer: Buffer.from('test'), timestamp: Date.now() })\n).rejects.toSatisfy((error: Error) => {\n  return error.message === 'Screenshot processing failed'\n    && error.cause instanceof Error\n    && error.cause.message === 'API rate limit exceeded'\n})",
+      "claude_md_rule": "error_handling.required"
+    }
+  ],
+  "positive_observations": [
+    "phash.ts tests are exemplary Functional Core unit tests: real sharp library for image creation, pure input/output verification, no mocks whatsoever",
+    "All Test Doubles for external boundaries (ScreenshotProvider, VlmProvider) include explicit '// Test Double rationale:' comments documenting why a real dependency is not used -- exactly matching the project convention",
+    "ScreenshotPipeline tests exercise the dedup logic thoroughly via direct tick() calls rather than relying on timers, making tests deterministic and fast",
+    "areSimilar() tests cover both custom thresholds and the default threshold, documenting the API contract clearly",
+    "screenshot-pipeline.test.ts uses real PNG images with different spatial patterns (horizontal vs vertical split) to produce genuinely different pHashes, avoiding the solid-color pitfall where all hashes would be identical"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

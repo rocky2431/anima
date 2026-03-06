@@ -5,9 +5,9 @@ export default defineConfig({
     './src/index.ts',
   ],
   noExternal: [
-    '@proj-airi/font-cjkfonts-allseto',
-    '@proj-airi/font-departure-mono',
-    '@proj-airi/font-xiaolai',
+    '@anase/font-cjkfonts-allseto',
+    '@anase/font-departure-mono',
+    '@anase/font-xiaolai',
   ],
   dts: true,
   sourcemap: true,

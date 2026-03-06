@@ -1,0 +1,137 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260221-005723-feat-task-20-email-feishu-dingtalk-channels-iter1-iter1",
+  "timestamp": "2026-02-21T01:02:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/email/index.ts",
+      "packages/channels-extra/src/feishu/index.ts",
+      "packages/channels-extra/src/dingtalk/index.ts",
+      "packages/channels-extra/src/__tests__/email/email-channel.test.ts",
+      "packages/channels-extra/src/__tests__/feishu/feishu-channel.test.ts",
+      "packages/channels-extra/src/__tests__/dingtalk/dingtalk-channel.test.ts"
+    ],
+    "total_lines_analyzed": 1509,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 5, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "Email connect/disconnect/send error paths not tested",
+      "file": "packages/channels-extra/src/__tests__/email/email-channel.test.ts",
+      "line": 40,
+      "code_snippet": "it('should transition to connecting then connected on connect', async () => {\n  const channel = new EmailChannel(config, {\n    createImapClient: () => createMockImapClient(),\n    createSmtpTransport: () => createMockSmtpTransport(),\n  })",
+      "description": "The email channel test covers the happy path for connect, disconnect, and sendMessage, but does not test error scenarios where the underlying IMAP client or SMTP transport throw errors. In EmailChannel.connect() (line 109), connect errors are caught, status set to 'error', and rethrown. In sendMessage(), SMTP sendMail failure is not tested. These are important error paths -- if IMAP/SMTP credentials are wrong or the server is down, the channel must correctly transition to error state and propagate the error. Without these tests, error handling regressions can reach production undetected.",
+      "suggestion": "Add tests that configure the mock IMAP client's connect() to reject, and verify: (1) channel.status becomes 'error', (2) the error is propagated with correct message and cause. Similarly test SMTP sendMail rejection after connect. Example:\n\nit('should set error status when IMAP connect fails', async () => {\n  const channel = new EmailChannel(config, {\n    createImapClient: () => ({ ...createMockImapClient(), connect: vi.fn().mockRejectedValue(new Error('auth failed')) }),\n    createSmtpTransport: () => createMockSmtpTransport(),\n  })\n  await expect(channel.connect()).rejects.toThrow('Email connect failed')\n  expect(channel.status).toBe('error')\n})",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "Feishu/DingTalk connect error paths and send failures not tested",
+      "file": "packages/channels-extra/src/__tests__/feishu/feishu-channel.test.ts",
+      "line": 29,
+      "code_snippet": "it('should transition to connecting then connected on connect', async () => {\n  const channel = new FeishuChannel(config, {\n    createClient: () => createMockFeishuClient(),\n    createWsClient: () => createMockWsClient(),\n  })",
+      "description": "Both FeishuChannel and DingTalkChannel have catch blocks in connect() that set status to 'error' and rethrow, but no tests exercise these paths. Additionally, FeishuChannel.sendMessage() calls client.im.message.create() which could reject or return a non-zero code -- neither failure mode is tested. DingTalkChannel.sendMessage() delegates to sendViaWebhook which could reject -- not tested. These error paths are important for resilience: if the external service is unavailable, the application must know the channel is in error state.",
+      "suggestion": "Add error-path tests for both channels. For Feishu, test wsClient.start() throwing and verify error status. For DingTalk, test streamClient.connect() rejecting. Also test sendMessage failures -- e.g., Feishu client.im.message.create rejecting, DingTalk sendViaWebhook rejecting. Verify the error propagates correctly and channel status reflects the failure.",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "DingTalk expired session webhook not tested",
+      "file": "packages/channels-extra/src/__tests__/dingtalk/dingtalk-channel.test.ts",
+      "line": 211,
+      "code_snippet": "it('should store session webhook from incoming message for later use', async () => {\n  // ... only tests non-expired webhook retrieval\n  const webhook = channel.getSessionWebhook('cid_webhook_test')\n  expect(webhook).toBe(TEST_SESSION_WEBHOOK_2)\n})",
+      "description": "DingTalkChannel.getSessionWebhook() has an expiry check (line 166 in dingtalk/index.ts): if Date.now() > entry.expiresAt, it deletes the entry and returns undefined. This boundary condition is not tested. The test at line 211 only verifies a non-expired webhook is returned. An expired webhook silently returning undefined could cause messages to fail to send without clear diagnosis if the expiry logic has a bug.",
+      "suggestion": "Add a test with sessionWebhookExpiredTime set to a past timestamp (e.g., Date.now() - 1000), then verify getSessionWebhook returns undefined:\n\nit('should return undefined for expired session webhook', async () => {\n  // ... trigger message with sessionWebhookExpiredTime: Date.now() - 1000\n  const webhook = channel.getSessionWebhook('cid_test')\n  expect(webhook).toBeUndefined()\n})",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "Email extractTextFromSource edge case not tested",
+      "file": "packages/channels-extra/src/__tests__/email/email-channel.test.ts",
+      "line": 86,
+      "code_snippet": "it('should receive messages via IMAP and invoke handler', async () => {\n  // Only tests the happy path with properly formatted email source",
+      "description": "EmailChannel.extractTextFromSource() (line 212 in email/index.ts) handles the case where no '\\r\\n\\r\\n' separator is found -- it returns the raw content as-is. This boundary condition is not tested. A malformed email source that lacks the standard header/body separator could yield unexpected text content passed to message handlers.",
+      "suggestion": "Add a test where _simulateNewEmail provides a source Buffer without the '\\r\\n\\r\\n' separator and verify the raw content is returned. Also consider testing with empty source buffer.",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "Feishu malformed message content and empty text not tested",
+      "file": "packages/channels-extra/src/__tests__/feishu/feishu-channel.test.ts",
+      "line": 94,
+      "code_snippet": "it('should receive messages and invoke handler', async () => {\n  // Only tests well-formed JSON content",
+      "description": "FeishuChannel.handleIncomingMessage() has two untested boundary conditions: (1) JSON.parse failure on message.content (line 176 in feishu/index.ts) -- the catch returns early with a log warning; (2) empty text after parsing (line 184) -- the method returns early. Neither path is exercised. Malformed content from Feishu API would silently be dropped, and if the early-return logic has a bug, messages could leak through or crash handlers.",
+      "suggestion": "Add two tests:\n1. Trigger a message with content: 'not-json' and verify no handler is called (tests the catch path)\n2. Trigger a message with content: JSON.stringify({ text: '' }) and verify no handler is called (tests the empty-text guard)",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "DingTalk handleBotMessage JSON parse error not tested",
+      "file": "packages/channels-extra/src/__tests__/dingtalk/dingtalk-channel.test.ts",
+      "line": 81,
+      "code_snippet": "it('should receive messages and invoke handler', async () => {\n  // Only tests well-formed JSON event data",
+      "description": "DingTalkChannel.handleBotMessage() wraps the entire body in try/catch (line 174 in dingtalk/index.ts). If event.data contains invalid JSON, the catch logs the error and returns { status: 'SUCCESS', message: 'parse error' }. This error path is not tested. A malformed event from DingTalk Stream would be silently consumed -- if the error handling logic has a bug, it could crash the stream client.",
+      "suggestion": "Test the parse-error path by calling _triggerBotMessage indirectly via the stream client with invalid JSON data. You may need to expose _botHandler or use the registerCallbackListener mock to call the handler directly with { data: 'invalid-json' } and verify the return value is { status: 'SUCCESS', message: 'parse error' }.",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-007",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-test-scenario",
+      "title": "onStatusChange unsubscribe not tested in any channel",
+      "file": "packages/channels-extra/src/__tests__/email/email-channel.test.ts",
+      "line": 40,
+      "code_snippet": "channel.onStatusChange(s => statuses.push(s))\n\nawait channel.connect()\n\nexpect(statuses).toContain('connecting')",
+      "description": "All three channels implement onStatusChange() returning an unsubscribe function (e.g., email/index.ts line 77-84). While onMessage unsubscribe is tested in all three test files, onStatusChange unsubscribe is never tested. If the unsubscribe logic in onStatusChange has a bug (e.g., wrong splice index), stale handlers would continue receiving status updates, potentially causing memory leaks or unexpected side effects in long-running channel instances.",
+      "suggestion": "Add a test that subscribes to onStatusChange, calls the returned unsubscribe function, then performs a connect/disconnect and verifies the handler is no longer invoked after unsubscribe:\n\nit('should unsubscribe status change handler', async () => {\n  const statuses: string[] = []\n  const unsub = channel.onStatusChange(s => statuses.push(s))\n  unsub()\n  await channel.connect()\n  expect(statuses).toHaveLength(0)\n})",
+      "claude_md_rule": "testing.coverage"
+    }
+  ],
+  "positive_observations": [
+    "All test doubles have proper '// Test Double rationale:' comments explaining why external APIs (imapflow, nodemailer, @larksuiteoapi/node-sdk, dingtalk-stream) cannot be tested with real infrastructure in CI",
+    "Dependency injection pattern (EmailChannelDeps, FeishuChannelDeps, DingTalkChannelDeps) cleanly separates external API concerns from channel logic, enabling proper test double usage at the boundary",
+    "Good coverage of core happy paths: connect/disconnect lifecycle, send/receive messages, handler subscribe/unsubscribe for all three channels",
+    "DingTalk test covers non-text message filtering and text trimming edge cases",
+    "Feishu test covers bot message filtering (sender_type === 'bot') and custom receiveIdType configuration",
+    "Email test covers custom mailbox configuration and default INBOX fallback",
+    "Test fixture URLs in DingTalk tests use env var override pattern to avoid hardcoded external URLs"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

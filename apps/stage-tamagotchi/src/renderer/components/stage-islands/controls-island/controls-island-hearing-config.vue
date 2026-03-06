@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { HearingConfigDialog } from '@proj-airi/stage-ui/components'
-import { useAudioAnalyzer, useAudioContextFromStream } from '@proj-airi/stage-ui/composables'
-import { useSettingsAudioDevice } from '@proj-airi/stage-ui/stores/settings'
+import { HearingConfigDialog } from '@anase/stage-ui/components'
+import { useAudioAnalyzer, useAudioContextFromStream } from '@anase/stage-ui/composables'
+import { useSettingsAudioDevice } from '@anase/stage-ui/stores/settings'
 import { useAsyncState } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { onMounted, onUnmounted, watch } from 'vue'

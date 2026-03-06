@@ -1,4 +1,4 @@
-# Start contributing to [Project AIRI](https://github.com/moeru-ai/airi)
+# Start contributing to [Project Anase](https://github.com/moeru-ai/airi)
 
 Hello! Thank you for your interest in contributing to this project. This guide will help you get started.
 
@@ -174,7 +174,7 @@ pnpm dev:tamagotchi
 > nr dev:tamagotchi
 > ```
 
-### Stage Web (Browser version for [airi.moeru.ai](https://airi.moeru.ai))
+### Stage Web (Browser version for [anase.app](https://anase.app))
 
 ```shell
 pnpm dev
@@ -222,14 +222,14 @@ Edit the credentials in `.env.local`.
 Migrate the database
 
 ```shell
-pnpm -F @proj-airi/telegram-bot db:generate
-pnpm -F @proj-airi/telegram-bot db:push
+pnpm -F @anase/telegram-bot db:generate
+pnpm -F @anase/telegram-bot db:push
 ```
 
 Run the bot
 
 ```shell
-pnpm -F @proj-airi/telegram-bot start
+pnpm -F @anase/telegram-bot start
 ```
 
 > [!NOTE]
@@ -237,7 +237,7 @@ pnpm -F @proj-airi/telegram-bot start
 > For [@antfu/ni](https://github.com/antfu-collective/ni) users, you can
 >
 > ```shell
-> nr -F @proj-airi/telegram-bot dev
+> nr -F @anase/telegram-bot dev
 > ```
 
 ### Discord bot integration
@@ -257,7 +257,7 @@ Edit the credentials in `.env.local`.
 Run the bot
 
 ```shell
-pnpm -F @proj-airi/discord-bot start
+pnpm -F @anase/discord-bot start
 ```
 
 > [!NOTE]
@@ -265,7 +265,7 @@ pnpm -F @proj-airi/discord-bot start
 > For [@antfu/ni](https://github.com/antfu-collective/ni) users, you can
 >
 > ```shell
-> nr -F @proj-airi/discord-bot dev
+> nr -F @anase/discord-bot dev
 > ```
 
 ### Minecraft agent
@@ -287,7 +287,7 @@ Edit the credentials in `.env.local`.
 Run the bot
 
 ```shell
-pnpm -F @proj-airi/minecraft-bot start
+pnpm -F @anase/minecraft-bot start
 ```
 
 > [!NOTE]
@@ -295,7 +295,7 @@ pnpm -F @proj-airi/minecraft-bot start
 > For [@antfu/ni](https://github.com/antfu-collective/ni) users, you can
 >
 > ```shell
-> nr -F @proj-airi/minecraft-bot dev
+> nr -F @anase/minecraft-bot dev
 > ```
 
 ## Commit

@@ -62,11 +62,11 @@ export default defineConfig({
     ['link', { rel: 'mask-icon', href: '/logo.svg', color: '#ffffff' }],
     // Proxying Plausible through Netlify | Plausible docs
     // https://plausible.io/docs/proxy/guides/netlify
-    ['script', { async: '', src: 'https://moeru-ai-airi-helper.kwaa.workers.dev/remote-assets/page-external-data/js/script.js' }],
+    ['script', { async: '', src: 'https://analytics.anase.app/remote-assets/page-external-data/js/script.js' }],
     ['script', {}, `
       window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
       plausible.init({
-        endpoint: "https://moeru-ai-airi-helper.kwaa.workers.dev/api/v1/page-external-data/submit"
+        endpoint: "https://analytics.anase.app/api/v1/page-external-data/submit"
       })
     `],
     ['script', {}, `
@@ -116,7 +116,7 @@ export default defineConfig({
           next: 'Next page',
         },
         editLink: {
-          pattern: 'https://github.com/moeru-ai/airi/edit/main/docs/content/:path',
+          pattern: 'https://github.com/rocky2431/anima/edit/main/docs/content/:path',
           text: 'Edit this page on GitHub',
         },
         lastUpdated: {
@@ -220,7 +220,7 @@ export default defineConfig({
           next: '下一页',
         },
         editLink: {
-          pattern: 'https://github.com/moeru-ai/airi/edit/main/docs/content/:path',
+          pattern: 'https://github.com/rocky2431/anima/edit/main/docs/content/:path',
           text: '在 GitHub 编辑此页',
         },
         lastUpdated: {
@@ -320,7 +320,7 @@ export default defineConfig({
           next: '次のページ',
         },
         editLink: {
-          pattern: 'https://github.com/moeru-ai/airi/edit/main/docs/content/:path',
+          pattern: 'https://github.com/rocky2431/anima/edit/main/docs/content/:path',
           text: 'GitHub でこのページを編集',
         },
         lastUpdated: {
@@ -401,7 +401,7 @@ export default defineConfig({
       provider: 'local',
     },
     editLink: {
-      pattern: 'https://github.com/moeru-ai/airi/edit/main/docs/content/:path',
+      pattern: 'https://github.com/rocky2431/anima/edit/main/docs/content/:path',
     },
   },
   srcDir: 'content',
@@ -457,8 +457,8 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: {
-        '@proj-airi/stage-ui/components': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-ui', 'src', 'components')),
-        '@proj-airi/i18n': resolve(join(import.meta.dirname, '..', '..', 'packages', 'i18n', 'src')),
+        '@anase/stage-ui/components': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-ui', 'src', 'components')),
+        '@anase/i18n': resolve(join(import.meta.dirname, '..', '..', 'packages', 'i18n', 'src')),
       },
     },
     plugins: [

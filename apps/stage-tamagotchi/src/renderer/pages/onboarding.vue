@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { OnboardingScreen } from '@proj-airi/stage-ui/components'
-import { useOnboardingStore } from '@proj-airi/stage-ui/stores/onboarding'
+import { OnboardingScreen } from '@anase/stage-ui/components'
+import { useOnboardingStore } from '@anase/stage-ui/stores/onboarding'
 
 // const window = useTauriWindow()
 const onboardingStore = useOnboardingStore()

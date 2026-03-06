@@ -1,6 +1,6 @@
-# @proj-airi/plugin-protocol
+# @anase/plugin-protocol
 
-Shared protocol contracts for plugin-module communication in Project AIRI.
+Shared protocol contracts for plugin-module communication in Project Anase.
 
 ## What it does
 
@@ -11,9 +11,9 @@ Shared protocol contracts for plugin-module communication in Project AIRI.
 ## How to use
 
 ```ts
-import type { WebSocketEvent, WebSocketEventOf, WebSocketEvents } from '@proj-airi/plugin-protocol/types'
+import type { WebSocketEvent, WebSocketEventOf, WebSocketEvents } from '@anase/plugin-protocol/types'
 
-import { moduleAnnounce, moduleAuthenticate } from '@proj-airi/plugin-protocol/types'
+import { moduleAnnounce, moduleAuthenticate } from '@anase/plugin-protocol/types'
 ```
 
 ## When to use

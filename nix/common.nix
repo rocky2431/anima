@@ -10,7 +10,7 @@
 }:
 
 stdenvNoCC.mkDerivation (final: {
-  pname = "airi";
+  pname = "anase";
   version = (builtins.fromJSON (builtins.readFile ../package.json)).version;
 
   src = ../.;
@@ -23,7 +23,7 @@ stdenvNoCC.mkDerivation (final: {
 
   # Cache of assets downloaded during vite build
   assets = stdenvNoCC.mkDerivation {
-    pname = "airi-assets";
+    pname = "anase-assets";
     inherit (final) version src pnpmDeps;
 
     nativeBuildInputs = [
@@ -37,7 +37,7 @@ stdenvNoCC.mkDerivation (final: {
       runHook preBuild
 
       pnpm run build:packages
-      pnpm -F @proj-airi/stage-web run build
+      pnpm -F @anase/stage-web run build
 
       runHook postBuild
     '';
@@ -64,9 +64,9 @@ stdenvNoCC.mkDerivation (final: {
       realtime voice chat, playing Minecraft and Factorio. It can be run in browser or on desktop.
       This is the desktop version.
     '';
-    homepage = "https://github.com/moeru-ai/airi";
-    changelog = "https://github.com/moeru-ai/airi/releases/tag/v${final.version}";
-    # While airi itself is licensed under MIT, it uses the nonfree Cubism SDK. Whether it's
+    homepage = "https://github.com/rocky2431/anima";
+    changelog = "https://github.com/rocky2431/anima/releases/tag/v${final.version}";
+    # While anase itself is licensed under MIT, it uses the nonfree Cubism SDK. Whether it's
     # redistributable remains a question, so we say it's not.
     license = lib.licenses.unfree;
     platforms = [

@@ -54,7 +54,7 @@ export async function handleLoopStep(
       chatCtx.messages = chatCtx.messages.slice(-MESSAGES_KEEP_ON_TRIM)
       chatCtx.messages.push({
         role: 'user',
-        content: `AIRI System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.messages.length}, history may be lost.`,
+        content: `Anase System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.messages.length}, history may be lost.`,
       })
     }
 
@@ -66,7 +66,7 @@ export async function handleLoopStep(
       chatCtx.actions = chatCtx.actions.slice(-ACTIONS_KEEP_ON_TRIM)
       chatCtx.messages.push({
         role: 'user',
-        content: `AIRI System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.actions.length}, history of actions may be lost.`,
+        content: `Anase System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.actions.length}, history of actions may be lost.`,
       })
     }
   }

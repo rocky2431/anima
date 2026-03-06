@@ -1,8 +1,8 @@
 {
-  "name": "@proj-airi/minecraft-bot",
+  "name": "@anase/minecraft-bot",
   "type": "module",
   "private": true,
-  "description": "An intelligent Minecraft bot powered by LLM. AIRI can understand natural language commands, interact with the world, and assist players in various tasks.",
+  "description": "An intelligent Minecraft bot powered by LLM. Anase can understand natural language commands, interact with the world, and assist players in various tasks.",
   "scripts": {
     "dev": "tsx --env-file=.env --env-file-if-exists=.env.local src/main.ts",
     "start": "tsx --env-file=.env --env-file-if-exists=.env.local src/main.ts",
@@ -14,7 +14,7 @@
   "dependencies": {
     "@guiiai/logg": "catalog:",
     "@moeru/std": "catalog:",
-    "@proj-airi/server-sdk": "^0.8.1",
+    "@anase/server-sdk": "workspace:^",
     "awilix": "^12.0.5",
     "es-toolkit": "^1.44.0",
     "eventemitter3": "^5.0.4",

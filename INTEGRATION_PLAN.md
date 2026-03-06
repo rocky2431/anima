@@ -1,4 +1,4 @@
-# Anima — 原生集成方案 v3 (基于 AIRI + Nanobot + MineContext)
+# Anima — 原生集成方案 v3 (基于 Anase + Nanobot + MineContext)
 
 > 由 4 位专家 Agent（桌面架构师 + 全栈工程师 + 上下文工程师 + 产品设计师）深度分析后综合输出
 > v3 更新: 补充 MCP + Skills 核心扩展能力；后端语言决策深度分析
@@ -190,7 +190,7 @@
 
 #### LLM SDK 选择: xsAI → Vercel AI SDK 6 (建议升级)
 
-| 维度 | xsAI (原 AIRI 现有) | Vercel AI SDK 6 |
+| 维度 | xsAI (原 Anase 现有) | Vercel AI SDK 6 |
 |------|-----------------|-----------------|
 | 周下载量 | ~5k | **2.8M** |
 | MCP Client | 无 (依赖 Tauri 插件) | **内置 `@ai-sdk/mcp`** |
@@ -220,7 +220,7 @@ AI SDK 6 的 `@ai-sdk/mcp` 直接解决了 MCP 多服务器连接问题，省去
 | 决策 | 选择 | 备选 | 理由 |
 |------|------|------|------|
 | **语言** | TypeScript 全栈 + MCP 桥接 | Python sidecar | App 单语言 + MCP 连接一切 |
-| **LLM SDK** | **Vercel AI SDK 6** (建议升级) | xsAI (原 AIRI 已有) | 内置 MCP Client + Agent Loop + 2.8M 周下载 |
+| **LLM SDK** | **Vercel AI SDK 6** (建议升级) | xsAI (原 Anase 已有) | 内置 MCP Client + Agent Loop + 2.8M 周下载 |
 | **MCP SDK** | @ai-sdk/mcp + @modelcontextprotocol/sdk | 自建 | 官方标准，v2 stable |
 | **桌面框架** | Electron (已有 stage-tamagotchi) | Tauri | 复用已有基础设施 |
 | **向量存储** | LanceDB (Rust 嵌入式) | SQLite+sqlite-vss | 原生向量搜索，Node.js binding 成熟 |
@@ -518,7 +518,7 @@ Layer 3: 长期记忆 (Long-term / User Profile)
 
 ## 八、分层记忆与存储方案
 
-> **现状说明**: 原 AIRI 现有存储均不可直接复用 — `memory-pgvector` 为空壳 (仅 Client 连接无实际逻辑)，
+> **现状说明**: 原 Anase 现有存储均不可直接复用 — `memory-pgvector` 为空壳 (仅 Client 连接无实际逻辑)，
 > `stage-ui` 中的 DuckDB WASM 仅为 demo 级 memory_test。本方案是 LanceDB + SQLite **全新构建**。
 
 ### 8.1 四层记忆架构
@@ -624,11 +624,11 @@ PageIndex 的强项是低频高质的文档理解 → 通过 MCP 按需接入，
 
 ### 8.6 memory-pgvector 处置
 
-原 AIRI 的 `packages/memory-pgvector/` 目前是空壳（只有 Client 连接，无实际向量存储逻辑）。
+原 Anase 的 `packages/memory-pgvector/` 目前是空壳（只有 Client 连接，无实际向量存储逻辑）。
 
 **方案**: 保留为服务端部署方案，桌面端用新建的 `@anima/context-engine` 统一管理存储。
 
-> **注**: 代码中的 `@proj-airi/` 包名将在实施阶段渐进重命名为 `@anima/`。
+> **注**: 代码中的 `@anase/` 包名将在实施阶段渐进重命名为 `@anima/`。
 
 ---
 
@@ -788,7 +788,7 @@ const animaMcpServer = injeca.provide('modules:anima-mcp-server', {
 
 > **MCP (Model Context Protocol) 让 AI 连接万物 — 这是 AI 无限成长的"硬插件"系统**
 
-### 10.1 现有 MCP 基础 (继承自 AIRI)
+### 10.1 现有 MCP 基础 (继承自 Anase)
 
 现有 MCP 基础设施：
 

@@ -1,4 +1,4 @@
-# @proj-airi/ui-transitions
+# @anase/ui-transitions
 
 <p align="center">
   [<a href="https://proj-airi-packages-ui-transitions.netlify.app/">Try it</a>]

@@ -4,7 +4,7 @@ import type { WidgetsWindowManager } from '../widgets'
 
 import { join, resolve } from 'node:path'
 
-import { initScreenCaptureForWindow } from '@proj-airi/electron-screen-capture/main'
+import { initScreenCaptureForWindow } from '@anase/electron-screen-capture/main'
 import { BrowserWindow, shell } from 'electron'
 
 import icon from '../../../../resources/icon.png?asset'

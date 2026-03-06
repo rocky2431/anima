@@ -1,6 +1,6 @@
 ---
 title: デスクトップ版のガイド
-description: Project AIRI のたまごっちバージョンの使い方
+description: Project Anase のたまごっちバージョンの使い方
 ---
 
 ## 今すぐチャットしたい！
@@ -47,7 +47,7 @@ description: Project AIRI のたまごっちバージョンの使い方
 ダウンロードして試していただきありがとうございます！
 :::
 
-ダウンロード後、どこからでも AIRI を起動できます。ユーザーインターフェースは2つの部分で構成されていることがわかります：
+ダウンロード後、どこからでも Anase を起動できます。ユーザーインターフェースは2つの部分で構成されていることがわかります：
 
 - オンボーディング / ウィザードセットアップガイド
 - モデル (Live2D および VRM モデルを表示可能)
@@ -170,7 +170,7 @@ Fade on Hover のショートカットは：<kbd aria-label="Shift" data-keyboar
 
 ## 設定
 
-システムトレイの設定を開いて、AIRI のテーマカラーを変更したり、Live2D (2D) または VRM (3D、Grok Companion など) の別のモデルに切り替えたりするなど、さらにカスタマイズすることができます。
+システムトレイの設定を開いて、Anase のテーマカラーを変更したり、Live2D (2D) または VRM (3D、Grok Companion など) の別のモデルに切り替えたりするなど、さらにカスタマイズすることができます。
 
 <video autoplay loop muted>
  <source src="/en/docs/overview/guide/tamagotchi/assets/tutorial-basic-open-settings.mp4" type="video/mp4">
@@ -196,7 +196,7 @@ Fade on Hover のショートカットは：<kbd aria-label="Shift" data-keyboar
 
 ::: warning バグあり
 現在、モデルのシーンをリロードする機能は意図したとおりに機能していません。
-モデルをロードした後、AIRI を再起動する必要があります。
+モデルをロードした後、Anase を再起動する必要があります。
 :::
 
 <br />

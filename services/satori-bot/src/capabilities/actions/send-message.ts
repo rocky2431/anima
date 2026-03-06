@@ -19,7 +19,7 @@ export function createSendMessageAction(client: SatoriClient): ActionHandler {
         return {
           success: false,
           shouldContinue: true,
-          result: 'AIRI System: [INTERRUPT] Message sending ABORTED. New unread messages were detected from the user. Please [read_unread_messages] first to understand the new context.',
+          result: 'Anase System: [INTERRUPT] Message sending ABORTED. New unread messages were detected from the user. Please [read_unread_messages] first to understand the new context.',
         }
       }
 
@@ -28,7 +28,7 @@ export function createSendMessageAction(client: SatoriClient): ActionHandler {
         await client.sendMessage(chatCtx.platform, chatCtx.selfId, channelId, content)
 
         // Logic 3: Persistence
-        await recordMessage(channelId, 'bot', 'AIRI', content)
+        await recordMessage(channelId, 'bot', 'Anase', content)
 
         // Logic 4: Memory State Update
         chatCtx.messages.push({
@@ -39,7 +39,7 @@ export function createSendMessageAction(client: SatoriClient): ActionHandler {
         return {
           success: true,
           shouldContinue: true,
-          result: `AIRI System: Message sent to ${channelId}: ${content}`,
+          result: `Anase System: Message sent to ${channelId}: ${content}`,
         }
       }
       catch (error) {
@@ -47,7 +47,7 @@ export function createSendMessageAction(client: SatoriClient): ActionHandler {
         return {
           success: false,
           shouldContinue: true,
-          result: `AIRI System: Error sending message: ${(error as Error).message}`,
+          result: `Anase System: Error sending message: ${(error as Error).message}`,
         }
       }
     },

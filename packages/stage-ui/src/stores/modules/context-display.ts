@@ -1,4 +1,4 @@
-import type { ContextUpdate } from '@proj-airi/server-sdk'
+import type { ContextUpdate } from '@anase/server-sdk'
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'

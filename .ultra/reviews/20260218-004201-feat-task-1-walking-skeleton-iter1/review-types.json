@@ -1,0 +1,96 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260218-004201-feat-task-1-walking-skeleton-iter1",
+  "timestamp": "2026-02-18T00:50:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/index.ts",
+      "packages/context-engine/src/storage/vector-store.ts"
+    ],
+    "total_lines_analyzed": 135,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 2, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "type-design",
+      "subcategory": "illegal-state-representable",
+      "title": "TriggerResult allows invalid state combinations",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 37,
+      "line_end": 44,
+      "code_snippet": "export interface TriggerResult {\n  triggered: boolean\n  triggerId: string\n  triggerName: string\n}",
+      "description": "Encapsulation: 3/10, Expression: 3/10, Usefulness: 6/10, Enforcement: 2/10 (Aggregate: 3.5). TriggerResult uses a boolean flag plus string fields that are empty when not triggered. This allows four illegal states: (1) triggered=true with empty triggerId/triggerName, (2) triggered=false with non-empty triggerId/triggerName, (3) triggerId set but triggerName empty, (4) triggerName set but triggerId empty. The NOT_TRIGGERED constant in proactive-trigger.ts uses empty strings as sentinel values. A discriminated union would make illegal states unrepresentable: `type TriggerResult = { triggered: true; triggerId: string; triggerName: string } | { triggered: false }`. This is the classic 'Make Illegal States Unrepresentable' pattern. Consumers like transitionEmotion and generateResponse already branch on `trigger.triggered`, so adopting the union is a straightforward refactor.",
+      "suggestion": "Refactor to discriminated union:\n\ntype TriggerResult =\n  | { triggered: true; triggerId: string; triggerName: string }\n  | { triggered: false }\n\nUpdate NOT_TRIGGERED to `{ triggered: false } as const` and update consumers to narrow via `if (trigger.triggered)` (already the case).",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "Duration and timestamp fields use raw number type",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 6,
+      "line_end": 29,
+      "code_snippet": "timestamp: number\ncontinuousWorkDurationMs: number\nlastActivityTimestamp: number",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 4/10 (Aggregate: 4.5). Multiple fields across ActivityEvent, ActivityContext, and TriggerInput use bare `number` for timestamps (milliseconds since epoch) and durations (milliseconds). This is primitive obsession on a domain concept. A caller could accidentally pass seconds instead of milliseconds, or mix up a duration with a timestamp. Branded types like `type Milliseconds = number & { readonly __brand: 'Milliseconds' }` or `type UnixTimestampMs = number & { readonly __brand: 'UnixTimestampMs' }` would catch unit mismatches at compile time. For a walking skeleton this is acceptable, but these domain concepts will propagate through the system.",
+      "suggestion": "Introduce branded types for temporal values:\n\ntype UnixTimestampMs = number & { readonly __brand: 'UnixTimestampMs' }\ntype DurationMs = number & { readonly __brand: 'DurationMs' }\n\nApply to timestamp fields (UnixTimestampMs) and duration fields (DurationMs). Add constructor functions: `function toTimestamp(ms: number): UnixTimestampMs` with optional validation.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "TriggerCondition.id uses unbranded string",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 24,
+      "line_end": 32,
+      "code_snippet": "export interface TriggerCondition {\n  id: string\n  name: string\n  check: (input: TriggerInput) => boolean\n  cooldownMs: number\n}",
+      "description": "Encapsulation: 4/10, Expression: 3/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 3.75). TriggerCondition.id is typed as bare `string` but has an implicit format (e.g., 'T03'). The same `string` type is used for triggerId in TriggerResult and ProactiveResponse, and as keys in `lastTriggerTimes: Record<string, number>` in evaluateTriggers. A branded `TriggerId` type would enforce that only valid trigger IDs flow through the system and prevent accidental use of triggerName where triggerId is expected (both are `string`). Similarly, `name` and `triggerName` could use a `TriggerName` branded type.",
+      "suggestion": "Introduce branded types:\n\ntype TriggerId = string & { readonly __brand: 'TriggerId' }\ntype TriggerName = string & { readonly __brand: 'TriggerName' }\n\nUse TriggerId for TriggerCondition.id, TriggerResult.triggerId, ProactiveResponse.triggerId, and Record<TriggerId, number> for lastTriggerTimes.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "type-design",
+      "subcategory": "loose-metadata-type",
+      "title": "VectorStore metadata uses Record<string, unknown>",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 7,
+      "line_end": 9,
+      "code_snippet": "store(embedding: number[], metadata: Record<string, unknown>): Promise<string>\nsearch(query: number[], topK: number): Promise<Array<{ id: string, score: number, metadata: Record<string, unknown> }>>",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 4/10, Enforcement: 3/10 (Aggregate: 4.0). The VectorStore interface uses `Record<string, unknown>` for metadata in both store and search methods. This provides no type safety for what metadata is stored or retrieved. Given this is an explicitly documented walking skeleton contract ('Walking skeleton: defines the contract for future LanceDB implementation'), this is understandable. However, when the real implementation arrives, a generic type parameter `VectorStore<M extends Record<string, unknown>>` would allow callers to specify their metadata shape and get type-safe retrieval.",
+      "suggestion": "When implementing beyond the walking skeleton, make VectorStore generic:\n\ninterface VectorStore<M extends Record<string, unknown> = Record<string, unknown>> {\n  store(embedding: number[], metadata: M): Promise<string>\n  search(query: number[], topK: number): Promise<Array<{ id: string, score: number, metadata: M }>>\n}",
+      "claude_md_rule": "architecture.functional_core"
+    }
+  ],
+  "positive_observations": [
+    "EmotionState uses a string literal union type, making invalid emotion values unrepresentable at compile time.",
+    "ScreenshotProvider interface cleanly separates the platform-specific capture concern from the domain, following Imperative Shell pattern.",
+    "TriggerInput is intentionally decoupled from ActivityContext (documented), maintaining package independence and clean boundaries.",
+    "TriggerCondition.check is typed as a pure function (input -> boolean), aligning well with Functional Core principles.",
+    "All interfaces are well-documented with JSDoc comments explaining purpose and field semantics."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

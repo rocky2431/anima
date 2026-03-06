@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTheme } from '@proj-airi/ui'
+import { useTheme } from '@anase/ui'
 import { RouterLink, RouterView } from 'vue-router'
 
 const { isDark, toggleDark } = useTheme()
@@ -16,7 +16,7 @@ const { isDark, toggleDark } = useTheme()
           <div v-if="isDark" i-solar:moon-stars-bold-duotone />
           <div v-else i-solar:sun-bold />
         </button>
-        <a href="https://github.com/moeru-ai/airi/tree/main/apps/component-calling">
+        <a href="https://github.com/rocky2431/anima/tree/main/apps/component-calling">
           <div i-simple-icons:github />
         </a>
       </div>

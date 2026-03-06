@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import type { DuckDBWasmDrizzleDatabase } from '@proj-airi/drizzle-duckdb-wasm'
-import type { Live2DLipSync, Live2DLipSyncOptions } from '@proj-airi/model-driver-lipsync'
-import type { Profile } from '@proj-airi/model-driver-lipsync/shared/wlipsync'
+import type { DuckDBWasmDrizzleDatabase } from '@anase/drizzle-duckdb-wasm'
+import type { Live2DLipSync, Live2DLipSyncOptions } from '@anase/model-driver-lipsync'
+import type { Profile } from '@anase/model-driver-lipsync/shared/wlipsync'
 import type { UnElevenLabsOptions } from 'unspeech'
 
 import type { EmotionPayload } from '../../constants/emotions'
 import type { SpeechProviderWithExtraOptions } from '../../stores/providers/types'
 
-import { drizzle } from '@proj-airi/drizzle-duckdb-wasm'
-import { getImportUrlBundles } from '@proj-airi/drizzle-duckdb-wasm/bundles/import-url-browser'
-import { createLive2DLipSync } from '@proj-airi/model-driver-lipsync'
-import { wlipsyncProfile } from '@proj-airi/model-driver-lipsync/shared/wlipsync'
-import { createPlaybackManager, createSpeechPipeline } from '@proj-airi/pipelines-audio'
-import { Live2DScene, useLive2d } from '@proj-airi/stage-ui-live2d'
-import { ThreeScene, useModelStore } from '@proj-airi/stage-ui-three'
-import { animations } from '@proj-airi/stage-ui-three/assets/vrm'
-import { createQueue } from '@proj-airi/stream-kit'
+import { drizzle } from '@anase/drizzle-duckdb-wasm'
+import { getImportUrlBundles } from '@anase/drizzle-duckdb-wasm/bundles/import-url-browser'
+import { createLive2DLipSync } from '@anase/model-driver-lipsync'
+import { wlipsyncProfile } from '@anase/model-driver-lipsync/shared/wlipsync'
+import { createPlaybackManager, createSpeechPipeline } from '@anase/pipelines-audio'
+import { Live2DScene, useLive2d } from '@anase/stage-ui-live2d'
+import { ThreeScene, useModelStore } from '@anase/stage-ui-three'
+import { animations } from '@anase/stage-ui-three/assets/vrm'
+import { createQueue } from '@anase/stream-kit'
 import { useBroadcastChannel } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -84,13 +84,13 @@ const viewUpdateCleanups: Array<() => void> = []
 type CaptionChannelEvent
   = | { type: 'caption-speaker', text: string }
     | { type: 'caption-assistant', text: string }
-const { post: postCaption } = useBroadcastChannel<CaptionChannelEvent, CaptionChannelEvent>({ name: 'airi-caption-overlay' })
+const { post: postCaption } = useBroadcastChannel<CaptionChannelEvent, CaptionChannelEvent>({ name: 'anase-caption-overlay' })
 const assistantCaption = ref('')
 
 type PresentEvent
   = | { type: 'assistant-reset' }
     | { type: 'assistant-append', text: string }
-const { post: postPresent } = useBroadcastChannel<PresentEvent, PresentEvent>({ name: 'airi-chat-present' })
+const { post: postPresent } = useBroadcastChannel<PresentEvent, PresentEvent>({ name: 'anase-chat-present' })
 
 viewUpdateCleanups.push(live2dStore.onShouldUpdateView(async () => {
   showStage.value = false

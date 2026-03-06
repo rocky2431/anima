@@ -31,7 +31,7 @@ ELEVENLABS_API_BASE_URL=''
 ```
 
 ```shell
-pnpm run -F @proj-airi/discord-bot start
+pnpm run -F @anase/discord-bot start
 ```
 
 ## Other similar projects

@@ -1,17 +1,17 @@
 {
-  "name": "@proj-airi/server-runtime",
+  "name": "@anase/server-runtime",
   "type": "module",
   "version": "0.8.4",
-  "description": "Server runtime implementation for AIRI running in different environments",
+  "description": "Server runtime implementation for Anase running in different environments",
   "author": {
-    "name": "Moeru AI Project AIRI Team",
-    "email": "airi@moeru.ai",
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
     "url": "https://github.com/moeru-ai"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/moeru-ai/airi.git",
+    "url": "https://github.com/rocky2431/anima.git",
     "directory": "packages/server-runtime"
   },
   "exports": {
@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@guiiai/logg": "catalog:",
-    "@proj-airi/server-shared": "workspace:^",
+    "@anase/server-shared": "workspace:^",
     "crossws": "^0.4.3",
     "h3": "^2.0.1-rc.11",
     "listhen": "^1.9.0",

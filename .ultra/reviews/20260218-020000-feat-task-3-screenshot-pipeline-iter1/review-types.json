@@ -1,0 +1,95 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260218-020000-feat-task-3-screenshot-pipeline-iter1",
+  "timestamp": "2026-02-18T02:05:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "packages/context-engine/src/processing/screenshot-processor.ts",
+      "packages/context-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 335,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "VlmResult.activity typed as bare string instead of union",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 66,
+      "line_end": 66,
+      "code_snippet": "activity: string",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 4/10, Enforcement: 2/10 (Aggregate: 3.5). The `activity` field on VlmResult, ProcessedScreenshotContext, and ScreenshotUnderstanding is documented as a category with known values ('coding', 'browsing', 'writing') but typed as bare `string`. This is primitive obsession -- the type system cannot prevent invalid activity strings from flowing through the pipeline. A string literal union would catch typos at compile time and make the domain vocabulary explicit.",
+      "suggestion": "Define a union type: `export type ActivityCategory = 'coding' | 'browsing' | 'writing' | 'reading' | 'communicating' | 'other'` and use it for the `activity` field across VlmResult, ProcessedScreenshotContext, and ScreenshotUnderstanding. If the VLM can return arbitrary categories, use a branded string or validate at the VLM boundary.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "ProcessedScreenshotContext.hash is bare string, not branded",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 83,
+      "line_end": 83,
+      "code_snippet": "hash: string",
+      "description": "Encapsulation: 5/10, Expression: 3/10, Usefulness: 4/10, Enforcement: 2/10 (Aggregate: 3.5). The `hash` field represents a 64-character binary string (pHash output) but is typed as bare `string`. This means any string -- an empty string, a UUID, a sentence -- is a valid hash value as far as the type system is concerned. The pHash functions (hammingDistance, areSimilar) operate on this string without type-level assurance it is a valid hash. A type alias or branded type would make the domain intent explicit and prevent accidental misuse.",
+      "suggestion": "Define a type alias or branded type: `export type PHash = string & { readonly __brand: 'PHash' }` and use it as the return type of computePHash() and in ProcessedScreenshotContext.hash. The hammingDistance and areSimilar functions should accept PHash parameters. If branding is too heavy for the walking skeleton, at minimum create a type alias: `export type PHash = string` for documentation and future refinement.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "missing-constructor-validation",
+      "title": "ScreenshotPipeline accepts unvalidated numeric options",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 32,
+      "line_end": 38,
+      "code_snippet": "constructor(options: ScreenshotPipelineOptions) {\n    this.capture = new ScreenshotCapture(options.screenshotProvider)\n    this.processor = new ScreenshotProcessor(options.vlmProvider)\n    this.intervalMs = options.intervalMs ?? 60_000\n    this.similarityThreshold = options.similarityThreshold ?? 5\n    this.onContext = options.onContext\n  }",
+      "description": "Encapsulation: 8/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 4/10 (Aggregate: 5.75). The ScreenshotPipeline constructor applies defaults for intervalMs and similarityThreshold but does not validate that the resulting values are positive. An intervalMs of 0 would create a tight loop; a negative similarityThreshold would never match. The class has good encapsulation (private fields, controlled state) but the constructor does not fully establish its invariants.",
+      "suggestion": "Add validation in the constructor: `if (this.intervalMs <= 0) throw new Error('intervalMs must be positive')` and `if (this.similarityThreshold < 0) throw new Error('similarityThreshold must be non-negative')`. Alternatively, define PositiveNumber or use Valibot at the options boundary.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "duplication",
+      "title": "ScreenshotUnderstanding duplicates ProcessedScreenshotContext fields",
+      "file": "packages/context-engine/src/processing/screenshot-processor.ts",
+      "line": 6,
+      "line_end": 11,
+      "code_snippet": "export interface ScreenshotUnderstanding {\n  description: string\n  entities: string[]\n  activity: string\n  timestamp: number\n}",
+      "description": "Encapsulation: 5/10, Expression: 5/10, Usefulness: 5/10, Enforcement: 5/10 (Aggregate: 5.0). ScreenshotUnderstanding has the exact same fields as ProcessedScreenshotContext minus `hash`. This creates a maintenance burden -- if a field is added to ProcessedScreenshotContext, ScreenshotUnderstanding must be updated manually. Using Omit<> would express the structural relationship between the two types and reduce duplication.",
+      "suggestion": "Replace the standalone interface with: `export type ScreenshotUnderstanding = Omit<ProcessedScreenshotContext, 'hash'>`. This keeps both types in sync and makes the relationship explicit."
+    }
+  ],
+  "positive_observations": [
+    "ScreenshotPipeline has good encapsulation with all fields private and controlled mutation through methods (start/stop/tick/resetDedup)",
+    "ScreenshotProvider and VlmProvider interfaces provide clean abstraction boundaries for the Imperative Shell, enabling test doubles at external API boundaries",
+    "Pure functions in phash.ts (computePHash, hammingDistance, areSimilar) correctly belong to the Functional Core with no class wrappers -- good alignment with FC/IS architecture",
+    "hammingDistance validates input length constraint (hash length mismatch), which is the strongest type-level enforcement in this changeset",
+    "ScreenshotPipelineOptions uses optional fields with sensible defaults rather than requiring all configuration upfront"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

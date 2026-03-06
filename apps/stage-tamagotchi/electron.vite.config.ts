@@ -51,10 +51,10 @@ export default defineConfig({
     optimizeDeps: {
       exclude: [
         // Internal Packages
-        '@proj-airi/stage-ui/*',
-        '@proj-airi/drizzle-duckdb-wasm',
-        '@proj-airi/drizzle-duckdb-wasm/*',
-        '@proj-airi/electron-screen-capture',
+        '@anase/stage-ui/*',
+        '@anase/drizzle-duckdb-wasm',
+        '@anase/drizzle-duckdb-wasm/*',
+        '@anase/electron-screen-capture',
 
         // Static Assets: Models, Images, etc.
         'src/renderer/public/assets/*',
@@ -79,11 +79,11 @@ export default defineConfig({
 
     resolve: {
       alias: {
-        '@proj-airi/server-sdk': resolve(join(import.meta.dirname, '..', '..', 'packages', 'server-sdk', 'src')),
-        '@proj-airi/i18n': resolve(join(import.meta.dirname, '..', '..', 'packages', 'i18n', 'src')),
-        '@proj-airi/stage-ui': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-ui', 'src')),
-        '@proj-airi/stage-pages': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-pages', 'src')),
-        '@proj-airi/stage-shared': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-shared', 'src')),
+        '@anase/server-sdk': resolve(join(import.meta.dirname, '..', '..', 'packages', 'server-sdk', 'src')),
+        '@anase/i18n': resolve(join(import.meta.dirname, '..', '..', 'packages', 'i18n', 'src')),
+        '@anase/stage-ui': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-ui', 'src')),
+        '@anase/stage-pages': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-pages', 'src')),
+        '@anase/stage-shared': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-shared', 'src')),
       },
     },
 
@@ -109,7 +109,7 @@ export default defineConfig({
       Info(),
 
       {
-        name: 'proj-airi:defines',
+        name: 'anase:defines',
         config(ctx) {
           const define: Record<string, any> = {
             'import.meta.env.RUNTIME_ENVIRONMENT': '\'electron\'',

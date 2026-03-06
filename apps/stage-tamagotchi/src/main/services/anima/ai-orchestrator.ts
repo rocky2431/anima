@@ -1,12 +1,12 @@
 import type { LanguageModelV3 } from '@ai-sdk/provider'
-import type { Skill } from '@proj-airi/skills-engine'
+import type { Skill } from '@anase/skills-engine'
 import type Database from 'better-sqlite3'
 
 import BetterSqlite3 from 'better-sqlite3'
 
 import { useLogg } from '@guiiai/logg'
-import { McpHub } from '@proj-airi/mcp-hub'
-import { buildSkillsContext, SkillRegistry } from '@proj-airi/skills-engine'
+import { McpHub } from '@anase/mcp-hub'
+import { buildSkillsContext, SkillRegistry } from '@anase/skills-engine'
 import { generateText, stepCountIs } from 'ai'
 
 const DEFAULT_MAX_STEPS = 5

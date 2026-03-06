@@ -1,13 +1,13 @@
-# AIRI 重构计划（能力可用导向）
+# Anase 重构计划（能力可用导向）
 
-> 目标：优先让 AIRI 前端具备 `nanobot` 所需的后端能力，并在不重复建设执行层的前提下，逐步收口到统一运行时。
+> 目标：优先让 Anase 前端具备 `nanobot` 所需的后端能力，并在不重复建设执行层的前提下，逐步收口到统一运行时。
 > 核心原则：`能力可用 > 主路径统一 > 插件化形式纯度`。
 
 ## 一、当前判断
 
 ### 已经成立的事实
 
-- AIRI 主执行链已经以 `Vercel AI SDK` 为核心，`Brain` 也已迁移到 AI SDK。
+- Anase 主执行链已经以 `Vercel AI SDK` 为核心，`Brain` 也已迁移到 AI SDK。
 - `MCP Hub`、`Skills`、`Context Engine`、`Anima MCP Server` 对应的 native plugin 包已经实现，不再只是计划。
 - 凭证安全化已经落地，前端也已经具备 `Brain-first` 的凭证同步能力。
 - `plugin-sdk` 的 transport / capability / configuration / compatibility 基础能力已经补齐到可用状态。
@@ -25,7 +25,7 @@
 不是追求“所有东西必须先插件化”，而是确保：
 
 1. `nanobot` 需要的后端能力已经存在且可调用。
-2. AIRI 不再继续长出第二套、第三套执行内核。
+2. Anase 不再继续长出第二套、第三套执行内核。
 3. 插件化在有收益的地方接管主路径，而不是为了概念统一强推。
 
 ---
@@ -71,7 +71,7 @@
 
 ### P0-3: Brain 迁移到 AI SDK
 
-- `services/airi-brain` 使用 AI SDK `generateText()` / `embed()`
+- `services/anase-brain` 使用 AI SDK `generateText()` / `embed()`
 - 不再依赖手工 fetch 作为主实现
 
 ### 状态
@@ -89,7 +89,7 @@
 
 - `provider_credentials` 表已建立
 - 支持 `AES-256-GCM`
-- 运行要求：生产环境必须设置 `AIRI_ENCRYPTION_KEY`
+- 运行要求：生产环境必须设置 `ANASE_ENCRYPTION_KEY`
 
 ### P1-2: Brain 凭证事件接口
 
@@ -146,22 +146,22 @@
 
 ### P3-1: MCP Hub 能力包
 
-- `plugins/airi-plugin-mcp-hub/`
+- `plugins/anase-plugin-mcp-hub/`
 - 已暴露服务器管理与工具聚合能力
 
 ### P3-2: Anima MCP Server 能力包
 
-- `plugins/airi-plugin-anima-mcp-server/`
+- `plugins/anase-plugin-anima-mcp-server/`
 - 已暴露 memory / daily summary / user-context MCP 接口
 
 ### P3-3: Skills 能力包
 
-- `plugins/airi-plugin-skills/`
+- `plugins/anase-plugin-skills/`
 - 已暴露 `skills:list / toggle / get-by-id / context`
 
 ### P3-4: Context Engine 能力包
 
-- `plugins/airi-plugin-context-engine/`
+- `plugins/anase-plugin-context-engine/`
 - 已支持：
   - memory search
   - recent memories
@@ -265,7 +265,7 @@
 
 ### C. 风险验收
 
-- [x] 生产环境 `AIRI_ENCRYPTION_KEY` 配置校验（启动时 warn/error 日志）
+- [x] 生产环境 `ANASE_ENCRYPTION_KEY` 配置校验（启动时 warn/error 日志）
 - [x] plugin-native 路径的启动顺序与降级路径验证（per-plugin try/catch，单个失败不影响其他）
 - [x] 旧路径删除前完成回归测试（378 tests: tamagotchi 36 + brain 35 + context-engine 307）
 

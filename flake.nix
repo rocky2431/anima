@@ -23,20 +23,20 @@
 
       packages = forAllSystems (
         system:
-        { default = self.packages.${system}.airi; } // self.overlays.airi (pkgsForSystem system) null
+        { default = self.packages.${system}.anase; } // self.overlays.anase (pkgsForSystem system) null
       );
 
       overlays = {
-        default = self.overlays.airi;
-        airi = final: _: {
-          airi = final.callPackage ./nix/package.nix { };
+        default = self.overlays.anase;
+        anase = final: _: {
+          anase = final.callPackage ./nix/package.nix { };
         };
       };
 
       devShells = forAllSystems (
         system: with (pkgsForSystem system); {
           default = mkShell {
-            inputsFrom = [ self.packages.${system}.airi ];
+            inputsFrom = [ self.packages.${system}.anase ];
             packages = [
               nixd
               nixfmt-rfc-style

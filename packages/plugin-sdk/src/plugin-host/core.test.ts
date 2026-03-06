@@ -24,7 +24,7 @@ describe('for FileSystemPluginHost', () => {
 
     const pluginDef = await host.loadPluginFor({
       apiVersion: 'v1',
-      kind: 'manifest.plugin.airi.moeru.ai',
+      kind: 'manifest.plugin.anase.app',
       name: 'test-plugin',
       entrypoints: {
         electron: join(import.meta.dirname, 'testdata', 'test-normal-plugin.ts'),
@@ -45,7 +45,7 @@ describe('for FileSystemPluginHost', () => {
 
     const pluginDef = await host.loadPluginFor({
       apiVersion: 'v1',
-      kind: 'manifest.plugin.airi.moeru.ai',
+      kind: 'manifest.plugin.anase.app',
       name: 'test-plugin',
       entrypoints: {
         node: join(import.meta.dirname, 'testdata', 'test-normal-plugin.ts'),
@@ -61,7 +61,7 @@ describe('for FileSystemPluginHost', () => {
 
     await expect(host.loadPluginFor({
       apiVersion: 'v1',
-      kind: 'manifest.plugin.airi.moeru.ai',
+      kind: 'manifest.plugin.anase.app',
       name: 'test-plugin',
       entrypoints: {
         electron: join(import.meta.dirname, 'testdata', 'test-error-plugin.ts'),
@@ -71,10 +71,10 @@ describe('for FileSystemPluginHost', () => {
 })
 
 describe('for PluginHost', () => {
-  const providersCapability = 'proj-airi:plugin-sdk:apis:protocol:resources:providers:list-providers'
+  const providersCapability = 'anase:plugin-sdk:apis:protocol:resources:providers:list-providers'
   const testManifest = {
     apiVersion: 'v1' as const,
-    kind: 'manifest.plugin.airi.moeru.ai' as const,
+    kind: 'manifest.plugin.anase.app' as const,
     name: 'test-plugin',
     entrypoints: {
       electron: join(import.meta.dirname, 'testdata', 'test-normal-plugin.ts'),
@@ -120,7 +120,7 @@ describe('for PluginHost', () => {
 
     const session = await host.load({
       apiVersion: 'v1',
-      kind: 'manifest.plugin.airi.moeru.ai',
+      kind: 'manifest.plugin.anase.app',
       name: 'test-plugin-no-connect',
       entrypoints: {
         electron: join(import.meta.dirname, 'testdata', 'test-no-connect-plugin.ts'),
@@ -150,7 +150,7 @@ describe('for PluginHost', () => {
 
     const pluginDef = await loader.loadPluginFor({
       apiVersion: 'v1',
-      kind: 'manifest.plugin.airi.moeru.ai',
+      kind: 'manifest.plugin.anase.app',
       name: 'test-plugin',
       entrypoints: {
         electron: join(import.meta.dirname, 'testdata', 'test-normal-plugin.ts'),
@@ -172,7 +172,7 @@ describe('for PluginHost', () => {
     })
     defineInvokeHandler(ctx, protocolCapabilityWait, async () => {
       return {
-        key: 'proj-airi:plugin-sdk:apis:protocol:resources:providers:list-providers',
+        key: 'anase:plugin-sdk:apis:protocol:resources:providers:list-providers',
         state: 'ready',
         updatedAt: Date.now(),
       }
@@ -241,7 +241,7 @@ describe('for PluginHost', () => {
     const session = await host.start(testManifest, { cwd: '' })
 
     // Simulate plugin offering a capability via event
-    const { moduleContributeCapabilityOffer } = await import('@proj-airi/plugin-protocol/types')
+    const { moduleContributeCapabilityOffer } = await import('@anase/plugin-protocol/types')
     session.channels.host.emit(moduleContributeCapabilityOffer, {
       identity: session.identity,
       capability: { id: 'test:cap:vision', name: 'Vision OCR' },
@@ -276,7 +276,7 @@ describe('for PluginHost', () => {
 
     const session = await host.start(testManifest, { cwd: '' })
 
-    const { moduleContributeCapabilityOffer, moduleContributeCapabilityActivated } = await import('@proj-airi/plugin-protocol/types')
+    const { moduleContributeCapabilityOffer, moduleContributeCapabilityActivated } = await import('@anase/plugin-protocol/types')
     session.channels.host.emit(moduleContributeCapabilityOffer, {
       identity: session.identity,
       capability: { id: 'test:cap:reject', name: 'To be rejected' },
@@ -324,7 +324,7 @@ describe('for PluginHost', () => {
       moduleConfigurationPlanResponse,
       moduleConfigurationCommit,
       moduleConfigurationCommitStatus,
-    } = await import('@proj-airi/plugin-protocol/types')
+    } = await import('@anase/plugin-protocol/types')
 
     // Plugin validates
     session.channels.host.on(moduleConfigurationValidateRequest, (envelope) => {
@@ -482,7 +482,7 @@ describe('for PluginHost', () => {
     const {
       moduleConfigurationCommit,
       moduleConfigurationCommitStatus,
-    } = await import('@proj-airi/plugin-protocol/types')
+    } = await import('@anase/plugin-protocol/types')
 
     session.channels.host.on(moduleConfigurationCommit, (envelope) => {
       if (!envelope.body)

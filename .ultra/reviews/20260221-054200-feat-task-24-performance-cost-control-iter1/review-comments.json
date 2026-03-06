@@ -1,0 +1,81 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260221-054200-feat-task-24-performance-cost-control-iter1",
+  "timestamp": "2026-02-21T05:43:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/model-router.ts",
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/model-router.test.ts",
+      "packages/context-engine/src/__tests__/dedup-stats.test.ts",
+      "packages/context-engine/src/__tests__/performance-benchmark.test.ts"
+    ],
+    "total_lines_analyzed": 1133,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 0, "P3": 2 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "comments",
+      "subcategory": "factual-accuracy",
+      "title": "Comment claims extraction routes to lightweight, but it routes to local",
+      "file": "packages/context-engine/src/__tests__/performance-benchmark.test.ts",
+      "line": 147,
+      "line_end": 149,
+      "code_snippet": "// - Entity extraction (60 calls) → lightweight: \"Extract entities...\"\n// - Classification (60 calls) → local: \"Classify the activity...\"\n// - Summary (60 calls) → standard: \"Summarize the context...\"",
+      "description": "The comment on line 147 states that entity extraction routes to the 'lightweight' tier. However, the ModelRouter's resolveTier function routes extraction tasks to the 'local' tier when a local provider is present (extraction is in LOCAL_ELIGIBLE_TASKS). The test assertions on lines 175-176 correctly show callsByTier.local === 120 (both classification AND extraction) and callsByTier.lightweight === 0, contradicting the comment. The cost breakdown on lines 179-180 is also correct ('Local: 120 calls'). Only this one line misattributes the extraction routing destination.",
+      "suggestion": "Change line 147 to: '// - Entity extraction (60 calls) → local: \"Extract entities...\"' to match the actual routing behavior and be consistent with the assertions and cost breakdown below it.",
+      "claude_md_rule": "verification.required_evidence"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Inline comments in resolveTier restate obvious code logic",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 96,
+      "line_end": 101,
+      "code_snippet": "  // Check explicit override first\n  if (overrides?.[taskType]) {\n    return overrides[taskType]!\n  }\n\n  // Route to local if available and task is eligible",
+      "description": "The inline comments '// Check explicit override first' (line 96) and '// Route to local if available and task is eligible' (line 101) directly restate what the code already expresses through its variable names and conditional logic. The function already has a JSDoc comment explaining its purpose. These inline comments add maintenance cost without new insight.",
+      "suggestion": "Consider removing lines 96 and 101 since the JSDoc on the function and the self-documenting code (overrides, hasLocal, LOCAL_ELIGIBLE_TASKS) already convey the intent. Alternatively, if kept for scan-readability, this is a minor style preference.",
+      "claude_md_rule": "code_quality"
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "roi-assessment",
+      "title": "Comment restates code in test: '// no local provider'",
+      "file": "packages/context-engine/src/__tests__/model-router.test.ts",
+      "line": 179,
+      "code_snippet": "        // no local provider",
+      "description": "The comment '// no local provider' on line 179 restates what is obvious from the constructor call above it, which only passes lightweight and standard providers. The test name 'falls back to lightweight when local is not available' already communicates this intent.",
+      "suggestion": "Remove the comment. The test name and constructor call make the absence of a local provider self-evident.",
+      "claude_md_rule": "code_quality"
+    }
+  ],
+  "positive_observations": [
+    "JSDoc on all exported interfaces and functions in model-router.ts follows project conventions consistently, with accurate parameter and return type descriptions.",
+    "The RoutingStats.estimatedSavingsRatio JSDoc (lines 23-28 in model-router.ts) explains both the formula and the interpretation, which is high-value documentation for future maintainers.",
+    "Test Double rationale comments in test files follow the CLAUDE.md convention for justifying non-real dependencies at external API boundaries.",
+    "The simulation scenario comment block in dedup-stats.test.ts (lines 90-98) effectively explains the 'why' behind the test design, helping future readers understand the realistic desktop usage pattern being modeled.",
+    "Section divider comments (// --- Functional Core --- etc.) in model-router.ts align with the project's Functional Core / Imperative Shell architecture and help readers navigate the file."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

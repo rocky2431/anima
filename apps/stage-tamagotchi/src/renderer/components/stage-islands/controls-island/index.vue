@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { defineInvoke } from '@moeru/eventa'
-import { useSettings, useSettingsAudioDevice } from '@proj-airi/stage-ui/stores/settings'
-import { useTheme } from '@proj-airi/ui'
+import { useSettings, useSettingsAudioDevice } from '@anase/stage-ui/stores/settings'
+import { useTheme } from '@anase/ui'
 import { useWindowSize } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'

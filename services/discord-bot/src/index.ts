@@ -2,7 +2,7 @@ import process, { env } from 'node:process'
 
 import { Format, LogLevel, setGlobalFormat, setGlobalLogLevel, useLogg } from '@guiiai/logg'
 
-import { DiscordAdapter } from './adapters/airi-adapter'
+import { DiscordAdapter } from './adapters/anase-adapter'
 
 setGlobalFormat(Format.Pretty)
 setGlobalLogLevel(LogLevel.Log)
@@ -13,8 +13,8 @@ async function main() {
   // Create Discord adapter with configuration
   const adapter = new DiscordAdapter({
     discordToken: env.DISCORD_TOKEN || '', // Fallback to env, but will be updated via WebSocket
-    airiToken: env.AIRI_TOKEN || 'abcd',
-    airiUrl: env.AIRI_URL || 'ws://localhost:6121/ws',
+    airiToken: env.ANASE_TOKEN || 'abcd',
+    airiUrl: env.ANASE_URL || 'ws://localhost:6121/ws',
   })
 
   await adapter.start()

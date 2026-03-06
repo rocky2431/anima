@@ -1,0 +1,103 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260220-201512-feat-task-23-integration-checkpoint-phase3-iter1-iter1",
+  "timestamp": "2026-02-21T00:00:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/stage-ui/src/stores/modules/phase3-checkpoint.integration.test.ts"
+    ],
+    "total_lines_analyzed": 1533,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 0, "P3": 5 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Redundant comment restates what the next assertion already proves",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 111,
+      "code_snippet": "// All channels should now be connected\nfor (const channel of channels) {\n  expect(channel.status).toBe('connected')\n}",
+      "description": "The comment 'All channels should now be connected' adds no information beyond what the assertion `expect(channel.status).toBe('connected')` already communicates. In a test file, the assertion IS the documentation of expected behavior.",
+      "suggestion": "Remove the comment. The test description 'connects all 5 channels successfully via connectAll' and the assertion together are sufficient documentation."
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Multiple low-ROI inline comments in context-engine test",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 95,
+      "line_end": 137,
+      "code_snippet": "// Verify complete MergedContext structure\n...\n// All 3 sources contributed\n...\n// Activity type classified",
+      "description": "Lines 95 ('Verify complete MergedContext structure'), 113 ('All 3 sources contributed'), and 137 ('Activity type classified') are restating what the immediately following assertion already expresses. These add maintenance cost without providing 'why' context. In contrast, the comment on line 116 ('Entities from all sources deduplicated: VS Code appears in screenshot + activity -> once') is excellent because it explains the deduplication logic.",
+      "suggestion": "Remove comments on lines 95, 113, and 137. Keep valuable comments like line 116 (deduplication explanation) and line 134 (importance calculation formula) which explain 'why' rather than 'what'."
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Duplicate ordering comment in persona-engine trigger test",
+      "file": "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 325,
+      "code_snippet": "// T07 should be evaluated before T08\nexpect(result.triggerId).toBe('T07')",
+      "description": "Line 325 ('T07 should be evaluated before T08') is redundant with the more detailed comment block on lines 314-315 which already explains: 'T07 (important-date, critical priority) should fire before T08 (task-due, high priority) / Because T07 comes before T08 in ALL_TRIGGERS order'. The second comment adds no new information.",
+      "suggestion": "Remove the comment on line 325. The block comment on lines 314-315 already fully explains the ordering expectation."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "comments",
+      "subcategory": "negative-roi-comments",
+      "title": "Pattern of 14 redundant one-line comments in stage-ui test",
+      "file": "packages/stage-ui/src/stores/modules/phase3-checkpoint.integration.test.ts",
+      "line": 77,
+      "line_end": 329,
+      "code_snippet": "// All start empty\n...\n// Reset one store\n...\n// Populate all\n// Reset all\n// All empty",
+      "description": "This file has 14+ short comments that restate the code: '// All start empty' (line 77), '// Reset one store' (line 102), '// totalWorkDuration comes from summary' (line 229), '// appBreakdown comes from summary' (line 232), '// highlights come from summary' (line 238), '// Initially no summary' (line 247), '// Set summary' (line 252), '// Reset clears summary' (line 263), '// Populate all' (line 317), '// Reset all' (line 323), '// All empty' (line 329). Each restates what the next 1-2 lines of code clearly express. The CRUD-phase labels (lines 117-150: '// Create:', '// Read:', '// Select', '// Delete:') are borderline acceptable as section headers, but the rest are pure noise.",
+      "suggestion": "Remove the redundant one-liners (lines 77, 102, 229, 232, 238, 247, 252, 263, 317, 323, 329). Keep the CRUD-phase labels (Create/Read/Select/Delete) as they serve as lightweight section headers in a long test. Keep '// Auto-cleared' on line 153 and '// Without todaySummary, totalWorkDuration defaults to 0' on line 209 as they explain non-obvious behavior."
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Redundant comment before self-describing for loop",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 159,
+      "code_snippet": "// Send a message from each platform\nfor (const [platform, channel] of channels) {\n  channel._triggerMessage(makeMessage(platform, `Hello from ${platform}`))\n}",
+      "description": "The comment 'Send a message from each platform' restates what the for-loop and the call to `_triggerMessage(makeMessage(platform, ...))` already communicate. The code is self-documenting through its variable names and method names.",
+      "suggestion": "Remove the comment. The code clearly iterates over platforms and triggers a message for each."
+    }
+  ],
+  "positive_observations": [
+    "All three Test Double rationale comments (channels-extra line 7, context-engine line 8, mcp-hub line 9) follow the project convention '// Test Double rationale: [reason]' and clearly justify why stubs are used instead of real dependencies. This is exemplary practice.",
+    "The persona-engine JSDoc on the makeTriggerInput factory (line 14-17) clearly explains the factory pattern purpose and override convention, which will help future test authors.",
+    "Context-engine line 116 ('Entities from all sources deduplicated: VS Code appears in screenshot + activity -> once') is an excellent 'why' comment that explains the deduplication behavior being tested, not just the assertion.",
+    "Persona-engine lines 174-176 provide valuable reasoning about trigger interaction during cooldown testing, explaining why certain triggers will or will not fire given the test input.",
+    "No forbidden patterns (TODO, FIXME, HACK, XXX, PLACEHOLDER, TEMP) were found in any of the five files."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

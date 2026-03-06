@@ -1,6 +1,6 @@
 ---
 title: 不同的版本
-description: AIRI 的不同版本以及如何获取它们
+description: Anase 的不同版本以及如何获取它们
 ---
 
 <script setup>
@@ -8,7 +8,7 @@ import ReleaseDownloads from '../../../../../.vitepress/components/ReleaseDownlo
 import ReleasesList from '../../../../../.vitepress/components/ReleasesList.vue'
 </script>
 
-AIRI 提供多个发布渠道以满足不同需求。无论你想要最稳定的体验还是最新的功能,我们都能满足你的需求。
+Anase 提供多个发布渠道以满足不同需求。无论你想要最稳定的体验还是最新的功能,我们都能满足你的需求。
 
 ## 稳定版本 & 预发布版本
 
@@ -43,9 +43,9 @@ AIRI 提供多个发布渠道以满足不同需求。无论你想要最稳定的
 2. 点击最近一次成功的运行(以绿色对勾 ✓ 标识)
 3. 向下滚动到 **Artifacts** (构建产物) 部分
 4. 下载适合你平台的构建版本:
-   - **Windows**: \`AIRI_*_x64_en-US.exe\`
-   - **macOS (Intel)**: \`AIRI_*_x64.dmg\`
-   - **macOS (Apple Silicon)**: \`AIRI_*_arm64.dmg\`
+   - **Windows**: \`ANASE_*_x64_en-US.exe\`
+   - **macOS (Intel)**: \`ANASE_*_x64.dmg\`
+   - **macOS (Apple Silicon)**: \`ANASE_*_arm64.dmg\`
    - **Linux (x64)**: \`airi_*_amd64.deb\` 或 \`airi-*.x86_64.rpm\`
    - **Linux (ARM64)**: \`airi_*_arm64.deb\` 或 \`airi-*.aarch64.rpm\`
 

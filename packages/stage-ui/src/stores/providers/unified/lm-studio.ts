@@ -1,6 +1,6 @@
 import type { ModelInfo, UnifiedProviderMetadata, ValidationResult } from '../types'
 
-import { isUrl } from '@proj-airi/stage-shared'
+import { isUrl } from '@anase/stage-shared'
 
 import { createOpenAI } from '../../../libs/ai/create-provider'
 

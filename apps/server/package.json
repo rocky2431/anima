@@ -1,5 +1,5 @@
 {
-  "name": "@proj-airi/server",
+  "name": "@anase/server",
   "type": "module",
   "version": "0.8.4",
   "private": true,

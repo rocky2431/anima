@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Project AIRI (`@proj-airi/root`) — an open-source AI virtual character / VTuber platform inspired by Neuro-sama. It provides a "soul container" that brings AI characters into our world across web, desktop, and mobile. Built with Vue 3, TypeScript, Electron, and Rust (Tauri plugins). LLM interactions powered by [xsAI](https://github.com/moeru-ai/xsai).
+Project Anase (`@anase/root`) — an open-source AI girlfriend & companion platform. It brings intelligent virtual characters to life across web, desktop, and mobile with long-term memory, proactive interactions, and screen awareness. Built with Vue 3, TypeScript, Electron. LLM interactions powered by Vercel AI SDK and [xsAI](https://github.com/moeru-ai/xsai).
 
 ## Monorepo Structure
 
@@ -15,7 +15,7 @@ Project AIRI (`@proj-airi/root`) — an open-source AI virtual character / VTube
 | `apps/` | Deployable applications (stage-web, stage-tamagotchi, stage-pocket, server, component-calling) |
 | `packages/` | Shared libraries (~35 packages: stage-ui, ui, i18n, server-runtime, plugin-sdk, etc.) |
 | `services/` | Bot integrations (discord-bot, telegram-bot, minecraft, satori-bot, twitter-services) |
-| `plugins/` | AIRI plugins (bilibili-laplace, claude-code, homeassistant, web-extension) |
+| `plugins/` | Anase plugins (bilibili-laplace, claude-code, homeassistant, web-extension) |
 | `crates/` | Rust Tauri plugins (mcp, rdev, window-pass-through, audio transcription/VAD) |
 | `integrations/` | IDE integrations (VSCode extensions) |
 | `docs/` | Documentation site (Astro-based) |
@@ -63,9 +63,9 @@ pnpm lint:rust                  # cargo fmt --check && cargo clippy
 pnpm typecheck                  # tsc/vue-tsc across all packages/apps
 
 # Scoped commands (use pnpm workspace filters)
-pnpm -F @proj-airi/stage-ui typecheck
-pnpm -F @proj-airi/stage-tamagotchi exec vitest run
-pnpm -F @proj-airi/telegram-bot start
+pnpm -F @anase/stage-ui typecheck
+pnpm -F @anase/stage-tamagotchi exec vitest run
+pnpm -F @anase/telegram-bot start
 ```
 
 ## Testing Configuration

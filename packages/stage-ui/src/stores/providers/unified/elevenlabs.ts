@@ -2,7 +2,7 @@ import type { UnElevenLabsOptions, VoiceProviderWithExtraOptions } from 'unspeec
 
 import type { ModelInfo, SpeechProviderWithExtraOptions, UnifiedProviderMetadata, ValidationResult, VoiceInfo } from '../types'
 
-import { isUrl } from '@proj-airi/stage-shared'
+import { isUrl } from '@anase/stage-shared'
 import { createUnElevenLabs, listVoices } from 'unspeech'
 
 import { models as elevenLabsModels } from '../elevenlabs/list-models'

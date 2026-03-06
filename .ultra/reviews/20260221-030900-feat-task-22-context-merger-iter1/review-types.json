@@ -1,0 +1,111 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260221-030900-feat-task-22-context-merger-iter1",
+  "timestamp": "2026-02-21T03:12:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/types.ts",
+      "packages/context-engine/src/processing/context-merger.ts",
+      "packages/context-engine/src/processing/entity-extractor.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/context-merger.test.ts",
+      "packages/context-engine/src/__tests__/entity-extractor.test.ts",
+      "packages/context-engine/src/__tests__/context-merger-utils.test.ts"
+    ],
+    "total_lines_analyzed": 1017,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 3, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "missing-validation",
+      "title": "EntityExtractor trusts LLM output without runtime validation",
+      "file": "packages/context-engine/src/processing/entity-extractor.ts",
+      "line": 24,
+      "line_end": 35,
+      "code_snippet": "async extract(text: string): Promise<ExtractedEntities> {\n  try {\n    return await this.llm.generateStructured<ExtractedEntities>({\n      system: SYSTEM_PROMPT,\n      prompt: text,\n      schemaDescription: SCHEMA_DESCRIPTION,\n    })\n  }",
+      "description": "Encapsulation: 8/10, Expression: 5/10, Usefulness: 7/10, Enforcement: 2/10 (Aggregate: 5.5). EntityExtractor calls generateStructured<ExtractedEntities> but performs no runtime validation on the returned object. The generic type parameter T is erased at runtime -- if the LLM returns malformed data (e.g., a string instead of an array for 'persons', or a missing field), the invalid shape silently propagates through the pipeline. SmartTip in this same codebase demonstrates the gold-standard pattern: validate LLM output with type guards before returning. This is a missing-constructor-validation-on-external-input case (LLM is external input).",
+      "suggestion": "Add a validateExtractedEntities() type guard that checks all 5 fields are present and are string arrays, similar to SmartTip's isValidSmartTipResult(). Return a safe default (empty arrays) or throw a typed error on validation failure. Example:\n\nfunction isValidExtractedEntities(obj: unknown): obj is ExtractedEntities {\n  if (!obj || typeof obj !== 'object') return false\n  const e = obj as Record<string, unknown>\n  return ['persons','organizations','locations','technologies','concepts']\n    .every(k => Array.isArray(e[k]) && e[k].every((v: unknown) => typeof v === 'string'))\n}",
+      "claude_md_rule": "architecture.functional_core_imperative_shell"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "immutability",
+      "title": "MergedContext output type lacks readonly modifiers",
+      "file": "packages/context-engine/src/processing/types.ts",
+      "line": 49,
+      "line_end": 66,
+      "code_snippet": "export interface MergedContext {\n  summary: string\n  keywords: string[]\n  entities: string[]\n  extractedEntities: ExtractedEntities\n  importance: number\n  activityType: ActivityType\n  sourceCount: number\n  timestamp: number\n}",
+      "description": "Encapsulation: 3/10, Expression: 5/10, Usefulness: 7/10, Enforcement: 3/10 (Aggregate: 4.5). MergedContext is a pipeline output type representing the merged result of multiple context sources. It should be immutable after construction. Task 19 established a new standard in context-engine: DocumentExtractionResult, TextChunk, and FileChangeEvent all use readonly fields. MergedContext breaks this pattern. Consumers could accidentally mutate the arrays (keywords, entities) or overwrite computed fields (importance, activityType), corrupting shared state.",
+      "suggestion": "Add readonly to all fields and use readonly arrays:\n\nexport interface MergedContext {\n  readonly summary: string\n  readonly keywords: readonly string[]\n  readonly entities: readonly string[]\n  readonly extractedEntities: Readonly<ExtractedEntities>\n  readonly importance: number\n  readonly activityType: ActivityType\n  readonly sourceCount: number\n  readonly timestamp: number\n}",
+      "claude_md_rule": "architecture.functional_core_imperative_shell"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "immutability",
+      "title": "ContextSource and ExtractedEntities lack readonly modifiers",
+      "file": "packages/context-engine/src/processing/types.ts",
+      "line": 19,
+      "line_end": 43,
+      "code_snippet": "export interface ContextSource {\n  source: 'screenshot' | 'activity' | 'document' | 'web' | 'system'\n  summary: string\n  entities: string[]\n  keywords: string[]\n  timestamp: number\n  importance?: number\n}\n\nexport interface ExtractedEntities {\n  persons: string[]\n  organizations: string[]\n  ...\n}",
+      "description": "Encapsulation: 4/10, Expression: 6/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.75). Both ContextSource (input) and ExtractedEntities (output) are fully mutable. ContextSource is passed into merge() and should not be mutated by the merger. ExtractedEntities flows downstream as immutable data. The arrays (entities, keywords, persons, etc.) are particularly vulnerable to accidental mutation. Task 19 set the readonly standard for output types in context-engine.",
+      "suggestion": "Mark all fields readonly. For ContextSource, at minimum make the array fields readonly:\n\nexport interface ContextSource {\n  readonly source: ...\n  readonly summary: string\n  readonly entities: readonly string[]\n  readonly keywords: readonly string[]\n  readonly timestamp: number\n  readonly importance?: number\n}\n\nexport interface ExtractedEntities {\n  readonly persons: readonly string[]\n  readonly organizations: readonly string[]\n  readonly locations: readonly string[]\n  readonly technologies: readonly string[]\n  readonly concepts: readonly string[]\n}"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "ContextSource.importance lacks type-level constraint for 0-1 range",
+      "file": "packages/context-engine/src/processing/types.ts",
+      "line": 31,
+      "code_snippet": "importance?: number",
+      "description": "Encapsulation: 4/10, Expression: 4/10, Usefulness: 6/10, Enforcement: 3/10 (Aggregate: 4.25). The importance field is documented as '0-1' in JSDoc but typed as bare number. Callers can pass -5 or 100 without type error. computeImportance() clamps the output but does not validate inputs. This is the recurring 'primitive obsession for domain-constrained numbers' pattern in this codebase (also seen with timestamps/durations). While branded types are not yet used in the codebase, at minimum a runtime assertion at ContextSource construction boundaries would catch invalid values early.",
+      "suggestion": "Option A (lightweight): Add a validateContextSource() function at the boundary where ContextSource is created, asserting 0 <= importance <= 1. Option B (type-safe): Define a branded type:\n\ntype Normalized = number & { readonly __brand: 'Normalized0to1' }\nfunction normalized(n: number): Normalized {\n  if (n < 0 || n > 1) throw new RangeError(`Expected 0-1, got ${n}`)\n  return n as Normalized\n}\n\nOption A is more practical given codebase conventions."
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "type-design",
+      "subcategory": "constructor-validation",
+      "title": "ContextMerger does not validate maxSources option",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 113,
+      "line_end": 117,
+      "code_snippet": "constructor(options: ContextMergerOptions) {\n  this.llm = options.llm\n  this.entityExtractor = new EntityExtractor(options.llm)\n  this.maxSources = options.maxSources ?? DEFAULT_MAX_SOURCES\n}",
+      "description": "Encapsulation: 8/10, Expression: 7/10, Usefulness: 7/10, Enforcement: 6/10 (Aggregate: 7.0). The constructor accepts maxSources without validation. A caller could pass 0 or a negative number, causing selectTopSources to return an empty array, which then silently produces a merge from zero sources (the empty-sources guard fires before selectTopSources in merge(), but only for the original input). With maxSources=0, selectTopSources returns [] but the check has already passed. This is a minor constructor completeness gap.",
+      "suggestion": "Add a guard in the constructor:\n\nconst max = options.maxSources ?? DEFAULT_MAX_SOURCES\nif (max < 1) throw new RangeError('maxSources must be >= 1')\nthis.maxSources = max"
+    }
+  ],
+  "positive_observations": [
+    "ActivityType is a well-defined 7-value literal union -- good domain modeling for activity classification",
+    "ContextSource.source uses a 5-value literal union instead of plain string -- prevents invalid source types at compile time",
+    "ContextMerger follows Functional Core / Imperative Shell cleanly: pure functions (deduplicateStrings, mergeKeywords, computeImportance, selectTopSources) are exported separately from the class, enabling independent unit testing",
+    "validateActivityType uses a ReadonlySet guard with 'other' fallback instead of trusting the LLM cast -- defensive pattern that prevents invalid activity types from propagating",
+    "Error handling wraps LLM errors with context (new Error('Context merge failed', { cause })) -- follows error handling best practices",
+    "ContextMerger uses Promise.all for parallel LLM calls (entity extraction, classification, summary) -- good performance pattern",
+    "Pure utility functions are thoroughly tested with edge cases (empty input, single element, whitespace) in a dedicated test file"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

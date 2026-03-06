@@ -36,8 +36,8 @@ else {
 }
 
 export default {
-  appId: 'ai.moeru.airi',
-  productName: 'AIRI',
+  appId: 'app.anase',
+  productName: 'Anase',
   directories: {
     output: 'dist',
     buildResources: 'build',
@@ -63,14 +63,14 @@ export default {
     '**/*.node',
   ],
   extraMetadata: {
-    name: 'ai.moeru.airi',
+    name: 'app.anase',
     main: 'out/main/index.js',
-    homepage: 'https://airi.moeru.ai/docs/',
-    repository: 'https://github.com/moeru-ai/airi',
+    homepage: 'https://anase.app/docs/',
+    repository: 'https://github.com/rocky2431/anima',
     license: 'MIT',
   },
   win: {
-    executableName: 'airi',
+    executableName: 'anase',
   },
   nsis: {
     artifactName: '${productName}-${version}-windows-${arch}-setup.${ext}',
@@ -85,15 +85,15 @@ export default {
     entitlementsInherit: 'build/entitlements.mac.plist',
     extendInfo: [
       {
-        NSMicrophoneUsageDescription: 'AIRI requires microphone access for voice interaction',
+        NSMicrophoneUsageDescription: 'Anase requires microphone access for voice interaction',
       },
       {
-        NSCameraUsageDescription: 'AIRI requires camera access for vision understanding',
+        NSCameraUsageDescription: 'Anase requires camera access for vision understanding',
       },
     ],
     notarize: false,
     hardenedRuntime: false,
-    executableName: 'airi',
+    executableName: 'anase',
     icon: useIconFormattedMacAppIcon ? 'icon.icon' : 'icon.icns',
   },
   dmg: {
@@ -106,8 +106,8 @@ export default {
     ],
     category: 'Utility',
     synopsis: 'AI VTuber/Waifu chatbot app inspired by Neuro-sama.',
-    description: 'AIRI is an AI VTuber/Waifu chatbot supporting Live2D/VRM avatars, featuring human-like interactions and modular stage-based rendering.',
-    executableName: 'airi',
+    description: 'Anase is an AI VTuber/Waifu chatbot supporting Live2D/VRM avatars, featuring human-like interactions and modular stage-based rendering.',
+    executableName: 'anase',
     artifactName: '${productName}-${version}-linux-${arch}.${ext}',
     icon: 'build/icons/icon.png',
   },
@@ -115,10 +115,10 @@ export default {
     artifactName: '${productName}-${version}-linux-${arch}.${ext}',
   },
   extraResources: [
-    'airi-plugin-skills',
-    'airi-plugin-mcp-hub',
-    'airi-plugin-context-engine',
-    'airi-plugin-anima-mcp-server',
+    'anase-plugin-skills',
+    'anase-plugin-mcp-hub',
+    'anase-plugin-context-engine',
+    'anase-plugin-anima-mcp-server',
   ].map(name => ({
     from: `../../plugins/${name}`,
     to: `builtin-plugins/${name}`,
@@ -128,6 +128,6 @@ export default {
   publish: {
     provider: 'github',
     owner: 'moeru-ai',
-    repo: 'airi',
+    repo: 'anase',
   },
 } as Configuration

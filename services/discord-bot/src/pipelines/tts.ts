@@ -9,7 +9,7 @@ import wavefile from 'wavefile'
 import { createOpenAI } from '@ai-sdk/openai'
 import { useLogg } from '@guiiai/logg'
 import { pipeline } from '@huggingface/transformers'
-import { toWav } from '@proj-airi/audio'
+import { toWav } from '@anase/audio'
 import { experimental_transcribe as aiTranscribe } from 'ai'
 
 export class WhisperLargeV3Pipeline {

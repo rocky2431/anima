@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Live2DCanvas } from '@proj-airi/stage-ui/components/scenes'
+import type { Live2DCanvas } from '@anase/stage-ui/components/scenes'
 
-import { ModelSettings } from '@proj-airi/stage-ui/components/scenarios/settings/model-settings'
+import { ModelSettings } from '@anase/stage-ui/components/scenarios/settings/model-settings'
 import { Vibrant } from 'node-vibrant/browser'
 import { ref } from 'vue'
 

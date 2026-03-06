@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useLocalStorageManualReset } from '@proj-airi/stage-shared/composables'
-import { FieldInput } from '@proj-airi/ui'
+import { useLocalStorageManualReset } from '@anase/stage-shared/composables'
+import { FieldInput } from '@anase/ui'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-const defaultWebSocketUrl = import.meta.env.VITE_AIRI_WS_URL || 'ws://localhost:6121/ws'
+const defaultWebSocketUrl = import.meta.env.VITE_ANASE_WS_URL || 'ws://localhost:6121/ws'
 const websocketUrl = useLocalStorageManualReset('settings/connection/websocket-url', defaultWebSocketUrl)
 </script>
 

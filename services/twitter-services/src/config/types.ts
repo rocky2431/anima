@@ -31,7 +31,7 @@ export interface Config {
 
   // Adapter configuration
   adapters: {
-    airi?: {
+    anase?: {
       url?: string
       token?: string
       enabled: boolean
@@ -86,10 +86,10 @@ export function getDefaultConfig(): Config {
       },
     },
     adapters: {
-      airi: {
-        url: process.env.AIRI_URL || 'http://localhost:3000',
-        token: process.env.AIRI_TOKEN || '',
-        enabled: process.env.ENABLE_AIRI === 'true',
+      anase: {
+        url: process.env.ANASE_URL || 'http://localhost:3000',
+        token: process.env.ANASE_TOKEN || '',
+        enabled: process.env.ENABLE_Anase === 'true',
       },
       mcp: {
         port: Number(process.env.MCP_PORT || 8080),

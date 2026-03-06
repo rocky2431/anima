@@ -1,0 +1,17 @@
+{
+  "name": "@anase/anase-plugin-bilibili-laplace",
+  "type": "module",
+  "version": "0.8.4",
+  "private": true,
+  "description": "Live stream chat plugin, a bridge to forward Bilibili live chat via LAPLACE Event Bridge into Anase server channel",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@guiiai/logg": "catalog:",
+    "@laplace.live/event-bridge-sdk": "^1.0.7",
+    "@laplace.live/event-types": "^2.0.14",
+    "@anase/server-sdk": "workspace:*"
+  }
+}

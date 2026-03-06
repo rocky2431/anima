@@ -1,12 +1,12 @@
 import type { ChatSessionsExport } from '../types/chat-session'
 
-import { isStageTamagotchi } from '@proj-airi/stage-shared'
-import { useLive2d } from '@proj-airi/stage-ui-live2d'
+import { isStageTamagotchi } from '@anase/stage-shared'
+import { useLive2d } from '@anase/stage-ui-live2d'
 
 import { useChatOrchestratorStore } from '../stores/chat'
 import { useChatSessionStore } from '../stores/chat/session-store'
 import { useDisplayModelsStore } from '../stores/display-models'
-import { useAiriCardStore } from '../stores/modules/airi-card'
+import { useAiriCardStore } from '../stores/modules/anase-card'
 import { useConsciousnessStore } from '../stores/modules/consciousness'
 import { useDiscordStore } from '../stores/modules/discord'
 import { useHearingStore } from '../stores/modules/hearing'

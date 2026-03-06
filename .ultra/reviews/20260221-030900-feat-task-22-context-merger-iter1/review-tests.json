@@ -1,0 +1,84 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260221-030900-feat-task-22-context-merger-iter1",
+  "timestamp": "2026-02-21T03:15:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/context-merger.ts",
+      "packages/context-engine/src/processing/entity-extractor.ts",
+      "packages/context-engine/src/processing/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/context-merger.test.ts",
+      "packages/context-engine/src/__tests__/entity-extractor.test.ts",
+      "packages/context-engine/src/__tests__/context-merger-utils.test.ts"
+    ],
+    "total_lines_analyzed": 1017,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 0 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "No test for invalid activityType fallback to 'other'",
+      "file": "packages/context-engine/src/__tests__/context-merger.test.ts",
+      "line": 208,
+      "line_end": 220,
+      "code_snippet": "it('returns all 7 valid activity types', async () => {\n  const validTypes: ActivityType[] = [\n    'coding', 'writing', 'browsing', 'communication',\n    'entertainment', 'meeting', 'other',\n  ]\n  // ...\n})",
+      "description": "The test verifies all 7 valid activity types are passed through correctly, but there is no test for the fallback behavior when the LLM returns an invalid activity type string (e.g., 'gaming' or 'unknown'). The production code at context-merger.ts:183-188 has a validateActivityType method that defaults to 'other' for unrecognized types. This fallback logic is untested and could silently break if refactored.",
+      "suggestion": "Add a test case where the StubLlmProvider returns an invalid activity type (e.g., 'invalid_type') and assert that the merged result has activityType === 'other'. Example:\n\nit('falls back to other for invalid LLM activity type', async () => {\n  const llm = new StubLlmProvider({ activityType: 'gaming' as ActivityType })\n  const merger = new ContextMerger({ llm })\n  const result = await merger.merge([makeSource({ source: 'activity' })])\n  expect(result.activityType).toBe('other')\n})",
+      "claude_md_rule": "testing.coverage.boundary_conditions"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "computeImportance clamp logic not tested with out-of-range values",
+      "file": "packages/context-engine/src/__tests__/context-merger-utils.test.ts",
+      "line": 105,
+      "line_end": 108,
+      "code_snippet": "it('clamps result to [0, 1]', () => {\n    expect(computeImportance([makeSource(0)])).toBeCloseTo(0, 5)\n    expect(computeImportance([makeSource(1)])).toBeCloseTo(1, 5)\n  })",
+      "description": "The test named 'clamps result to [0, 1]' only tests with valid boundary values (0 and 1). It does not test values outside the valid range (e.g., importance: 1.5 or importance: -0.3) that would actually exercise the Math.max(0, Math.min(1, ...)) clamping logic in computeImportance (context-merger.ts:80). The ContextSource type allows importance as an optional number with no range constraint, so out-of-range values are possible at runtime.",
+      "suggestion": "Add test cases with out-of-range importance values to verify the clamp actually works:\n\nit('clamps values above 1 down to 1', () => {\n  expect(computeImportance([makeSource(1.5), makeSource(1.5)])).toBe(1)\n})\n\nit('clamps values below 0 up to 0', () => {\n  expect(computeImportance([makeSource(-0.5), makeSource(-0.5)])).toBe(0)\n})",
+      "claude_md_rule": "testing.coverage.boundary_conditions"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "fragile-test-double",
+      "title": "StubLlmProvider routes by schema content string matching -- brittle",
+      "file": "packages/context-engine/src/__tests__/context-merger.test.ts",
+      "line": 49,
+      "line_end": 53,
+      "code_snippet": "if (options.schemaDescription.includes('persons')) {\n  return this.entityResponse as T\n}\nreturn this.activityResponse as T",
+      "description": "The StubLlmProvider.generateStructured method routes its response by checking if schemaDescription.includes('persons'). This couples the test to an internal implementation detail (the exact schema description string). If the schema description in entity-extractor.ts or context-merger.ts changes (e.g., renaming 'persons' to 'people' or restructuring the schema format), the stub will silently return the wrong response type, causing confusing test failures or false passes.",
+      "suggestion": "Consider making the routing more explicit, for example by tracking call order (first call = entities, second = activity) or by using separate stub instances for each LLM call. Alternatively, use a call-counting approach:\n\nprivate callCount = 0\nasync generateStructured<T>(options: ...): Promise<T> {\n  this.calls.push(options)\n  this.callCount++\n  // Entity extraction is called first in Promise.all\n  return (this.callCount === 1 ? this.entityResponse : this.activityResponse) as T\n}",
+      "claude_md_rule": "testing.test_double_design"
+    }
+  ],
+  "positive_observations": [
+    "Pure functions (deduplicateStrings, mergeKeywords, computeImportance, selectTopSources) are cleanly separated as Functional Core and tested without any mocks -- direct input/output testing.",
+    "Test doubles for external LLM API follow the project convention with '// Test Double rationale:' comments and implement the LlmProvider interface rather than using vi.fn() or vi.mock().",
+    "Good error path coverage: both ContextMerger and EntityExtractor test LLM failure scenarios with proper error wrapping (cause chaining) verification.",
+    "Edge cases for empty inputs are consistently tested across utility functions (empty arrays for deduplicateStrings, mergeKeywords, selectTopSources, computeImportance).",
+    "The context-merger-utils.test.ts file properly tests the Functional Core in isolation from the Imperative Shell, following the architecture convention.",
+    "No vi.fn(), vi.mock(), jest.fn(), jest.mock(), InMemoryRepository, MockXxx, FakeXxx, or skipped tests detected."
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

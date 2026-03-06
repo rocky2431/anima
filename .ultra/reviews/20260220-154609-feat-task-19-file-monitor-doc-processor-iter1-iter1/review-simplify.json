@@ -1,0 +1,81 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260220-154609-feat-task-19-file-monitor-doc-processor-iter1-iter1",
+  "timestamp": "2026-02-20T15:50:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/capture/folder-monitor.ts",
+      "packages/context-engine/src/processing/document-processor.ts",
+      "packages/context-engine/src/processing/text-chunker.ts",
+      "packages/context-engine/src/__tests__/text-chunker.test.ts",
+      "packages/context-engine/src/__tests__/document-processor.test.ts",
+      "packages/context-engine/src/__tests__/folder-monitor.test.ts",
+      "packages/context-engine/src/__tests__/document-pipeline.integration.test.ts"
+    ],
+    "total_lines_analyzed": 963,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "deep-nesting",
+      "title": "Watcher callback in start() has 4 levels of nesting",
+      "file": "packages/context-engine/src/capture/folder-monitor.ts",
+      "line": 43,
+      "line_end": 75,
+      "code_snippet": "for (const dir of this.watchPaths) {\n  try {\n    const sub = await watcher.subscribe(dir, (err, events) => {\n      ...\n      for (const event of events) {\n        if (this.extensions !== null) {\n          ...\n        }\n        try { this.onChange(...) } catch { ... }",
+      "description": "The start() method reaches 4 levels of nesting: for-loop > try > subscribe callback > for-loop over events > if extension check > try/catch around onChange. This makes the control flow difficult to follow at a glance. Extracting the watcher callback into a named private method would flatten the nesting in start() and give the callback a descriptive name.",
+      "suggestion": "BEFORE:\nasync start(): Promise<void> {\n  ...\n  for (const dir of this.watchPaths) {\n    try {\n      const sub = await watcher.subscribe(dir, (err, events) => {\n        if (err) { ... }\n        for (const event of events) {\n          if (this.extensions !== null) { ... }\n          try { this.onChange({...}) }\n          catch (callbackError) { ... }\n        }\n      })\n    } catch (error) { ... }\n  }\n}\n\nAFTER:\nprivate handleWatcherEvents(dir: string, err: Error | null, events: Event[]): void {\n  if (err) {\n    this.onError(new Error(`Watcher error for ${dir}`, { cause: err }))\n    return\n  }\n  for (const event of events) {\n    if (this.extensions !== null && !this.extensions.has(extname(event.path).toLowerCase())) {\n      continue\n    }\n    try {\n      this.onChange({ filePath: event.path, type: event.type })\n    } catch (callbackError) {\n      this.onError(new Error('FolderMonitor onChange callback failed', { cause: callbackError }))\n    }\n  }\n}\n\nasync start(): Promise<void> {\n  ...\n  for (const dir of this.watchPaths) {\n    try {\n      const sub = await watcher.subscribe(dir, (err, events) => this.handleWatcherEvents(dir, err, events))\n      this.subscriptions.push(sub)\n    } catch (error) {\n      this.onError(new Error(`Failed to watch directory: ${dir}`, { cause: error }))\n    }\n  }\n}\n\nWHY: Extracting the callback reduces nesting in start() from 4 to 2 levels and gives the event-handling logic a descriptive name. The extracted method is independently testable."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "redundant-type-assertion",
+      "title": "Duplicated type assertion for PDF text item extraction",
+      "file": "packages/context-engine/src/processing/document-processor.ts",
+      "line": 62,
+      "line_end": 66,
+      "code_snippet": ".map((item) => {\n  if ('str' in item && typeof (item as Record<string, unknown>).str === 'string') {\n    return (item as Record<string, unknown>).str as string\n  }\n  return ''\n})",
+      "description": "The expression casts `item` to `Record<string, unknown>` twice in succession -- once for the type guard and once for the value access. After the `'str' in item` narrowing, TypeScript knows item has a `str` property. The double cast plus verbose conditional can be simplified with a single cast or a helper type. The `typeof ... === 'string'` check after `'str' in item` is also somewhat redundant since pdfjs-dist TextItem.str is always a string.",
+      "suggestion": "BEFORE:\n.map((item) => {\n  if ('str' in item && typeof (item as Record<string, unknown>).str === 'string') {\n    return (item as Record<string, unknown>).str as string\n  }\n  return ''\n})\n\nAFTER:\n.map(item => ('str' in item ? String((item as { str: unknown }).str) : ''))\n\nAlternatively, using a type guard:\nfunction hasStr(item: unknown): item is { str: string } {\n  return typeof item === 'object' && item !== null && 'str' in item && typeof (item as { str: unknown }).str === 'string'\n}\n// Then:\n.map(item => hasStr(item) ? item.str : '')\n\nWHY: The current code duplicates the `Record<string, unknown>` cast and the verbose conditional obscures what is a simple 'extract str or empty string' operation. Either approach reduces the visual complexity from 5 lines to 1, and the type guard version gives a reusable, self-documenting predicate."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "naming",
+      "title": "Variable 'textParts' used for two different semantics",
+      "file": "packages/context-engine/src/processing/document-processor.ts",
+      "line": 56,
+      "line_end": 101,
+      "code_snippet": "// In extractPdf (line 56):\nconst textParts: string[] = []\n// Each element is one page's text\n\n// In extractXlsx (line 101):\nconst textParts: string[] = []\n// Each element is one sheet's text",
+      "description": "Both extractPdf and extractXlsx use the variable name 'textParts' but with different semantic granularity (pages vs. sheets). While both are private methods so confusion risk is low, naming them 'pageTexts' and 'sheetTexts' respectively would make the code slightly more self-documenting.",
+      "suggestion": "BEFORE:\n// extractPdf line 56\nconst textParts: string[] = []\n// extractXlsx line 101\nconst textParts: string[] = []\n\nAFTER:\n// extractPdf\nconst pageTexts: string[] = []\n// extractXlsx\nconst sheetTexts: string[] = []\n\nWHY: Descriptive variable names clarify the semantic meaning at a glance. 'pageTexts' immediately communicates that each element corresponds to a PDF page; 'sheetTexts' communicates spreadsheet sheets."
+    }
+  ],
+  "positive_observations": [
+    "text-chunker.ts is an exemplary pure function: no side effects, named constants for defaults, early guard clauses, only 56 lines, cyclomatic complexity ~4",
+    "All source files stay well under the 200-line threshold with clear single-responsibility",
+    "FolderMonitor and DocumentProcessor are properly documented as Imperative Shell with class-based design, consistent with project architecture conventions",
+    "Extension normalization in FolderMonitor constructor handles both '.txt' and 'txt' input gracefully",
+    "Test files use real file I/O with temp directories rather than mocks, following the project's testing philosophy",
+    "The integration test demonstrates a complete end-to-end pipeline (extract -> chunk -> embed -> store -> search) with real LanceDB"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

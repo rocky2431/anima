@@ -1,7 +1,7 @@
 import type { VoiceInfo } from '../providers'
 import type { SpeechProviderWithExtraOptions } from '../providers/types'
 
-import { useLocalStorageManualReset } from '@proj-airi/stage-shared/composables'
+import { useLocalStorageManualReset } from '@anase/stage-shared/composables'
 import { refManualReset } from '@vueuse/core'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, onMounted, watch } from 'vue'

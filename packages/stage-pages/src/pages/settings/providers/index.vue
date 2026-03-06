@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { IconStatusItem, RippleGrid } from '@proj-airi/stage-ui/components'
-import { useAnalytics, useScrollToHash } from '@proj-airi/stage-ui/composables'
-import { useRippleGridState } from '@proj-airi/stage-ui/composables/use-ripple-grid-state'
-import { useUnifiedProvidersStore } from '@proj-airi/stage-ui/stores/unified-providers'
+import { IconStatusItem, RippleGrid } from '@anase/stage-ui/components'
+import { useAnalytics, useScrollToHash } from '@anase/stage-ui/composables'
+import { useRippleGridState } from '@anase/stage-ui/composables/use-ripple-grid-state'
+import { useUnifiedProvidersStore } from '@anase/stage-ui/stores/unified-providers'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'

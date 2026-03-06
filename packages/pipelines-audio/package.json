@@ -1,18 +1,18 @@
 {
-  "name": "@proj-airi/pipelines-audio",
+  "name": "@anase/pipelines-audio",
   "type": "module",
   "version": "0.8.4",
   "private": true,
-  "description": "Audio pipeline orchestration for AIRI (capture, VAD, encode, stream)",
+  "description": "Audio pipeline orchestration for Anase (capture, VAD, encode, stream)",
   "author": {
-    "name": "Moeru AI Project AIRI Team",
-    "email": "airi@moeru.ai",
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
     "url": "https://github.com/moeru-ai"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/moeru-ai/airi.git",
+    "url": "https://github.com/rocky2431/anima.git",
     "directory": "packages/pipelines-audio"
   },
   "exports": {

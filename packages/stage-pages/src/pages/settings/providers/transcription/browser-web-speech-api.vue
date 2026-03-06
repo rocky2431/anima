@@ -7,11 +7,11 @@ import {
   ProviderBasicSettings,
   ProviderSettingsContainer,
   ProviderSettingsLayout,
-} from '@proj-airi/stage-ui/components'
-import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
-import { streamWebSpeechAPITranscription } from '@proj-airi/stage-ui/stores/providers/web-speech-api'
-import { useSettingsAudioDevice } from '@proj-airi/stage-ui/stores/settings'
-import { Button, FieldSelect } from '@proj-airi/ui'
+} from '@anase/stage-ui/components'
+import { useProvidersStore } from '@anase/stage-ui/stores/providers'
+import { streamWebSpeechAPITranscription } from '@anase/stage-ui/stores/providers/web-speech-api'
+import { useSettingsAudioDevice } from '@anase/stage-ui/stores/settings'
+import { Button, FieldSelect } from '@anase/ui'
 import { until } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref } from 'vue'

@@ -1,0 +1,95 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260218-174800-feat-task-7-integration-checkpoint-iter1",
+  "timestamp": "2026-02-18T17:48:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/index.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 1184,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "type-safety",
+      "title": "Unsafe `as PersonaEmotion` cast on xstate actor snapshot value",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 138,
+      "line_end": 138,
+      "code_snippet": "const currentEmotion = emotionActor.getSnapshot().value as PersonaEmotion",
+      "description": "Encapsulation: 7/10, Expression: 5/10, Usefulness: 7/10, Enforcement: 5/10 (Aggregate: 6.0). The xstate actor snapshot `.value` is typed as a generic state value. Using `as PersonaEmotion` bypasses type checking entirely -- if the machine definition changes to add new states or use nested states, this cast will silently produce incorrect values at runtime. The same cast appears again on line 194 in `getEmotionState()`. Two occurrences total.",
+      "suggestion": "Add a runtime guard function: `function assertPersonaEmotion(v: unknown): PersonaEmotion { const valid: Set<string> = new Set(['idle','curious','caring','worried','sleepy','excited']); if (typeof v === 'string' && valid.has(v)) return v as PersonaEmotion; throw new Error('Unexpected emotion state: ' + String(v)); }` -- or configure the xstate machine with typed output so `.value` is properly narrowed without a cast.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "TRIGGER_EMOTION_MAP keyed by plain `string` instead of trigger name union",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 63,
+      "line_end": 75,
+      "code_snippet": "const TRIGGER_EMOTION_MAP: Record<string, EmotionEvent> = {\n  'morning-greeting': { type: 'GOOD_NEWS' },\n  'noon-care': { type: 'TRIGGER_CONCERN' },\n  ...\n}",
+      "description": "Encapsulation: 6/10, Expression: 4/10, Usefulness: 7/10, Enforcement: 4/10 (Aggregate: 5.25). The map is typed `Record<string, EmotionEvent>` which accepts any arbitrary string key. Since `ALL_TRIGGERS` exports a fixed array of TriggerCondition objects, a literal union type `TriggerName = typeof ALL_TRIGGERS[number]['name']` can be derived and used as the key type. This would catch typos and ensure the map stays in sync with trigger definitions at compile time. Currently, a misspelled key like 'mornng-greeting' would compile without error and silently fail to match at runtime (line 133: `const emotionEvent = TRIGGER_EMOTION_MAP[result.triggerName]`).",
+      "suggestion": "Extract `type TriggerName = typeof ALL_TRIGGERS[number]['name']` from persona-engine exports, then type the map as `Record<TriggerName, EmotionEvent>` or `Partial<Record<TriggerName, EmotionEvent>>` if not all triggers need an explicit emotion mapping.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "Millisecond config fields use bare `number` without branded types",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 48,
+      "line_end": 52,
+      "code_snippet": "screenshotIntervalMs?: number\naggregationIntervalMs?: number\ninactivityThresholdMs?: number\neventRetentionMs?: number",
+      "description": "Encapsulation: 7/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 5/10 (Aggregate: 5.25). Four optional config fields represent durations in milliseconds but are typed as plain `number`. Nothing prevents accidentally passing seconds (e.g., `60` instead of `60_000`) or negative values. The `Ms` suffix in the field name is helpful documentation but not enforced by the type system. This is a recurring pattern across context-engine and persona-engine as well.",
+      "suggestion": "Consider a branded type `type Milliseconds = number & { readonly __brand: 'Milliseconds' }` with a constructor `function ms(value: number): Milliseconds` that validates non-negative. This is a walking-skeleton-level concern so lower priority, but establishing the pattern now prevents drift. Alternatively, add a runtime guard in `createAnimaOrchestrator` that validates all duration fields are positive.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "encapsulation",
+      "title": "AnimaOrchestrator interface + factory function: good encapsulation pattern",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 83,
+      "line_end": 104,
+      "code_snippet": "export interface AnimaOrchestrator {\n  start(): void\n  stop(): void\n  recordActivity(event: ActivityEvent): void\n  tickScreenshot(): Promise<boolean>\n  ...\n}",
+      "description": "Encapsulation: 9/10, Expression: 7/10, Usefulness: 8/10, Enforcement: 7/10 (Aggregate: 7.75). The AnimaOrchestrator uses a public interface with a private factory function (`createAnimaOrchestrator`), effectively hiding the emotionActor, pipeline, monitor, and intimacy state as closure variables. Consumers cannot directly mutate internal state. The `tickScreenshot()` and `tickActivity()` methods enable deterministic testing without timers. This is the recommended Imperative Shell pattern for this codebase.",
+      "suggestion": "No change needed. This is a positive observation documented as a P3 finding for the record. Consider adding `readonly` to the interface methods if the project adopts strict interface conventions."
+    }
+  ],
+  "positive_observations": [
+    "AnimaOrchestrator uses interface + factory function pattern, hiding all internal state (emotionActor, pipeline, monitor, intimacy) as closure variables -- excellent Imperative Shell encapsulation",
+    "AnimaProactiveEvent marks all fields readonly, preventing accidental mutation of emitted events",
+    "TriggerInput and IntimacyState from persona-engine correctly use readonly modifiers on all fields, preserving Functional Core immutability",
+    "buildTriggerInput cleanly maps context-engine's ActivityState to persona-engine's TriggerInput, maintaining package boundary separation",
+    "Test file uses real sharp-generated PNG buffers and properly documented Test Doubles for platform APIs (ScreenshotProvider, VlmProvider)"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

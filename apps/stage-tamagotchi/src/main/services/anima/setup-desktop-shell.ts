@@ -3,7 +3,7 @@ import type { AnimaOrchestrator } from './orchestrator'
 import { platform } from 'node:process'
 
 import { useLogg } from '@guiiai/logg'
-import { ClipboardMonitor, DEFAULT_BINDINGS, getActiveWindow, ShortcutManager } from '@proj-airi/desktop-shell'
+import { ClipboardMonitor, DEFAULT_BINDINGS, getActiveWindow, ShortcutManager } from '@anase/desktop-shell'
 import { clipboard, globalShortcut } from 'electron'
 
 const log = useLogg('desktop-shell').useGlobalConfig()

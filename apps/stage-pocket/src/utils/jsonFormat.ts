@@ -1,8 +1,8 @@
-import type { Message } from '@proj-airi/stage-ui/types/ai-messages'
+import type { Message } from '@anase/stage-ui/types/ai-messages'
 import type { Infer, Schema } from 'xsschema'
 
-import { generateText } from '@proj-airi/stage-ui/libs/ai/generate-text'
-import { message } from '@proj-airi/stage-ui/libs/ai/message-helpers'
+import { generateText } from '@anase/stage-ui/libs/ai/generate-text'
+import { message } from '@anase/stage-ui/libs/ai/message-helpers'
 import { toJsonSchema, validate } from 'xsschema'
 
 interface CommonRequestOptions {

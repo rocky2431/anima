@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useChatMaintenanceStore } from '@proj-airi/stage-ui/stores/chat/maintenance'
-import { useTheme } from '@proj-airi/ui'
+import { useChatMaintenanceStore } from '@anase/stage-ui/stores/chat/maintenance'
+import { useTheme } from '@anase/ui'
 import { ref } from 'vue'
 
 import { BackgroundDialogPicker } from '../Backgrounds'

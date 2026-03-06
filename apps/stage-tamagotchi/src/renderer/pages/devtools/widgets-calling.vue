@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button, FieldInput, FieldSelect, FieldTextArea } from '@proj-airi/ui'
+import { Button, FieldInput, FieldSelect, FieldTextArea } from '@anase/ui'
 import { computed, reactive, ref } from 'vue'
 
 import { widgetsAdd, widgetsClear, widgetsOpenWindow, widgetsPrepareWindow, widgetsRemove, widgetsUpdate } from '../../../shared/eventa'

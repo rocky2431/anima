@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BackgroundMaterialType, VibrancyType } from '../../../shared/electron/window'
 
-import { FieldSelect } from '@proj-airi/ui'
+import { FieldSelect } from '@anase/ui'
 import { ref, watch } from 'vue'
 
 import { electron } from '../../../shared/electron'

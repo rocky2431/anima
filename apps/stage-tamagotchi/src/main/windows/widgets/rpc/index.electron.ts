@@ -5,7 +5,7 @@ import type { WidgetsWindowManager } from '../../widgets'
 import { createContext } from '@moeru/eventa/adapters/electron/main'
 import { ipcMain } from 'electron'
 
-import { createWidgetsService } from '../../../services/airi/widgets'
+import { createWidgetsService } from '../../../services/anase/widgets'
 import { createScreenService, createWindowService } from '../../../services/electron'
 
 export async function setupWidgetsWindowInvokes(params: { widgetWindow: BrowserWindow, widgetsManager: WidgetsWindowManager }) {

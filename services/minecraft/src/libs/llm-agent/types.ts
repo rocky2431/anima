@@ -1,4 +1,4 @@
-import type { Client } from '@proj-airi/server-sdk'
+import type { Client } from '@anase/server-sdk'
 import type { Neuri } from 'neuri'
 
 import type { Mineflayer } from '../mineflayer'

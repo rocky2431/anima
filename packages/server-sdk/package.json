@@ -1,17 +1,17 @@
 {
-  "name": "@proj-airi/server-sdk",
+  "name": "@anase/server-sdk",
   "type": "module",
   "version": "0.8.4",
-  "description": "Client-side SDK implementation for connecting to AIRI server components and runtimes",
+  "description": "Client-side SDK implementation for connecting to Anase server components and runtimes",
   "author": {
-    "name": "Moeru AI Project AIRI Team",
-    "email": "airi@moeru.ai",
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
     "url": "https://github.com/moeru-ai"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/moeru-ai/airi.git",
+    "url": "https://github.com/rocky2431/anima.git",
     "directory": "packages/server-sdk"
   },
   "exports": {
@@ -37,7 +37,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@proj-airi/server-shared": "workspace:^",
+    "@anase/server-shared": "workspace:^",
     "crossws": "^0.4.3",
     "superjson": "catalog:"
   },

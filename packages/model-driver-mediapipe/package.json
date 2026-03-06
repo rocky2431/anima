@@ -1,17 +1,17 @@
 {
-  "name": "@proj-airi/model-driver-mediapipe",
+  "name": "@anase/model-driver-mediapipe",
   "type": "module",
   "private": true,
-  "description": "MediaPipe motion capture workshop (experimental) for Project AIRI",
+  "description": "MediaPipe motion capture workshop (experimental) for Project Anase",
   "author": {
-    "name": "Moeru AI Project AIRI Team",
-    "email": "airi@moeru.ai",
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
     "url": "https://github.com/moeru-ai"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/moeru-ai/airi.git",
+    "url": "https://github.com/rocky2431/anima.git",
     "directory": "packages/model-driver-mediapipe"
   },
   "exports": {

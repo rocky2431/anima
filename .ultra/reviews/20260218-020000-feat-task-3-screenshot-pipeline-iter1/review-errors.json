@@ -1,0 +1,113 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260218-020000-feat-task-3-screenshot-pipeline-iter1",
+  "timestamp": "2026-02-18T02:01:30.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "packages/context-engine/src/capture/screenshot.ts",
+      "packages/context-engine/src/processing/screenshot-processor.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/__tests__/phash.test.ts",
+      "packages/context-engine/src/__tests__/screenshot-pipeline.test.ts",
+      "packages/context-engine/src/__tests__/screenshot-processor.test.ts"
+    ],
+    "total_lines_analyzed": 802,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 1, "P1": 2, "P2": 2, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P0",
+      "confidence": 99,
+      "category": "error-handling",
+      "subcategory": "silent-swallow",
+      "title": "Bare catch block silently swallows all errors in tick()",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 92,
+      "line_end": 96,
+      "code_snippet": "catch {\n  // Pipeline errors are non-fatal: log and continue on next tick.\n  // In production, this would use a structured logger.\n  return false\n}",
+      "description": "The catch block in tick() has no error parameter binding -- the error object is completely discarded. No logging, no emission, no observability. Errors from screenshot capture, pHash computation, and VLM processing are all silently swallowed. The return value `false` is indistinguishable from a legitimate dedup skip, making it impossible for callers to differentiate between 'screenshot was similar' and 'VLM provider crashed'. The comment acknowledges this should use a structured logger but delivers no logging at all. This violates CLAUDE.md's explicit forbidden pattern: `catch (e) {}` -- silent swallow hides bugs.",
+      "suggestion": "Bind the error parameter and either (1) emit it via an onError callback (matching the onContext pattern), (2) use a structured logger, or (3) return a discriminated result type like { status: 'skipped' | 'processed' | 'error', error?: Error }. At minimum: `catch (error) { this.onError?.(error instanceof Error ? error : new Error(String(error))); return false }` with an `onError` callback in the options.",
+      "claude_md_rule": "error_handling.forbidden.catch_empty"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "error-as-valid-state",
+      "title": "tick() error path returns false -- same value as dedup skip",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 95,
+      "line_end": 95,
+      "code_snippet": "return false",
+      "description": "When tick() catches an error, it returns `false`, which is the same return value used for a legitimate dedup skip (line 79). Callers cannot distinguish between 'the screenshot was similar to the previous one' and 'the VLM provider threw an exception'. This converts an error into an invalid state that looks like normal operation. This matches the CLAUDE.md forbidden pattern: `catch (e) { return null }` -- converts error to invalid state (here `false` instead of `null`, same anti-pattern).",
+      "suggestion": "Return a discriminated union: `Promise<{ status: 'processed', context: ProcessedScreenshotContext } | { status: 'skipped' } | { status: 'error', error: Error }>`. This makes the error state observable and distinguishable from dedup skips.",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "fire-and-forget-async",
+      "title": "Fire-and-forget async calls to tick() in start()",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 50,
+      "line_end": 54,
+      "code_snippet": "void this.tick()\n\nthis.timer = setInterval(() => {\n  void this.tick()\n}, this.intervalMs)",
+      "description": "The `void this.tick()` calls on lines 50 and 53 are fire-and-forget async invocations. While `tick()` internally catches all errors (preventing unhandled promise rejections), the combination of fire-and-forget + catch-all-swallow creates a completely opaque system: errors happen, nobody knows, nobody can react. The `void` operator explicitly discards the promise result, making it impossible for start() callers to observe failures. If the first tick() fails (e.g., provider is misconfigured), the pipeline silently starts in an error state.",
+      "suggestion": "For the initial tick in start(), consider awaiting or chaining: `this.tick().catch(err => this.onError?.(err))`. For interval ticks, use the same onError callback pattern. Alternatively, make start() async and await the first tick to surface immediate configuration errors: `async start(): Promise<void> { ... await this.tick(); ... }`.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "error-handling",
+      "subcategory": "callback-error-swallowed",
+      "title": "onContext callback errors silently swallowed by catch-all",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 89,
+      "line_end": 89,
+      "code_snippet": "this.onContext?.(context)",
+      "description": "The `onContext` callback is invoked inside the try block (line 89). If the consumer's callback throws an exception, the error propagates to the catch block on line 92 and is silently swallowed. This means bugs in the callback consumer are hidden -- the pipeline reports `false` (as if deduped) and the consumer never learns their handler threw. This is particularly dangerous because the pipeline already successfully captured and processed the screenshot, but the successful result is lost.",
+      "suggestion": "Either (1) move the onContext call outside the try/catch so callback errors propagate to the caller, or (2) wrap it in its own try/catch with explicit error reporting: `try { this.onContext?.(context) } catch (callbackError) { this.onError?.(callbackError) }`. Option 1 is preferred -- the pipeline should not be responsible for swallowing consumer errors.",
+      "claude_md_rule": "error_handling.forbidden.catch_empty"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "generic-error-message",
+      "title": "Error messages lack input context for debugging",
+      "file": "packages/context-engine/src/processing/screenshot-processor.ts",
+      "line": 40,
+      "line_end": 40,
+      "code_snippet": "throw new Error('Screenshot processing failed', { cause: error })",
+      "description": "The error message 'Screenshot processing failed' in ScreenshotProcessor.process() and similarly 'Screenshot capture failed' in ScreenshotCapture.capture() lack context about what was being processed. While `{ cause: error }` preserves the error chain (good), the wrapping message itself provides no information about the buffer size, the provider being used, or a correlation ID. When multiple screenshots fail in production, these errors are hard to correlate with specific capture cycles.",
+      "suggestion": "Include relevant context: `throw new Error(`Screenshot processing failed (buffer=${screenshot.buffer.length} bytes, ts=${screenshot.timestamp})`, { cause: error })`. Similarly for capture: include provider type or a pipeline cycle ID.",
+      "claude_md_rule": "error_handling.rules.include_context"
+    }
+  ],
+  "positive_observations": [
+    "ScreenshotCapture.capture() and ScreenshotProcessor.process() both use { cause: error } for error chaining, preserving the original error stack trace",
+    "hammingDistance() throws with a descriptive error message including both hash lengths",
+    "Test file for ScreenshotProcessor includes an explicit test case verifying error wrapping behavior (line 82-97)",
+    "The ScreenshotPipeline comment on the catch block honestly acknowledges it needs a structured logger -- the intent is correct even if the implementation is not"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

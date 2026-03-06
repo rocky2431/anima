@@ -1,12 +1,12 @@
 import type { LanguageModelV3, LanguageModelV3CallOptions } from '@ai-sdk/provider'
-import type { Skill } from '@proj-airi/skills-engine'
+import type { Skill } from '@anase/skills-engine'
 
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { McpHub } from '@proj-airi/mcp-hub'
-import { buildSkillsContext, SkillRegistry } from '@proj-airi/skills-engine'
+import { McpHub } from '@anase/mcp-hub'
+import { buildSkillsContext, SkillRegistry } from '@anase/skills-engine'
 import { generateText, stepCountIs } from 'ai'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 

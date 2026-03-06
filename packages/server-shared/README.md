@@ -1,18 +1,18 @@
-# @proj-airi/server-shared
+# @anase/server-shared
 
-The shared type definitions for all server-side packages of Project AIRI.
+The shared type definitions for all server-side packages of Project Anase.
 
 ## Usage
 
 ```shell
-ni @proj-airi/server-shared -D # from @antfu/ni, can be installed via `npm i -g @antfu/ni`
-pnpm i @proj-airi/server-shared -D
-yarn i @proj-airi/server-shared -D
-npm i @proj-airi/server-shared -D
+ni @anase/server-shared -D # from @antfu/ni, can be installed via `npm i -g @antfu/ni`
+pnpm i @anase/server-shared -D
+yarn i @anase/server-shared -D
+npm i @anase/server-shared -D
 ```
 
 ```typescript
-import type { WebSocketEvents } from '@proj-airi/server-shared'
+import type { WebSocketEvents } from '@anase/server-shared'
 ```
 
 ## How to use the events in distributed use cases?

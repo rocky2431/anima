@@ -3,7 +3,7 @@ import type { AiOrchestrator } from './ai-orchestrator'
 import { resolve } from 'node:path'
 
 import { useLogg } from '@guiiai/logg'
-import { CronService } from '@proj-airi/cron-service'
+import { CronService } from '@anase/cron-service'
 import { app } from 'electron'
 
 import { createAiOrchestrator } from './ai-orchestrator'

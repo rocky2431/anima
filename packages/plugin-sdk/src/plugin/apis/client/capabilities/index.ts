@@ -1,11 +1,11 @@
 import type { EventContext } from '@moeru/eventa'
-import type { ModuleCapability } from '@proj-airi/plugin-protocol/types'
+import type { ModuleCapability } from '@anase/plugin-protocol/types'
 
 import { defineInvoke } from '@moeru/eventa'
 import {
   moduleContributeCapabilityActivated,
   moduleContributeCapabilityOffer,
-} from '@proj-airi/plugin-protocol/types'
+} from '@anase/plugin-protocol/types'
 
 import { protocolCapabilitySnapshot, protocolCapabilityWait } from '../../protocol/capabilities'
 

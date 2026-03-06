@@ -1,6 +1,6 @@
 ---
 title: 参与项目指南
-description: 参与并贡献 Project AIRI
+description: 参与并贡献 Project Anase
 ---
 
 你好呀！感谢你有兴趣参与这个项目。本指南将帮助你快速上手
@@ -178,7 +178,7 @@ nr dev:tamagotchi
 
 :::
 
-### 网页端 ([airi.moeru.ai](https://airi.moeru.ai))
+### 网页端 ([anase.app](https://anase.app))
 
 ```shell
 pnpm dev
@@ -230,14 +230,14 @@ cp .env .env.local
 执行数据库迁移：
 
 ```shell
-pnpm -F @proj-airi/telegram-bot db:generate
-pnpm -F @proj-airi/telegram-bot db:push
+pnpm -F @anase/telegram-bot db:generate
+pnpm -F @anase/telegram-bot db:push
 ```
 
 启动机器人：
 
 ```shell
-pnpm -F @proj-airi/telegram-bot start
+pnpm -F @anase/telegram-bot start
 ```
 
 ::: tip
@@ -245,7 +245,7 @@ pnpm -F @proj-airi/telegram-bot start
 如果你使用 [@antfu/ni](https://github.com/antfu-collective/ni)，你可以：
 
 ```shell
-nr -F @proj-airi/telegram-bot dev
+nr -F @anase/telegram-bot dev
 ```
 
 :::
@@ -267,7 +267,7 @@ cp .env .env.local
 启动机器人：
 
 ```shell
-pnpm -F @proj-airi/discord-bot start
+pnpm -F @anase/discord-bot start
 ```
 
 ::: tip
@@ -275,7 +275,7 @@ pnpm -F @proj-airi/discord-bot start
 如果你使用 [@antfu/ni](https://github.com/antfu-collective/ni)，你可以：
 
 ```shell
-nr -F @proj-airi/discord-bot dev
+nr -F @anase/discord-bot dev
 ```
 
 :::
@@ -299,7 +299,7 @@ cp .env .env.local
 启动机器人：
 
 ```shell
-pnpm -F @proj-airi/minecraft-bot start
+pnpm -F @anase/minecraft-bot start
 ```
 
 ::: tip
@@ -307,7 +307,7 @@ pnpm -F @proj-airi/minecraft-bot start
 如果你使用 [@antfu/ni](https://github.com/antfu-collective/ni)，你可以：
 
 ```shell
-nr -F @proj-airi/minecraft-bot dev
+nr -F @anase/minecraft-bot dev
 ```
 
 :::
@@ -343,7 +343,7 @@ git add .
 git commit -m "<your-commit-message>"
 ```
 
-### 将你的代码推送（push）至先前 fork 或者拥有写入权限的 AIRI 仓库
+### 将你的代码推送（push）至先前 fork 或者拥有写入权限的 Anase 仓库
 
 ```shell
 git push origin <your-branch-name> -u

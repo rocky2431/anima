@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { AboutContent, MarkdownRenderer } from '@proj-airi/stage-ui/components'
-import { useSharedAnalyticsStore } from '@proj-airi/stage-ui/stores/analytics/index'
-import { Button, DoubleCheckButton, Progress } from '@proj-airi/ui'
+import { AboutContent, MarkdownRenderer } from '@anase/stage-ui/components'
+import { useSharedAnalyticsStore } from '@anase/stage-ui/stores/analytics/index'
+import { Button, DoubleCheckButton, Progress } from '@anase/ui'
 import { useMediaQuery } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui'
@@ -26,9 +26,9 @@ const isLatestVersion = computed(() => updateState.value.status === 'idle' && !u
 const isError = computed(() => updateState.value.status === 'error')
 
 const links = [
-  { label: 'Home', href: 'https://airi.moeru.ai/docs/', icon: 'i-solar:home-smile-outline' },
-  { label: 'Documentations', href: 'https://airi.moeru.ai/docs/en/docs/overview/', icon: 'i-solar:document-add-outline' },
-  { label: 'GitHub', href: 'https://github.com/moeru-ai/airi', icon: 'i-simple-icons:github' },
+  { label: 'Home', href: 'https://anase.app/docs/', icon: 'i-solar:home-smile-outline' },
+  { label: 'Documentations', href: 'https://anase.app/docs/en/docs/overview/', icon: 'i-solar:document-add-outline' },
+  { label: 'GitHub', href: 'https://github.com/rocky2431/anima', icon: 'i-simple-icons:github' },
 ]
 
 const showChangelog = ref(false)
@@ -68,7 +68,7 @@ const releaseNotesContent = computed(() => {
     ]"
   >
     <div :class="['mx-auto max-w-[min(960px,calc(100%-2rem))]', 'px-6 py-20']">
-      <AboutContent title="Project" highlight="AIRI" subtitle="Desktop ver." />
+      <AboutContent title="Project" highlight="Anase" subtitle="Desktop ver." />
 
       <!-- Main Content Card -->
       <div :class="['mb-12', 'rounded-2xl', 'bg-white/50 dark:bg-black/20', 'p-6', 'backdrop-blur-sm']">

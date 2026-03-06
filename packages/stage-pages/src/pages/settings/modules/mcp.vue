@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { McpServer } from '@proj-airi/stage-ui/components'
+import { McpServer } from '@anase/stage-ui/components'
 </script>
 
 <template>

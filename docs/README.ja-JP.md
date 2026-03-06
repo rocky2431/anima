@@ -12,13 +12,13 @@
   <img width="250" src="./content/public/banner-light-1280x640.avif" />
 </picture>
 
-<h1 align="center">Project AIRI</h1>
+<h1 align="center">Project Anase</h1>
 
 <p align="center">Neuro-sama を再創造し、AI waifu / バーチャルキャラクターの魂の器をこの世界へ。</p>
 <p align="center">Neuro-sama のようなバーチャルパートナーも、私たちの暮らしの一部に。</p>
 
 <p align="center">
-  [<a href="https://discord.gg/TgQ3Cu2F7A">Discordサーバーに参加する</a>] [<a href="https://airi.moeru.ai">試してみる</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/README.md">English</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/docs/README.zh-CN.md">简体中文</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/docs/README.ru-RU.md">Русский</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/docs/README.vi.md">Tiếng Việt</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/docs/README.fr.md">Français</a>]
+  [<a href="https://discord.gg/TgQ3Cu2F7A">Discordサーバーに参加する</a>] [<a href="https://anase.app">試してみる</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/README.md">English</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/docs/README.zh-CN.md">简体中文</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/docs/README.ru-RU.md">Русский</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/docs/README.vi.md">Tiếng Việt</a>] [<a href="https://github.com/moeru-ai/airi/blob/main/docs/README.fr.md">Français</a>]
 </p>
 
 <p align="center">
@@ -32,7 +32,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.producthunt.com/products/airi?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-airi" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=993524&theme=neutral&t=1752696535380" alt="AIRI - A&#0032;container&#0032;of&#0032;cyber&#0032;living&#0032;souls&#0044;&#0032;re&#0045;creation&#0032;of&#0032;Neuro&#0045;sama | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+  <a href="https://www.producthunt.com/products/airi?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-airi" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=993524&theme=neutral&t=1752696535380" alt="Anase - A&#0032;container&#0032;of&#0032;cyber&#0032;living&#0032;souls&#0044;&#0032;re&#0045;creation&#0032;of&#0032;Neuro&#0045;sama | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
   <a href="https://trendshift.io/repositories/14636" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14636" alt="moeru-ai%2Fairi | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 </p>
 
@@ -44,7 +44,7 @@
 
 > [!NOTE]
 >
-> Project AIRIから生まれたすべてのサブプロジェクト用に、専用の組織[@proj-airi](https://github.com/proj-airi)があります。ぜひチェックしてみてください！
+> Project Anaseから生まれたすべてのサブプロジェクト用に、専用の組織[@proj-airi](https://github.com/proj-airi)があります。ぜひチェックしてみてください！
 >
 > RAG、メモリシステム、組み込みデータベース、アイコン、Live2Dユーティリティなど多数あります！
 
@@ -60,17 +60,17 @@
 
 おそらく[Neuro-sama](https://www.youtube.com/@Neurosama)をすでに知っているでしょう。彼女は現在、ゲームをプレイし、チャットし、あなたや参加者（VTuberコミュニティ内）と対話できる最高のコンパニオンです。この種の存在を「デジタルヒューマン」と呼ぶ人もいます。**残念ながら、オープンソースではないため、ライブストリームがオフラインになった後は彼女と対話することはできません**。
 
-そのため、このプロジェクトAIRIは、ここで別の可能性を提供します：**簡単に、どこでも、いつでも、あなた自身のデジタルライフ、サイバー生活を所有できるようにします**。
+そのため、このプロジェクトAnaseは、ここで別の可能性を提供します：**簡単に、どこでも、いつでも、あなた自身のデジタルライフ、サイバー生活を所有できるようにします**。
 
 ## 投稿した DevLog と最近のアップデート
 
-- [DevLog @ 2026.01.01](https://airi.moeru.ai/docs/en/blog/DevLog-2026.01.01/) — 2026/01/01
-- [DevLog @ 2025.10.20](https://airi.moeru.ai/docs/en/blog/DevLog-2025.10.20/) — 2025/10/20
-- [DevLog @ 2025.08.05](https://airi.moeru.ai/docs/en/blog/DevLog-2025.08.05/) — 2025/08/05
-- [DevLog @ 2025.08.01](https://airi.moeru.ai/docs/en/blog/DevLog-2025.08.01/) — 2025/08/01
-- [DevLog @ 2025.07.18](https://airi.moeru.ai/docs/en/blog/DevLog-2025.07.18/) — 2025/07/18
-- [DreamLog 0x1](https://airi.moeru.ai/docs/en/blog/dreamlog-0x1/) — 2025/06/16
-- ...そのほかは[ドキュメントサイト](https://airi.moeru.ai/docs/en/)で
+- [DevLog @ 2026.01.01](https://anase.app/docs/en/blog/DevLog-2026.01.01/) — 2026/01/01
+- [DevLog @ 2025.10.20](https://anase.app/docs/en/blog/DevLog-2025.10.20/) — 2025/10/20
+- [DevLog @ 2025.08.05](https://anase.app/docs/en/blog/DevLog-2025.08.05/) — 2025/08/05
+- [DevLog @ 2025.08.01](https://anase.app/docs/en/blog/DevLog-2025.08.01/) — 2025/08/01
+- [DevLog @ 2025.07.18](https://anase.app/docs/en/blog/DevLog-2025.07.18/) — 2025/07/18
+- [DreamLog 0x1](https://anase.app/docs/en/blog/dreamlog-0x1/) — 2025/06/16
+- ...そのほかは[ドキュメントサイト](https://anase.app/docs/en/)で
 
 ## このプロジェクトの特別な点は？
 
@@ -79,7 +79,7 @@
 > [!TIP]
 > 「Web技術だとパフォーマンスが落ちない？」と心配ですか？
 >
-> ご安心を。ブラウザ版はブラウザやWebViewでどこまでできるかを示すためのものですが、そこに完全依存しません。デスクトップ版 AIRI は標準で [NVIDIA CUDA](https://developer.nvidia.com/cuda-toolkit) と [Apple Metal](https://developer.apple.com/metal/) を扱えます（HuggingFace と愛すべき [candle](https://github.com/huggingface/candle) に感謝）。依存管理も複雑ではなく、グラフィックス・レイアウト・アニメーション・プラグインシステム（WIP）は Web 技術を組み合わせつつ、いいとこ取りしています。
+> ご安心を。ブラウザ版はブラウザやWebViewでどこまでできるかを示すためのものですが、そこに完全依存しません。デスクトップ版 Anase は標準で [NVIDIA CUDA](https://developer.nvidia.com/cuda-toolkit) と [Apple Metal](https://developer.apple.com/metal/) を扱えます（HuggingFace と愛すべき [candle](https://github.com/huggingface/candle) に感謝）。依存管理も複雑ではなく、グラフィックス・レイアウト・アニメーション・プラグインシステム（WIP）は Web 技術を組み合わせつつ、いいとこ取りしています。
 
 これは、**アイリVTuberが現代のブラウザやデバイスで動作可能である**ことを意味し、モバイルデバイスでも動作します（PWAサポート済み）。これにより、私たち（開発者）はアイリVTuberの力を次のレベルに引き上げるための多くの可能性を持ちつつ、ユーザーがTCP接続や他の非Web技術を必要とする機能を有効にする柔軟性を残しています。例えば、Discordのボイスチャネルに接続したり、MinecraftやFactorioを友達と一緒にプレイすることができます。
 
@@ -107,7 +107,7 @@
 > - Three.js
 > - WebXR（@moeru-ai組織の[別のプロジェクト](https://github.com/moeru-ai/chat)もチェックしてください）
 >
-> **興味があるなら、ここで自己紹介してみませんか？ [Would like to join part of us to build AIRI?](https://github.com/moeru-ai/airi/discussions/33)**
+> **興味があるなら、ここで自己紹介してみませんか？ [Would like to join part of us to build Anase?](https://github.com/moeru-ai/airi/discussions/33)**
 
 ## 現在の進捗
 
@@ -227,9 +227,9 @@ npx bumpp --no-commit --no-tag
 - [`hfup`](https://github.com/moeru-ai/hfup): HuggingFace Spaces へのデプロイとバンドルを支援するツール
 - [`xsai-transformers`](https://github.com/moeru-ai/xsai-transformers): [xsAI](https://github.com/moeru-ai/xsai)向けの実験的な [🤗 Transformers.js](https://github.com/huggingface/transformers.js) プロバイダー
 - [WebAI: Realtime Voice Chat](https://github.com/proj-airi/webai-realtime-voice-chat): VAD + STT + LLM + TTS で ChatGPT のリアルタイム音声をゼロから実装する完全例
-- [`@proj-airi/drizzle-duckdb-wasm`](https://github.com/moeru-ai/airi/tree/main/packages/drizzle-duckdb-wasm/README.md): DuckDB WASM の Drizzle ORM ドライバー
-- [`@proj-airi/duckdb-wasm`](https://github.com/moeru-ai/airi/tree/main/packages/duckdb-wasm/README.md): 使いやすい `@duckdb/duckdb-wasm` ラッパー
-- [AIRI Factorio](https://github.com/moeru-ai/airi-factorio): AIRI が Factorio をプレイできるようにする
+- [`@anase/drizzle-duckdb-wasm`](https://github.com/moeru-ai/airi/tree/main/packages/drizzle-duckdb-wasm/README.md): DuckDB WASM の Drizzle ORM ドライバー
+- [`@anase/duckdb-wasm`](https://github.com/moeru-ai/airi/tree/main/packages/duckdb-wasm/README.md): 使いやすい `@duckdb/duckdb-wasm` ラッパー
+- [Anase Factorio](https://github.com/moeru-ai/airi-factorio): Anase が Factorio をプレイできるようにする
 - [Factorio RCON API](https://github.com/nekomeowww/factorio-rcon-api): Factorio ヘッドレスサーバーコンソールの RESTful API ラッパー
 - [`autorio`](https://github.com/moeru-ai/airi-factorio/tree/main/packages/autorio): Factorio 自動化ライブラリ
 - [`tstl-plugin-reload-factorio-mod`](https://github.com/moeru-ai/airi-factorio/tree/main/packages/tstl-plugin-reload-factorio-mod): Factorio モッド開発時のリロードを支援
@@ -245,17 +245,17 @@ npx bumpp --no-commit --no-tag
 flowchart TD
   Core("Core")
   Unspeech("unspeech")
-  DBDriver("@proj-airi/drizzle-duckdb-wasm")
+  DBDriver("@anase/drizzle-duckdb-wasm")
   MemoryDriver("[WIP] メモリアラヤ")
-  DB1("@proj-airi/duckdb-wasm")
-  SVRT("@proj-airi/server-runtime")
+  DB1("@anase/duckdb-wasm")
+  SVRT("@anase/server-runtime")
   Memory("Memory")
   STT("STT")
   Stage("ステージ")
-  StageUI("@proj-airi/stage-ui")
-  UI("@proj-airi/ui")
+  StageUI("@anase/stage-ui")
+  UI("@anase/ui")
 
-  subgraph AIRI
+  subgraph Anase
     DB1 --> DBDriver --> MemoryDriver --> Memory --> Core
     UI --> StageUI --> Stage --> Core
     Core --> STT
@@ -264,22 +264,22 @@ flowchart TD
 
   subgraph UI_Components
     UI --> StageUI
-    UITransitions("@proj-airi/ui-transitions") --> StageUI
-    UILoadingScreens("@proj-airi/ui-loading-screens") --> StageUI
-    FontCJK("@proj-airi/font-cjkfonts-allseto") --> StageUI
-    FontXiaolai("@proj-airi/font-xiaolai") --> StageUI
+    UITransitions("@anase/ui-transitions") --> StageUI
+    UILoadingScreens("@anase/ui-loading-screens") --> StageUI
+    FontCJK("@anase/font-cjkfonts-allseto") --> StageUI
+    FontXiaolai("@anase/font-xiaolai") --> StageUI
   end
 
   subgraph Apps
-    Stage --> StageWeb("@proj-airi/stage-web")
-    Stage --> StageTamagotchi("@proj-airi/stage-tamagotchi")
-    Core --> RealtimeAudio("@proj-airi/realtime-audio")
-    Core --> PromptEngineering("@proj-airi/playground-prompt-engineering")
+    Stage --> StageWeb("@anase/stage-web")
+    Stage --> StageTamagotchi("@anase/stage-tamagotchi")
+    Core --> RealtimeAudio("@anase/realtime-audio")
+    Core --> PromptEngineering("@anase/playground-prompt-engineering")
   end
 
   subgraph Server_Components
-    Core --> ServerSDK("@proj-airi/server-sdk")
-    ServerShared("@proj-airi/server-shared") --> SVRT
+    Core --> ServerSDK("@anase/server-sdk")
+    ServerShared("@anase/server-shared") --> SVRT
     ServerShared --> ServerSDK
   end
 
@@ -309,10 +309,10 @@ flowchart TD
   XSAI --> F_AGENT
   XSAI --> MC_AGENT
 
-  Memory_PGVector("@proj-airi/memory-pgvector") --> Memory
+  Memory_PGVector("@anase/memory-pgvector") --> Memory
 
   style Core fill:#f9d4d4,stroke:#333,stroke-width:1px
-  style AIRI fill:#fcf7f7,stroke:#333,stroke-width:1px
+  style Anase fill:#fcf7f7,stroke:#333,stroke-width:1px
   style UI fill:#d4f9d4,stroke:#333,stroke-width:1px
   style Stage fill:#d4f9d4,stroke:#333,stroke-width:1px
   style UI_Components fill:#d4f9d4,stroke:#333,stroke-width:1px

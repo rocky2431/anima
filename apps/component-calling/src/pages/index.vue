@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { AssistantMessage, SystemMessage, ToolMessage, Message as UpstreamMessage, UserMessage } from '@proj-airi/stage-ui/types/ai-messages'
+import type { AssistantMessage, SystemMessage, ToolMessage, Message as UpstreamMessage, UserMessage } from '@anase/stage-ui/types/ai-messages'
 import type { Element, Root } from 'xast'
 
-import { streamText } from '@proj-airi/stage-ui/libs/ai/stream-text'
-import { Input, Textarea } from '@proj-airi/ui'
+import { streamText } from '@anase/stage-ui/libs/ai/stream-text'
+import { Input, Textarea } from '@anase/ui'
 import { useLocalStorage } from '@vueuse/core'
 import { ref, toRaw } from 'vue'
 

@@ -1,0 +1,156 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260218-174800-feat-task-7-integration-checkpoint-iter1",
+  "timestamp": "2026-02-18T17:48:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/index.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 1184,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 8,
+    "by_severity": { "P0": 0, "P1": 4, "P2": 4, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch",
+      "title": "handleProcessedContext has no try/catch around persona-engine calls",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 122,
+      "line_end": 147,
+      "code_snippet": "function handleProcessedContext(context: ProcessedContext): void {\n  const now = Date.now()\n  const triggerInput = buildTriggerInput(context, intimacy, now)\n  const result = evaluateTriggers(triggerInput, triggers, lastTriggerTimes, now)\n  ...\n  config.onProactiveResponse?.({\n    response, animaEmotion, timestamp: now,\n  })\n}",
+      "description": "handleProcessedContext (lines 122-147) calls evaluateTriggers, emotionActor.send, generateResponse, mapToAnimaEmotion, and config.onProactiveResponse without any try/catch. This function is registered as the onContext callback of ActivityMonitor. If any of these calls throw, the exception propagates to ActivityMonitor.tick(). In the periodic setInterval path, ActivityMonitor.tick() wraps onContext in try/catch and routes to onError -- but only if onError is set. When onError is absent and start() is used, the error is re-thrown inside setInterval, causing an unhandled exception that can crash the Electron main process.",
+      "suggestion": "Wrap the body of handleProcessedContext in try/catch. Log the error with context (trigger input, emotion state) and forward to config.onError. This isolates persona-engine failures from crashing the aggregation loop.",
+      "claude_md_rule": "error_handling.rules.catch_log_rethrow"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "silent-swallow",
+      "title": "onError optional: ScreenshotPipeline swallows errors, ActivityMonitor crashes",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 56,
+      "line_end": 56,
+      "code_snippet": "onError?: (error: Error) => void",
+      "description": "AnimaOrchestratorConfig.onError is optional (line 56). The orchestrator passes it through to both ScreenshotPipeline and ActivityMonitor (lines 158, 166). In ScreenshotPipeline, when onError is undefined, this.onError?.(wrappedError) is a no-op -- the error is silently swallowed and tick() returns false (same value as a dedup skip, making errors indistinguishable from normal operation). In ActivityMonitor, when onError is undefined and onContext throws, the error is re-thrown inside setInterval, which becomes an unhandled exception. The orchestrator provides no default error handling of its own.",
+      "suggestion": "Either make onError required in AnimaOrchestratorConfig, or provide a default handler inside createAnimaOrchestrator that at minimum logs errors. Example: const errorHandler = config.onError ?? ((err: Error) => console.error('[AnimaOrchestrator]', err)). This prevents both the silent-swallow path and the crash path.",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "logging-without-handling",
+      "title": "setup-orchestrator onError only logs -- no escalation or recovery",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "line": 69,
+      "line_end": 71,
+      "code_snippet": "onError: (error) => {\n  log.withError(error).error('Anima orchestrator error')\n},",
+      "description": "The production wiring in setupAnimaOrchestrator sets onError to log the error (lines 69-71) but takes no further action: no circuit breaking, no metric emission, no re-throw, no graceful degradation. Repeated failures (e.g., screen capture permissions revoked) will log indefinitely without any corrective action. This matches the CLAUDE.md forbidden pattern: 'catch (e) { console.log(e) }' -- Logging without handling.",
+      "suggestion": "Add meaningful error handling: count consecutive errors and stop the pipeline after N failures (circuit breaker), emit an error metric/event for observability, or at minimum surface the failure state to the application. Example: track errorCount, and after 5 consecutive failures, call orchestrator.stop() and log a FATAL-level message.",
+      "claude_md_rule": "error_handling.forbidden.catch_console_log"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-test-coverage",
+      "title": "No error tests for handleProcessedContext failure paths",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "line": 494,
+      "line_end": 516,
+      "code_snippet": "describe('error handling', () => {\n  it('reports screenshot errors via onError', async () => {\n    ...\n    await orchestrator.tickScreenshot()\n    expect(errors).toHaveLength(1)\n  })\n})",
+      "description": "The error handling test suite (lines 494-516) only covers screenshot provider failures. There is no test for errors thrown during the handleProcessedContext path (trigger evaluation, response generation, onProactiveResponse callback). Given that handleProcessedContext has no try/catch (see review-errors-001), this gap means the crash/swallow paths are both untested and unhandled. The test provides false confidence that error handling works end-to-end.",
+      "suggestion": "Add test cases: (1) onProactiveResponse callback that throws -- verify error reaches onError with proper wrapping, (2) test behavior when onError is not provided and onProactiveResponse throws -- verify no unhandled exception in tick path, (3) test that errors in the trigger pipeline do not prevent subsequent ticks from running.",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "error-handling",
+      "subcategory": "unsafe-type-assertion",
+      "title": "Unsafe type assertion on emotion actor snapshot hides state errors",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 138,
+      "line_end": 138,
+      "code_snippet": "const currentEmotion = emotionActor.getSnapshot().value as PersonaEmotion",
+      "description": "emotionActor.getSnapshot().value is cast as PersonaEmotion (lines 138 and 194) without runtime validation. If the xstate actor is in a stopped/errored state, or if the machine definition changes and introduces nested states, .value could be an object instead of a string, or undefined. The unsafe cast silently produces incorrect data that propagates to generateResponse and the UI layer via animaEmotion. This same pattern appears on line 194 in getEmotionState().",
+      "suggestion": "Add a runtime guard: validate that the snapshot value is one of the known PersonaEmotion string literals before using it. Fall back to 'idle' with a warning log if the value is unexpected. Example: const raw = emotionActor.getSnapshot().value; if (!isPersonaEmotion(raw)) { config.onError?.(new Error('Unexpected emotion state: ' + String(raw))); return; }",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-006",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "cleanup-safety",
+      "title": "stop() has no error handling -- partial cleanup if any stop throws",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 175,
+      "line_end": 179,
+      "code_snippet": "stop() {\n  pipeline.stop()\n  monitor.stop()\n  emotionActor.stop()\n},",
+      "description": "The stop() method (lines 175-179) calls pipeline.stop(), monitor.stop(), and emotionActor.stop() sequentially without try/catch. If any stop call throws (e.g., emotionActor already stopped, or xstate internal error), subsequent cleanup calls are skipped. This can leave timers running (resource leak) or the system in a partially-stopped state.",
+      "suggestion": "Wrap each stop call in its own try/catch, or use a finally-chain pattern to ensure all three components are stopped regardless of individual failures. Log any errors from stop() with context about which component failed.",
+      "claude_md_rule": "error_handling.rules.handle_gracefully"
+    },
+    {
+      "id": "review-errors-007",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "silent-skip",
+      "title": "TRIGGER_EMOTION_MAP silently skips unmapped triggers without warning",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 133,
+      "line_end": 136,
+      "code_snippet": "const emotionEvent = TRIGGER_EMOTION_MAP[result.triggerName]\nif (emotionEvent) {\n  emotionActor.send(emotionEvent)\n}",
+      "description": "When a trigger fires, the orchestrator looks up the trigger name in TRIGGER_EMOTION_MAP (line 133). If the trigger name is not in the map, emotionEvent is undefined, and the if(emotionEvent) check silently skips the emotion transition. A new trigger added to ALL_TRIGGERS without a corresponding entry in TRIGGER_EMOTION_MAP will fire its response but with a stale/incorrect emotion state. No warning is logged for unmapped triggers, making this a hidden failure that affects response quality.",
+      "suggestion": "Log a warning when a triggered name has no entry in TRIGGER_EMOTION_MAP. Example: if (!emotionEvent) { config.onError?.(new Error('No emotion mapping for trigger: ' + result.triggerName)); }. Alternatively, make TRIGGER_EMOTION_MAP exhaustive by typing it as Record<TriggerName, EmotionEvent> so the compiler catches missing entries.",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-008",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "constructor-failure",
+      "title": "setupAnimaOrchestrator has no error handling for initialization failures",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "line": 53,
+      "line_end": 80,
+      "code_snippet": "export function setupAnimaOrchestrator() {\n  const screenshotProvider = new ElectronScreenshotProvider()\n  const vlmProvider = new PlaceholderVlmProvider()\n  const orchestrator = createAnimaOrchestrator(...)\n  orchestrator.start()\n  return orchestrator\n}",
+      "description": "setupAnimaOrchestrator() (lines 53-80) instantiates providers, creates the orchestrator, and calls start() -- all without try/catch. If createEmotionActor() (called inside createAnimaOrchestrator) fails to initialize, or if start() triggers an immediate error from the ScreenshotPipeline's first void this.tick(), the exception propagates to injeca.provide() and may leave partially-constructed resources. The calling code in index.ts has injeca.start().catch() but this only logs the error (line 121), leaving the app in a broken state without the orchestrator.",
+      "suggestion": "Wrap the setup in try/catch. On failure, log with context and either re-throw a typed error for injeca to handle, or return a degraded/no-op orchestrator. Ensure any partially-created resources are cleaned up on failure.",
+      "claude_md_rule": "error_handling.rules.handle_gracefully"
+    }
+  ],
+  "positive_observations": [
+    "onError callback pattern provides a consistent error reporting channel across ScreenshotPipeline and ActivityMonitor",
+    "setup-orchestrator.ts uses structured logging via @guiiai/logg with error context (log.withError(error))",
+    "ElectronScreenshotProvider throws a descriptive error with actionable guidance when no screen sources are available (line 25-26)",
+    "Error wrapping with { cause } in upstream pipelines preserves the original error chain for debugging",
+    "The orchestrator correctly delegates error handling to its dependencies rather than duplicating catch logic"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

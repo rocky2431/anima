@@ -1,0 +1,1051 @@
+{"timestamp": "2026-02-17T15:31:24.759212+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T15:41:29.516286+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T16:06:07.938598+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T16:09:22.663046+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a"}
+{"timestamp": "2026-02-17T16:11:45.099095+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T16:15:05.598244+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a"}
+{"timestamp": "2026-02-17T16:16:58.210973+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a"}
+{"timestamp": "2026-02-17T16:17:29.409532+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T16:18:39.631410+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T16:19:00.707045+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T16:19:40.351056+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T16:19:44.482966+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T16:19:48.673858+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4744a33-f6c2-451c-8eca-e7024630529a", "turns_used": null}
+{"timestamp": "2026-02-17T16:25:46.010176+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7"}
+{"timestamp": "2026-02-17T16:27:51.234468+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:40:52.434779+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:42:40.152388+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7"}
+{"timestamp": "2026-02-17T16:42:44.445169+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7"}
+{"timestamp": "2026-02-17T16:42:48.359149+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7"}
+{"timestamp": "2026-02-17T16:42:51.573712+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7"}
+{"timestamp": "2026-02-17T16:42:55.858188+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7"}
+{"timestamp": "2026-02-17T16:42:59.577595+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7"}
+{"timestamp": "2026-02-17T16:44:07.593697+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:44:28.379121+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:44:30.548280+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:44:32.440048+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:44:43.623554+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:45:21.879521+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7"}
+{"timestamp": "2026-02-17T16:45:37.708278+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:49:54.940114+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:52:10.144807+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:57:30.957185+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:58:25.146500+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:58:31.765881+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:58:49.771827+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:58:59.374357+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:59:16.403759+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:59:24.410297+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:59:35.337767+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T16:59:48.226624+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "042021e4-addd-4b00-ac31-dfa1029a96c7", "turns_used": null}
+{"timestamp": "2026-02-17T17:10:53.252050+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42"}
+{"timestamp": "2026-02-17T17:13:46.312400+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:27:36.453520+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42"}
+{"timestamp": "2026-02-17T17:27:39.548652+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42"}
+{"timestamp": "2026-02-17T17:27:42.340450+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42"}
+{"timestamp": "2026-02-17T17:27:45.132571+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42"}
+{"timestamp": "2026-02-17T17:27:47.796765+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42"}
+{"timestamp": "2026-02-17T17:27:50.502559+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42"}
+{"timestamp": "2026-02-17T17:29:15.509094+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:29:31.190252+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:29:34.001133+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:29:37.429122+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:29:38.252365+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:29:50.082982+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:30:12.361206+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42"}
+{"timestamp": "2026-02-17T17:35:05.015976+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:55:23.080421+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:55:33.284340+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:55:33.813859+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:55:44.794120+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:55:51.276570+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:55:56.672068+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:56:05.959830+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T17:56:13.421779+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6f05343-6b7a-4b30-a0b5-d1beba7c8e42", "turns_used": null}
+{"timestamp": "2026-02-17T18:01:07.648152+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91"}
+{"timestamp": "2026-02-17T18:03:50.600748+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:16:07.147368+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91"}
+{"timestamp": "2026-02-17T18:16:10.464597+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91"}
+{"timestamp": "2026-02-17T18:16:13.599396+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91"}
+{"timestamp": "2026-02-17T18:16:16.965562+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91"}
+{"timestamp": "2026-02-17T18:16:20.331516+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91"}
+{"timestamp": "2026-02-17T18:16:23.378769+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91"}
+{"timestamp": "2026-02-17T18:17:46.470126+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:17:51.252266+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:17:56.807188+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:17:59.476095+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:18:07.469877+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:18:14.649045+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91"}
+{"timestamp": "2026-02-17T18:18:40.429546+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:23:35.054449+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:31:00.181967+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:31:32.899230+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:31:44.839076+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:31:49.612720+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:31:55.011824+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:31:57.564487+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:32:01.701631+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-17T18:32:06.888861+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cf55b3c2-b6d4-4481-bf75-09c8cdb4dc91", "turns_used": null}
+{"timestamp": "2026-02-18T03:08:50.235696+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15"}
+{"timestamp": "2026-02-18T03:09:59.693346+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:14:15.011244+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15"}
+{"timestamp": "2026-02-18T03:14:17.455347+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15"}
+{"timestamp": "2026-02-18T03:14:19.944298+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15"}
+{"timestamp": "2026-02-18T03:14:22.443352+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15"}
+{"timestamp": "2026-02-18T03:14:24.998027+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15"}
+{"timestamp": "2026-02-18T03:14:27.496499+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15"}
+{"timestamp": "2026-02-18T03:15:33.290644+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:15:46.329811+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:15:59.461566+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:16:12.334506+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:16:12.427291+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:16:18.677458+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:16:25.982488+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15"}
+{"timestamp": "2026-02-18T03:21:20.237498+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:24:02.515790+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:24:45.557470+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:24:51.385933+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:24:54.454920+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:25:02.994851+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:25:12.115674+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:25:13.382502+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:25:19.544262+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:25:29.785388+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "99c567d4-e165-488c-abad-52884ede0c15", "turns_used": null}
+{"timestamp": "2026-02-18T03:41:01.505849+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d"}
+{"timestamp": "2026-02-18T03:41:31.655685+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d", "turns_used": null}
+{"timestamp": "2026-02-18T03:49:24.520365+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d"}
+{"timestamp": "2026-02-18T03:49:27.730935+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d"}
+{"timestamp": "2026-02-18T03:49:30.980708+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d"}
+{"timestamp": "2026-02-18T03:49:33.670956+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d"}
+{"timestamp": "2026-02-18T03:49:36.606722+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d"}
+{"timestamp": "2026-02-18T03:49:39.531474+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d"}
+{"timestamp": "2026-02-18T03:50:47.001967+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d", "turns_used": null}
+{"timestamp": "2026-02-18T03:51:02.912969+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d", "turns_used": null}
+{"timestamp": "2026-02-18T03:51:30.945646+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d", "turns_used": null}
+{"timestamp": "2026-02-18T03:51:31.832432+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d", "turns_used": null}
+{"timestamp": "2026-02-18T03:51:34.040164+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d", "turns_used": null}
+{"timestamp": "2026-02-18T03:52:01.829439+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d", "turns_used": null}
+{"timestamp": "2026-02-18T03:52:10.639732+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d"}
+{"timestamp": "2026-02-18T03:58:00.910844+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "3edb3c49-890e-4a7c-81c3-cbac68e9551d", "turns_used": null}
+{"timestamp": "2026-02-18T04:11:25.701096+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27"}
+{"timestamp": "2026-02-18T04:12:10.307641+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27", "turns_used": null}
+{"timestamp": "2026-02-18T04:20:44.583143+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27"}
+{"timestamp": "2026-02-18T04:20:47.052421+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27"}
+{"timestamp": "2026-02-18T04:20:50.086999+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27"}
+{"timestamp": "2026-02-18T04:20:51.378588+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27"}
+{"timestamp": "2026-02-18T04:20:53.202261+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27"}
+{"timestamp": "2026-02-18T04:20:56.667493+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27"}
+{"timestamp": "2026-02-18T04:22:07.529524+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27", "turns_used": null}
+{"timestamp": "2026-02-18T04:22:08.162366+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27", "turns_used": null}
+{"timestamp": "2026-02-18T04:22:11.142126+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27", "turns_used": null}
+{"timestamp": "2026-02-18T04:22:28.927393+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27", "turns_used": null}
+{"timestamp": "2026-02-18T04:22:39.365677+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27", "turns_used": null}
+{"timestamp": "2026-02-18T04:24:13.122191+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27"}
+{"timestamp": "2026-02-18T04:33:13.014409+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "fe12773c-ad3c-462b-ac75-c97145e03e27", "turns_used": null}
+{"timestamp": "2026-02-18T09:32:15.699356+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:34:32.192333+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:47:43.142013+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:47:46.795971+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:47:50.355458+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:47:54.103783+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:47:57.629602+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:48:01.355520+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:49:19.370873+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:49:40.012548+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:49:57.337739+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:49:59.786288+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:50:02.553155+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:50:04.383650+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:50:05.310094+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:50:05.767488+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:50:08.105623+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:50:10.891966+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:50:14.916691+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:50:18.267797+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:50:22.894732+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:50:26.304885+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf"}
+{"timestamp": "2026-02-18T09:52:37.020321+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:52:51.104408+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:52:55.606801+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:52:58.837758+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:53:05.550791+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:53:38.779035+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T09:57:08.012102+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c6d7b538-c60d-4064-94c6-e0555459b0bf", "turns_used": null}
+{"timestamp": "2026-02-18T10:37:30.560558+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba"}
+{"timestamp": "2026-02-18T10:37:34.997362+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba"}
+{"timestamp": "2026-02-18T10:39:06.600363+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T10:40:37.964171+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T11:11:32.504016+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba"}
+{"timestamp": "2026-02-18T11:11:35.188600+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba"}
+{"timestamp": "2026-02-18T11:11:37.565718+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba"}
+{"timestamp": "2026-02-18T11:11:40.160588+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba"}
+{"timestamp": "2026-02-18T11:11:42.861382+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba"}
+{"timestamp": "2026-02-18T11:11:45.184799+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba"}
+{"timestamp": "2026-02-18T11:13:10.068019+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T11:13:10.129503+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T11:13:22.371297+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T11:13:30.121949+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T11:13:40.253143+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T11:14:50.358467+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T11:15:10.681912+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T11:15:20.667012+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba"}
+{"timestamp": "2026-02-18T11:20:53.589833+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "8566aafe-c182-4df1-b179-2d813fb4daba", "turns_used": null}
+{"timestamp": "2026-02-18T15:38:41.244602+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T15:40:16.549018+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T15:50:56.609544+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T15:50:59.543429+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T15:51:02.286024+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T15:51:05.092380+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T15:51:08.017546+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T15:51:12.413342+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T15:52:29.010523+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T15:52:32.469356+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T15:52:41.744248+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T15:53:01.047128+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T15:53:19.701758+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T15:53:47.690754+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T15:54:35.955580+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:00:14.179476+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:01:57.544165+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:05:50.084303+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T16:05:53.913166+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T16:05:57.196371+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T16:05:59.969371+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T16:06:03.378800+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T16:06:06.184383+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T16:07:30.458469+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:07:39.893033+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:07:45.120132+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:08:00.618989+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:08:08.190949+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:08:56.237498+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6"}
+{"timestamp": "2026-02-18T16:09:41.594771+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:16:11.441894+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5bc2e764-ee13-4bf7-a9e1-dbaaa2b8a0a6", "turns_used": null}
+{"timestamp": "2026-02-18T16:27:24.386321+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8"}
+{"timestamp": "2026-02-18T16:29:06.855052+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8", "turns_used": null}
+{"timestamp": "2026-02-18T16:35:50.255102+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8"}
+{"timestamp": "2026-02-18T16:35:53.487817+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8"}
+{"timestamp": "2026-02-18T16:35:56.106804+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8"}
+{"timestamp": "2026-02-18T16:35:59.035584+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8"}
+{"timestamp": "2026-02-18T16:36:01.846881+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8"}
+{"timestamp": "2026-02-18T16:36:05.151642+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8"}
+{"timestamp": "2026-02-18T16:37:36.878623+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8", "turns_used": null}
+{"timestamp": "2026-02-18T16:37:41.378115+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8", "turns_used": null}
+{"timestamp": "2026-02-18T16:37:46.438013+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8", "turns_used": null}
+{"timestamp": "2026-02-18T16:37:47.418266+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8", "turns_used": null}
+{"timestamp": "2026-02-18T16:38:01.395135+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8", "turns_used": null}
+{"timestamp": "2026-02-18T16:38:38.326618+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8"}
+{"timestamp": "2026-02-18T16:38:48.891616+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8", "turns_used": null}
+{"timestamp": "2026-02-18T16:44:45.335292+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "7d7da56f-3adc-47b8-b104-b287759b9bd8", "turns_used": null}
+{"timestamp": "2026-02-18T16:58:24.650586+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008"}
+{"timestamp": "2026-02-18T17:01:18.835556+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008", "turns_used": null}
+{"timestamp": "2026-02-18T17:17:02.139666+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008", "turns_used": null}
+{"timestamp": "2026-02-18T17:18:04.321333+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008"}
+{"timestamp": "2026-02-18T17:18:07.164187+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008"}
+{"timestamp": "2026-02-18T17:18:09.948973+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008"}
+{"timestamp": "2026-02-18T17:18:12.771249+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008"}
+{"timestamp": "2026-02-18T17:18:15.657301+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008"}
+{"timestamp": "2026-02-18T17:18:18.533728+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008"}
+{"timestamp": "2026-02-18T17:19:40.358557+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008", "turns_used": null}
+{"timestamp": "2026-02-18T17:19:41.077995+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008", "turns_used": null}
+{"timestamp": "2026-02-18T17:20:07.208502+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008", "turns_used": null}
+{"timestamp": "2026-02-18T17:20:07.629976+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008", "turns_used": null}
+{"timestamp": "2026-02-18T17:20:23.144290+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008", "turns_used": null}
+{"timestamp": "2026-02-18T17:20:37.970325+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008"}
+{"timestamp": "2026-02-18T17:21:38.329053+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008", "turns_used": null}
+{"timestamp": "2026-02-18T17:26:32.051233+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "df898460-c31b-4d1e-9a99-1fcab08c0008", "turns_used": null}
+{"timestamp": "2026-02-18T18:04:04.834161+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:04:07.836023+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:05:21.290903+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:06:24.769236+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:19:14.877295+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:19:17.634311+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:19:19.911005+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:19:22.766413+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:19:25.090911+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:19:27.477686+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:20:52.195919+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:20:54.632043+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:21:15.623630+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:21:29.866202+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:21:32.260250+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:21:34.482803+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:21:45.656170+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:27:51.885071+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:30:12.542442+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977", "turns_used": null}
+{"timestamp": "2026-02-18T18:33:58.649156+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "2a7d4753-1423-4027-8f85-2f535cca7977"}
+{"timestamp": "2026-02-18T18:52:49.638336+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T18:55:26.318070+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:02:35.744335+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:02:38.670191+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:02:41.346882+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:02:44.410510+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:02:47.223001+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:02:50.645851+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:04:28.506146+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:04:35.189746+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:04:43.292060+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:04:48.286756+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:05:02.228361+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:05:09.833911+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:06:03.901897+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:12:20.601489+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:14:45.981575+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:22:41.168551+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:22:44.168151+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:22:49.047312+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:23:35.884995+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:23:56.524832+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:24:17.238614+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:25:10.584723+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd"}
+{"timestamp": "2026-02-18T19:28:11.969688+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "481087ab-58c9-4b40-a725-26345ca8aedd", "turns_used": null}
+{"timestamp": "2026-02-18T19:39:13.741342+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe"}
+{"timestamp": "2026-02-18T19:41:32.929141+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe", "turns_used": null}
+{"timestamp": "2026-02-18T19:48:38.985583+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe"}
+{"timestamp": "2026-02-18T19:48:43.436915+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe"}
+{"timestamp": "2026-02-18T19:48:46.101130+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe"}
+{"timestamp": "2026-02-18T19:48:49.203740+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe"}
+{"timestamp": "2026-02-18T19:48:52.410594+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe"}
+{"timestamp": "2026-02-18T19:48:55.491492+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe"}
+{"timestamp": "2026-02-18T19:50:38.100556+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe", "turns_used": null}
+{"timestamp": "2026-02-18T19:50:58.603955+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe", "turns_used": null}
+{"timestamp": "2026-02-18T19:51:02.228796+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe", "turns_used": null}
+{"timestamp": "2026-02-18T19:51:03.841606+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe", "turns_used": null}
+{"timestamp": "2026-02-18T19:51:10.467787+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe", "turns_used": null}
+{"timestamp": "2026-02-18T19:52:05.761427+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe"}
+{"timestamp": "2026-02-18T19:53:19.324247+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe", "turns_used": null}
+{"timestamp": "2026-02-18T20:00:32.456404+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe", "turns_used": null}
+{"timestamp": "2026-02-18T20:02:09.741307+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "bf2a1995-4a44-43b5-8072-d485c2c2d0fe", "turns_used": null}
+{"timestamp": "2026-02-20T06:20:32.812541+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e"}
+{"timestamp": "2026-02-20T06:22:30.803929+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T06:31:17.320861+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e"}
+{"timestamp": "2026-02-20T06:31:20.233204+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e"}
+{"timestamp": "2026-02-20T06:31:22.576502+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e"}
+{"timestamp": "2026-02-20T06:31:25.255035+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e"}
+{"timestamp": "2026-02-20T06:31:27.996942+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e"}
+{"timestamp": "2026-02-20T06:31:30.783118+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e"}
+{"timestamp": "2026-02-20T06:33:08.175890+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T06:33:09.380599+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T06:33:13.844864+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T06:33:39.316049+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T06:33:40.235859+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T06:33:44.038638+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e"}
+{"timestamp": "2026-02-20T06:34:53.903710+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T06:39:46.440539+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T06:40:05.112213+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T10:14:07.516071+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T10:14:11.848373+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T10:14:26.740656+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T10:14:29.474842+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T10:14:36.416875+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T10:14:50.613057+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T10:14:55.510749+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T10:15:06.109591+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f58a4717-f9a1-4cae-b040-3858d0fff60e", "turns_used": null}
+{"timestamp": "2026-02-20T11:01:56.159143+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:01:59.747178+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:05:22.815169+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:06:45.858325+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:07:22.930859+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:08:44.167193+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:16:13.474511+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:16:16.439482+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:16:19.015905+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:16:21.569894+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:16:24.416830+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:16:27.031364+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:17:54.669477+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:18:01.211570+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:18:17.475847+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:18:21.859372+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:18:27.024950+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:18:36.929258+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76"}
+{"timestamp": "2026-02-20T11:19:10.764253+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:25:20.828532+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T11:36:50.526748+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T12:04:14.438028+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T12:04:26.618311+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T12:04:29.871963+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T12:04:56.154509+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T12:04:57.480375+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T12:05:17.207349+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T12:05:18.483905+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T12:05:45.515620+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "53b380d8-e012-45f8-aac5-4e6e2ceafb76", "turns_used": null}
+{"timestamp": "2026-02-20T13:06:46.823169+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T13:06:51.269390+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T13:06:54.611845+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T13:08:26.264492+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T13:09:00.843168+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T13:11:04.697087+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T13:11:41.896760+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T13:11:46.788204+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T13:14:13.645294+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T13:15:52.359943+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T13:39:51.474927+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T13:40:24.551914+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T13:50:41.310627+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:04:21.870327+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T14:04:26.557986+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T14:04:27.109857+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T14:04:27.109898+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T14:04:29.652691+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T14:04:31.632432+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T14:06:37.747622+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:06:58.598694+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:07:23.120835+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:07:29.300917+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:08:34.257676+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:10:06.086259+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:10:09.123502+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6"}
+{"timestamp": "2026-02-20T14:17:07.689001+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:19:06.311563+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:26:37.355554+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:26:54.724249+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:27:01.144594+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:27:06.000346+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:27:14.349680+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:27:15.033839+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T14:27:21.140160+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "50595e29-575b-4d91-a721-71c4f9ab39d6", "turns_used": null}
+{"timestamp": "2026-02-20T15:01:57.152747+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:02:52.158596+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:07:06.926713+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:07:33.761807+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:11:50.327437+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:11:57.522107+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:11:58.073645+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:11:59.543864+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:12:02.558898+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:12:05.414289+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:13:26.950288+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:13:28.053788+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:13:55.908564+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:14:00.226405+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:14:05.517509+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:14:16.449190+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:15:13.649216+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:21:01.649037+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:29:54.542863+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:30:11.938621+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:31:43.847973+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:32:52.362819+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:45:58.052984+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:46:59.370994+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:47:02.700183+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:47:05.594110+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:47:08.195831+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:47:11.361882+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:47:14.634589+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:48:48.046876+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:48:56.337091+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:49:00.559178+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:49:12.972548+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:49:19.334116+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:49:37.851045+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f"}
+{"timestamp": "2026-02-20T15:50:40.748264+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T15:55:32.097643+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:38:25.755258+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:38:41.031983+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:38:47.805005+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:38:50.946493+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:38:57.798962+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:39:02.961443+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:39:09.207996+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:40:27.513132+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:40:33.498617+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:40:44.712260+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:40:55.091280+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:41:01.628784+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:41:06.624504+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:41:10.821329+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:41:17.145897+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:41:19.826959+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d7851630-b2f5-41de-a370-4a077539b51f", "turns_used": null}
+{"timestamp": "2026-02-20T16:42:53.613223+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:43:55.299633+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T16:45:04.013953+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:45:07.817311+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:45:13.472662+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:47:49.794370+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T16:47:54.490028+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T16:48:58.789904+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T16:53:45.994625+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:54:51.810344+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T16:57:35.843083+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:57:39.291589+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:57:41.620452+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:57:44.485517+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:57:48.251385+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:57:50.475486+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T16:59:33.830383+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T16:59:42.090075+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T16:59:47.497941+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:00:23.100538+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T17:00:23.758348+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:00:33.748887+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:01:34.439047+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:07:55.871176+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:08:25.877067+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:11:04.640813+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T17:13:27.567558+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:13:38.865975+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5"}
+{"timestamp": "2026-02-20T17:15:57.383953+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:57:09.623629+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:57:28.865314+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:57:37.659856+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:57:43.110544+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:57:53.564983+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:58:12.703868+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T17:58:23.977459+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "cbd68dec-c10e-4818-b96d-08d9fe030bb5", "turns_used": null}
+{"timestamp": "2026-02-20T18:02:34.981529+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c"}
+{"timestamp": "2026-02-20T18:04:34.179194+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:04:46.234656+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c"}
+{"timestamp": "2026-02-20T18:06:47.028844+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:18:12.515419+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c"}
+{"timestamp": "2026-02-20T18:18:20.747635+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c"}
+{"timestamp": "2026-02-20T18:18:29.118583+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c"}
+{"timestamp": "2026-02-20T18:18:36.655956+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c"}
+{"timestamp": "2026-02-20T18:18:45.831868+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c"}
+{"timestamp": "2026-02-20T18:18:53.749931+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c"}
+{"timestamp": "2026-02-20T18:19:38.132949+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:20:15.993456+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:20:30.887952+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:20:44.375191+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:20:47.009659+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:20:55.589393+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c"}
+{"timestamp": "2026-02-20T18:22:13.291149+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:26:40.548101+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:27:21.855933+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:55:14.284835+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:55:27.923150+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:55:45.320997+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:55:49.087986+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:55:56.648066+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:56:01.727892+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:56:12.259270+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T18:56:53.476712+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "834a4360-eca2-4003-87dd-6fe53f26308c", "turns_used": null}
+{"timestamp": "2026-02-20T19:02:25.195944+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2"}
+{"timestamp": "2026-02-20T19:03:53.569506+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:10:21.661871+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2"}
+{"timestamp": "2026-02-20T19:10:24.547684+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2"}
+{"timestamp": "2026-02-20T19:10:27.300657+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2"}
+{"timestamp": "2026-02-20T19:10:30.565377+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2"}
+{"timestamp": "2026-02-20T19:10:33.088306+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2"}
+{"timestamp": "2026-02-20T19:10:36.045133+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2"}
+{"timestamp": "2026-02-20T19:12:10.572145+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:12:25.055450+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:12:34.129308+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:12:39.902423+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:12:56.726390+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:13:12.487221+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2"}
+{"timestamp": "2026-02-20T19:14:19.308504+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:18:55.614306+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:21:11.513694+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:46:56.779097+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:47:03.571221+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:47:07.136583+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:47:15.603527+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:47:24.498645+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:47:30.658104+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:47:41.299043+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "1104a751-ca4a-44c6-a687-f7a0402f1fe2", "turns_used": null}
+{"timestamp": "2026-02-20T19:52:40.143109+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T19:55:42.278466+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T19:56:02.404881+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T19:56:50.229245+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:07:58.203134+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T20:11:49.440176+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:12:16.669644+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T20:12:49.044402+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:14:51.659636+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:15:50.304344+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T20:15:52.962782+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T20:15:55.839745+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T20:15:58.785247+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T20:16:01.725360+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T20:16:05.008721+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T20:17:38.484431+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:17:57.250432+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:17:59.028359+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:18:21.116522+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:18:24.952826+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:18:54.132467+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T20:19:04.916736+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c"}
+{"timestamp": "2026-02-20T20:25:12.273294+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T21:18:59.308239+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T21:19:06.658292+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T21:19:11.362519+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T21:19:16.476901+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T21:19:25.342492+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T21:19:28.815628+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T21:19:36.997577+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T21:19:44.006633+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "f5143344-2638-44a2-8641-8c6cde34b20c", "turns_used": null}
+{"timestamp": "2026-02-20T21:23:44.533036+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:25:21.447713+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:42:53.596469+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:42:56.326697+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:42:59.147658+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:43:01.887088+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:43:04.658234+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:43:07.542855+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:44:25.325984+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:44:43.950080+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:44:50.020591+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:44:50.172254+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:44:58.001641+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:45:01.654490+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:45:19.058237+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:45:30.029920+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:51:23.193244+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:54:56.407562+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:56:45.276073+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-20T21:56:55.563910+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee"}
+{"timestamp": "2026-02-20T21:59:12.208927+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-21T05:53:03.729342+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "d4088221-1be8-4011-bc99-755fd4c6dbee", "turns_used": null}
+{"timestamp": "2026-02-21T05:53:42.850846+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "e6262ecb-5137-48dc-965f-07262f23dbd7", "turns_used": null}
+{"timestamp": "2026-02-21T05:57:07.532454+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T05:59:28.835952+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T05:59:34.403290+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:00:58.213470+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b"}
+{"timestamp": "2026-02-21T06:02:35.299045+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:04:23.299476+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:08:41.320057+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:08:49.497049+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:08:56.248744+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:12:43.090467+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:13:50.485765+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:17:09.590378+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:22:29.426591+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:25:42.806194+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:28:09.576166+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:32:04.429803+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:38:42.351958+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:39:18.486784+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:45:57.195789+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b"}
+{"timestamp": "2026-02-21T06:46:04.755975+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b"}
+{"timestamp": "2026-02-21T06:46:10.782799+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b"}
+{"timestamp": "2026-02-21T06:47:31.055945+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:47:55.116939+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:48:07.880959+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:48:56.646245+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b"}
+{"timestamp": "2026-02-21T06:53:15.741722+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "650987f6-98a2-44a8-9c8a-6bf8a3bb9c2b", "turns_used": null}
+{"timestamp": "2026-02-21T06:56:32.868658+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29"}
+{"timestamp": "2026-02-21T06:59:18.744983+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T07:07:05.487239+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29"}
+{"timestamp": "2026-02-21T07:07:07.406596+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29"}
+{"timestamp": "2026-02-21T07:07:14.645076+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T07:11:49.900401+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T07:11:58.476328+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29"}
+{"timestamp": "2026-02-21T07:12:10.383712+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T07:22:22.741671+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T07:28:56.769759+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T07:40:39.360437+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T07:47:50.126404+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T07:48:48.240621+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T08:31:52.987925+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29"}
+{"timestamp": "2026-02-21T08:40:00.518257+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T08:45:58.599797+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29"}
+{"timestamp": "2026-02-21T08:46:04.320514+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29"}
+{"timestamp": "2026-02-21T08:48:37.710197+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T08:49:48.666831+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "728c126f-6c98-4d3f-b258-ecbd3cb33e29", "turns_used": null}
+{"timestamp": "2026-02-21T09:11:16.063174+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "913e0432-1ac5-478b-b8ea-b3ef6697434f", "turns_used": null}
+{"timestamp": "2026-02-21T09:14:10.720843+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "913e0432-1ac5-478b-b8ea-b3ef6697434f", "turns_used": null}
+{"timestamp": "2026-02-21T09:18:39.197917+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0"}
+{"timestamp": "2026-02-21T09:18:44.119221+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0"}
+{"timestamp": "2026-02-21T09:18:48.335900+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0"}
+{"timestamp": "2026-02-21T09:19:26.297487+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0", "turns_used": null}
+{"timestamp": "2026-02-21T09:19:37.352881+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0", "turns_used": null}
+{"timestamp": "2026-02-21T09:21:39.476220+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0", "turns_used": null}
+{"timestamp": "2026-02-21T09:22:03.420563+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0"}
+{"timestamp": "2026-02-21T09:23:58.362678+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0", "turns_used": null}
+{"timestamp": "2026-02-21T09:25:02.050237+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0"}
+{"timestamp": "2026-02-21T09:26:43.932508+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0", "turns_used": null}
+{"timestamp": "2026-02-21T09:28:14.165696+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0", "turns_used": null}
+{"timestamp": "2026-02-21T09:34:00.508937+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0"}
+{"timestamp": "2026-02-21T09:34:10.384555+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0"}
+{"timestamp": "2026-02-21T09:34:19.233681+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0"}
+{"timestamp": "2026-02-21T09:37:57.652791+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0", "turns_used": null}
+{"timestamp": "2026-02-21T09:38:09.370593+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0", "turns_used": null}
+{"timestamp": "2026-02-21T09:44:45.232894+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9915e01c-f808-4452-8140-21d0da9f99a0", "turns_used": null}
+{"timestamp": "2026-02-21T09:58:03.425165+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b"}
+{"timestamp": "2026-02-21T10:00:11.810074+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:03:08.097888+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b"}
+{"timestamp": "2026-02-21T10:08:02.100320+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:08:02.138237+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b"}
+{"timestamp": "2026-02-21T10:08:07.278984+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:08:07.318394+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b"}
+{"timestamp": "2026-02-21T10:08:11.665096+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:08:11.705732+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b"}
+{"timestamp": "2026-02-21T10:08:17.834880+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:11:09.001627+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b"}
+{"timestamp": "2026-02-21T10:11:53.811588+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:13:26.719137+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:32:40.276328+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:33:12.717545+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:43:52.053269+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b"}
+{"timestamp": "2026-02-21T10:44:55.888724+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T10:48:22.236442+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T11:03:20.306083+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T11:03:36.792506+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T11:03:59.908247+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b"}
+{"timestamp": "2026-02-21T11:05:12.738712+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T11:07:07.175303+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T11:07:40.630412+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T11:16:04.018257+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b"}
+{"timestamp": "2026-02-21T11:17:14.095725+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T11:26:03.965027+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T11:27:45.530555+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T12:13:13.505034+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a159d4f6-6901-49ce-94eb-fd7665f68e6b", "turns_used": null}
+{"timestamp": "2026-02-21T12:19:03.121919+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9"}
+{"timestamp": "2026-02-21T12:19:10.871110+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9"}
+{"timestamp": "2026-02-21T12:19:18.197606+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9"}
+{"timestamp": "2026-02-21T12:20:45.438011+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:21:40.540807+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:22:22.271290+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:23:23.960599+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9"}
+{"timestamp": "2026-02-21T12:23:29.972049+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9"}
+{"timestamp": "2026-02-21T12:25:04.032180+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:25:27.953988+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:27:31.757549+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:29:49.620500+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9"}
+{"timestamp": "2026-02-21T12:29:54.577678+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9"}
+{"timestamp": "2026-02-21T12:30:01.138304+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9"}
+{"timestamp": "2026-02-21T12:30:37.644814+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:30:49.229899+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:30:50.745192+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:31:55.216697+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9"}
+{"timestamp": "2026-02-21T12:36:38.982943+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:38:52.401454+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "5705babb-d338-4099-9d48-5e1d633a3bc9", "turns_used": null}
+{"timestamp": "2026-02-21T12:41:36.506333+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0"}
+{"timestamp": "2026-02-21T12:42:12.619065+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0", "turns_used": null}
+{"timestamp": "2026-02-21T12:42:20.178596+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0"}
+{"timestamp": "2026-02-21T12:42:24.926612+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0"}
+{"timestamp": "2026-02-21T12:42:29.053187+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0"}
+{"timestamp": "2026-02-21T12:42:40.363149+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0", "turns_used": null}
+{"timestamp": "2026-02-21T12:43:15.202075+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0", "turns_used": null}
+{"timestamp": "2026-02-21T12:44:03.618081+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0", "turns_used": null}
+{"timestamp": "2026-02-21T12:47:06.593012+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0"}
+{"timestamp": "2026-02-21T12:47:24.421225+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0"}
+{"timestamp": "2026-02-21T12:48:30.514236+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0", "turns_used": null}
+{"timestamp": "2026-02-21T12:57:35.311715+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0", "turns_used": null}
+{"timestamp": "2026-02-21T13:29:48.545152+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0"}
+{"timestamp": "2026-02-21T13:31:03.848884+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0", "turns_used": null}
+{"timestamp": "2026-02-21T13:32:29.503074+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0", "turns_used": null}
+{"timestamp": "2026-02-21T13:36:43.361361+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a3d61bb9-0130-4ba0-ae51-3068919b69c0", "turns_used": null}
+{"timestamp": "2026-02-21T13:38:12.353756+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "17dc7e84-5322-4643-baec-09f23d952d72", "turns_used": null}
+{"timestamp": "2026-02-21T13:40:07.891654+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "17dc7e84-5322-4643-baec-09f23d952d72", "turns_used": null}
+{"timestamp": "2026-02-21T13:42:41.939689+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "17dc7e84-5322-4643-baec-09f23d952d72", "turns_used": null}
+{"timestamp": "2026-02-21T13:43:07.440449+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "17dc7e84-5322-4643-baec-09f23d952d72"}
+{"timestamp": "2026-02-21T13:43:13.714007+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "17dc7e84-5322-4643-baec-09f23d952d72"}
+{"timestamp": "2026-02-21T13:44:49.276778+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "17dc7e84-5322-4643-baec-09f23d952d72", "turns_used": null}
+{"timestamp": "2026-02-21T13:45:02.345195+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "17dc7e84-5322-4643-baec-09f23d952d72", "turns_used": null}
+{"timestamp": "2026-02-21T13:46:45.613760+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "17dc7e84-5322-4643-baec-09f23d952d72"}
+{"timestamp": "2026-02-21T13:51:28.753328+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "17dc7e84-5322-4643-baec-09f23d952d72", "turns_used": null}
+{"timestamp": "2026-02-21T14:00:46.073541+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "db7aea24-29a8-43a9-950f-b00fa25d0b5b", "turns_used": null}
+{"timestamp": "2026-02-21T14:07:10.864389+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "db7aea24-29a8-43a9-950f-b00fa25d0b5b", "turns_used": null}
+{"timestamp": "2026-02-21T19:03:37.787565+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-21T19:15:59.478888+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-21T19:20:06.496818+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-21T19:21:33.095911+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-21T19:27:08.231627+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-21T19:27:59.389733+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-21T19:38:56.182830+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-22T02:27:26.278043+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-22T02:31:59.327366+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b"}
+{"timestamp": "2026-02-22T02:34:39.939766+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-22T02:35:05.855972+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-22T02:38:54.015308+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b"}
+{"timestamp": "2026-02-22T02:38:59.238559+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b"}
+{"timestamp": "2026-02-22T02:39:05.955546+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b"}
+{"timestamp": "2026-02-22T02:41:03.410603+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-22T02:41:43.480648+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-22T02:42:00.479563+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9660ae43-0c4a-47cd-8e38-be063bfc787b", "turns_used": null}
+{"timestamp": "2026-02-23T06:56:58.663602+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a"}
+{"timestamp": "2026-02-23T06:57:17.477961+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T06:57:43.863873+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T07:00:21.604939+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a"}
+{"timestamp": "2026-02-23T07:00:41.696568+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T07:03:40.591802+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T11:34:04.686540+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T11:39:36.277114+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T11:42:41.933145+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T11:53:08.177649+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a"}
+{"timestamp": "2026-02-23T11:53:16.537828+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a"}
+{"timestamp": "2026-02-23T11:54:29.301957+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T11:54:55.962366+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T11:55:38.850934+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a"}
+{"timestamp": "2026-02-23T12:00:08.685835+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "c7f7b7a7-3bcc-427c-82de-847648ee9c0a", "turns_used": null}
+{"timestamp": "2026-02-23T12:14:51.544406+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2"}
+{"timestamp": "2026-02-23T12:14:55.044603+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2"}
+{"timestamp": "2026-02-23T12:14:57.692497+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2"}
+{"timestamp": "2026-02-23T12:17:59.611923+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T12:18:08.283874+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T12:18:38.076133+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T12:26:12.133765+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T12:27:59.426372+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T13:18:14.466088+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T13:19:30.066612+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2"}
+{"timestamp": "2026-02-23T13:21:11.329238+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T13:31:35.902197+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T13:37:00.044488+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T13:40:38.034055+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T13:52:01.630621+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:04:24.363777+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:21:47.188448+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:39:29.322749+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:47:25.063791+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:49:33.887465+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2"}
+{"timestamp": "2026-02-23T14:50:11.845967+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:51:43.179647+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:53:32.934139+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:56:37.407522+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:57:27.186656+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2"}
+{"timestamp": "2026-02-23T14:57:32.739030+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2"}
+{"timestamp": "2026-02-23T14:57:40.175134+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2"}
+{"timestamp": "2026-02-23T14:58:42.601469+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T14:58:54.761275+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T15:00:24.396064+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T15:02:10.117093+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2"}
+{"timestamp": "2026-02-23T15:08:01.723731+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "265b8e36-5866-46c4-b243-8f849c6c05a2", "turns_used": null}
+{"timestamp": "2026-02-23T15:27:34.227767+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e"}
+{"timestamp": "2026-02-23T15:29:18.083272+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T15:33:50.317119+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e"}
+{"timestamp": "2026-02-23T15:35:18.678695+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T15:39:04.277936+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T15:41:01.500915+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e"}
+{"timestamp": "2026-02-23T15:42:31.103875+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T15:50:28.998942+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T15:52:54.060637+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T15:59:57.467363+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e"}
+{"timestamp": "2026-02-23T16:00:21.013903+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e"}
+{"timestamp": "2026-02-23T16:02:57.839357+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:03:30.202939+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:06:31.391114+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:18:10.430191+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:20:21.982222+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e"}
+{"timestamp": "2026-02-23T16:20:42.702013+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e"}
+{"timestamp": "2026-02-23T16:22:32.932122+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:29:43.722058+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:35:28.081067+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:40:55.577693+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:42:11.828798+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:42:22.076453+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:42:27.161051+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:42:35.249816+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:48:22.640683+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T16:57:26.400515+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T17:00:57.088852+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T17:09:16.182539+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T17:34:37.398066+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T17:37:36.322050+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T17:57:44.775979+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T17:58:51.406318+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-23T17:58:58.802141+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "0cc6298d-a7c0-42e3-bbbe-aee4f204e13e", "turns_used": null}
+{"timestamp": "2026-02-24T06:09:44.725537+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T06:46:03.464521+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T06:46:08.662800+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:08:41.614146+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:11:57.697822+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037"}
+{"timestamp": "2026-02-24T08:14:18.290701+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:14:52.430646+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:17:05.806876+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:18:23.221964+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037"}
+{"timestamp": "2026-02-24T08:23:28.403061+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:24:04.994420+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:35:20.791550+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:35:27.325867+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:38:24.984246+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:48:05.403166+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:52:13.341483+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T08:59:54.545816+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037"}
+{"timestamp": "2026-02-24T09:01:20.571260+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T09:02:41.549537+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037"}
+{"timestamp": "2026-02-24T09:05:52.716309+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037"}
+{"timestamp": "2026-02-24T09:05:56.948127+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037"}
+{"timestamp": "2026-02-24T09:06:16.088593+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T09:06:38.514391+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T09:08:41.711960+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9b424a07-8b55-4115-b72d-24547274f037", "turns_used": null}
+{"timestamp": "2026-02-24T09:21:19.772311+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T09:22:12.631804+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T09:29:52.321526+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T09:37:59.985882+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T09:38:03.588499+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T09:39:58.838473+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T09:41:21.195876+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T09:46:32.913998+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T09:53:11.275644+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T09:55:13.991568+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T09:58:10.941563+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T10:06:43.166377+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T10:14:00.360060+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T10:15:59.534159+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T10:16:45.018564+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T10:42:30.414444+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T10:43:25.302151+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T10:45:27.770015+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T11:03:22.351728+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T11:05:13.020697+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T11:11:03.565007+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T11:23:06.846816+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T11:36:45.216409+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T11:38:13.204265+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T11:42:57.473505+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T11:54:30.299370+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T11:59:54.058812+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T12:13:15.650807+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T12:15:05.515945+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T12:16:18.163682+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T12:51:59.948606+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T13:08:34.686201+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T13:44:36.119264+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T13:49:19.150720+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:01:52.214941+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T14:03:06.237197+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:12:44.612673+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:19:25.595051+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T14:20:40.871204+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:23:16.360135+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:24:47.833546+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:27:01.147145+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T14:28:37.153844+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:29:11.784112+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:45:40.162605+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T14:47:00.561804+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:47:25.059159+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T14:47:31.095952+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T14:47:53.236171+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:48:38.076026+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:50:11.017579+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:50:39.506511+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T14:50:46.097037+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295"}
+{"timestamp": "2026-02-24T14:51:24.778684+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:52:11.875178+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "a0d97d32-7d02-4084-9f1e-219dd5c0f295", "turns_used": null}
+{"timestamp": "2026-02-24T14:55:31.207308+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e"}
+{"timestamp": "2026-02-24T14:56:08.034705+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:07:43.089343+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e"}
+{"timestamp": "2026-02-24T15:10:23.639653+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:12:15.475585+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:35:24.566896+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:41:01.570067+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:46:19.841720+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:48:23.024946+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e"}
+{"timestamp": "2026-02-24T15:49:38.416302+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:51:57.745092+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:53:48.765562+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:55:24.900142+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:58:19.664342+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:58:49.526649+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T15:59:52.715033+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T16:08:43.330427+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T16:11:00.515831+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-02-24T16:25:26.086599+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "9225ab1d-1abc-4b97-8356-4623c62eb66e", "turns_used": null}
+{"timestamp": "2026-03-04T08:44:14.545049+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "9c514e72-1b36-40af-a608-66965288e163"}
+{"timestamp": "2026-03-04T09:05:06.583491+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334"}
+{"timestamp": "2026-03-04T09:05:16.830086+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334"}
+{"timestamp": "2026-03-04T09:05:22.397524+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334"}
+{"timestamp": "2026-03-04T09:05:28.559764+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334"}
+{"timestamp": "2026-03-04T09:05:37.439296+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334"}
+{"timestamp": "2026-03-04T09:05:44.281571+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334"}
+{"timestamp": "2026-03-04T09:07:44.504970+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334", "turns_used": null}
+{"timestamp": "2026-03-04T09:08:19.076356+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334", "turns_used": null}
+{"timestamp": "2026-03-04T09:08:25.117757+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334", "turns_used": null}
+{"timestamp": "2026-03-04T09:09:05.351013+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334", "turns_used": null}
+{"timestamp": "2026-03-04T09:09:52.259610+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334", "turns_used": null}
+{"timestamp": "2026-03-04T09:11:17.901666+00:00", "event": "subagent_start", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334"}
+{"timestamp": "2026-03-04T09:23:14.452598+00:00", "event": "subagent_stop", "agent_name": "unknown", "session_id": "ed7ead00-5c13-4a7c-acfc-89106059a334", "turns_used": null}
+{"timestamp": "2026-03-06T01:31:40.871523+00:00", "event": "subagent_start", "agent_id": "a4d2bc0a9bf464610", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:32:50.182025+00:00", "event": "subagent_stop", "agent_id": "a4d2bc0a9bf464610", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a4d2bc0a9bf464610.jsonl"}
+{"timestamp": "2026-03-06T01:42:03.998943+00:00", "event": "subagent_start", "agent_id": "ab900fc6d5c7c62f3", "agent_type": "ai-sdk-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:42:11.916591+00:00", "event": "subagent_start", "agent_id": "af312a563674ca060", "agent_type": "mcp-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:42:20.044564+00:00", "event": "subagent_start", "agent_id": "a5087ef3957c5f004", "agent_type": "skill-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:42:30.423676+00:00", "event": "subagent_start", "agent_id": "a4195329b39022ea1", "agent_type": "plugin-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:42:39.236604+00:00", "event": "subagent_start", "agent_id": "a3d4991d6ab93d22a", "agent_type": "provider-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:43:34.894781+00:00", "event": "subagent_stop", "agent_id": "ab900fc6d5c7c62f3", "agent_type": "ai-sdk-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-ab900fc6d5c7c62f3.jsonl"}
+{"timestamp": "2026-03-06T01:43:41.101559+00:00", "event": "subagent_stop", "agent_id": "a3d4991d6ab93d22a", "agent_type": "provider-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a3d4991d6ab93d22a.jsonl"}
+{"timestamp": "2026-03-06T01:44:36.888045+00:00", "event": "subagent_stop", "agent_id": "af312a563674ca060", "agent_type": "mcp-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-af312a563674ca060.jsonl"}
+{"timestamp": "2026-03-06T01:44:53.922182+00:00", "event": "subagent_stop", "agent_id": "a4195329b39022ea1", "agent_type": "plugin-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a4195329b39022ea1.jsonl"}
+{"timestamp": "2026-03-06T01:45:07.500333+00:00", "event": "subagent_stop", "agent_id": "a5087ef3957c5f004", "agent_type": "skill-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a5087ef3957c5f004.jsonl"}
+{"timestamp": "2026-03-06T01:45:27.341083+00:00", "event": "subagent_start", "agent_id": "a800d130760d3c9dd", "agent_type": "ai-sdk-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:45:33.151980+00:00", "event": "subagent_start", "agent_id": "a41642fcea44cf830", "agent_type": "mcp-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:45:33.256150+00:00", "event": "subagent_start", "agent_id": "add513d6a1dc3174d", "agent_type": "skill-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:45:33.649146+00:00", "event": "subagent_start", "agent_id": "aa08e780614d80886", "agent_type": "plugin-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:45:34.623802+00:00", "event": "subagent_start", "agent_id": "ad90a7945a51eca7c", "agent_type": "provider-analyst", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:51:29.634510+00:00", "event": "subagent_start", "agent_id": "aed62adb135f0093d", "agent_type": "xsai-cleaner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:51:40.575562+00:00", "event": "subagent_start", "agent_id": "a2011e536d0d93a3d", "agent_type": "tauri-cleaner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:51:55.135107+00:00", "event": "subagent_start", "agent_id": "a66cdb4ed5ca6a418", "agent_type": "brain-migrator", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:54:24.651165+00:00", "event": "subagent_stop", "agent_id": "a66cdb4ed5ca6a418", "agent_type": "brain-migrator", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a66cdb4ed5ca6a418.jsonl"}
+{"timestamp": "2026-03-06T01:54:24.702291+00:00", "event": "subagent_start", "agent_id": "a228237c428470b7c", "agent_type": "brain-migrator", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:54:33.362597+00:00", "event": "subagent_stop", "agent_id": "a228237c428470b7c", "agent_type": "brain-migrator", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a228237c428470b7c.jsonl"}
+{"timestamp": "2026-03-06T01:54:33.414424+00:00", "event": "subagent_start", "agent_id": "aca2c015a61abb04d", "agent_type": "brain-migrator", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T01:54:35.909031+00:00", "event": "subagent_stop", "agent_id": "aca2c015a61abb04d", "agent_type": "brain-migrator", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-aca2c015a61abb04d.jsonl"}
+{"timestamp": "2026-03-06T01:54:38.470914+00:00", "event": "subagent_start", "agent_id": "a17e6fa367ed9c55c", "agent_type": "brain-migrator", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:01:22.116253+00:00", "event": "subagent_stop", "agent_id": "a2011e536d0d93a3d", "agent_type": "tauri-cleaner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a2011e536d0d93a3d.jsonl"}
+{"timestamp": "2026-03-06T02:01:37.952495+00:00", "event": "subagent_start", "agent_id": "a4bad7a49085f20a3", "agent_type": "tauri-cleaner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:05:37.247867+00:00", "event": "subagent_stop", "agent_id": "aed62adb135f0093d", "agent_type": "xsai-cleaner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-aed62adb135f0093d.jsonl"}
+{"timestamp": "2026-03-06T02:05:37.298479+00:00", "event": "subagent_start", "agent_id": "ade1d77d56a92766a", "agent_type": "xsai-cleaner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:05:44.760248+00:00", "event": "subagent_stop", "agent_id": "ade1d77d56a92766a", "agent_type": "xsai-cleaner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-ade1d77d56a92766a.jsonl"}
+{"timestamp": "2026-03-06T02:05:44.803831+00:00", "event": "subagent_start", "agent_id": "a2f4e281bcd656381", "agent_type": "xsai-cleaner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:07:26.711632+00:00", "event": "subagent_start", "agent_id": "ab82d4d8d9f812700", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:07:27.987305+00:00", "event": "subagent_stop", "agent_id": "ab82d4d8d9f812700", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-ab82d4d8d9f812700.jsonl"}
+{"timestamp": "2026-03-06T02:07:50.606971+00:00", "event": "subagent_start", "agent_id": "a75b7d8a4310d7d4f", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:07:51.369461+00:00", "event": "subagent_stop", "agent_id": "a75b7d8a4310d7d4f", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a75b7d8a4310d7d4f.jsonl"}
+{"timestamp": "2026-03-06T02:08:07.515035+00:00", "event": "subagent_start", "agent_id": "ab325cf1897d616f6", "agent_type": "phase0-reviewer", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:08:24.578838+00:00", "event": "subagent_start", "agent_id": "aa584f48254300503", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:08:25.348445+00:00", "event": "subagent_stop", "agent_id": "aa584f48254300503", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-aa584f48254300503.jsonl"}
+{"timestamp": "2026-03-06T02:11:27.707132+00:00", "event": "subagent_start", "agent_id": "afd29288c1fedfe04", "agent_type": "brain-credentials", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:11:54.836663+00:00", "event": "subagent_start", "agent_id": "a2774ead87efad61b", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:11:55.521663+00:00", "event": "subagent_stop", "agent_id": "a2774ead87efad61b", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a2774ead87efad61b.jsonl"}
+{"timestamp": "2026-03-06T02:12:04.616667+00:00", "event": "subagent_start", "agent_id": "a8f7e75b8638bb608", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:12:05.413038+00:00", "event": "subagent_stop", "agent_id": "a8f7e75b8638bb608", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a8f7e75b8638bb608.jsonl"}
+{"timestamp": "2026-03-06T02:12:06.894033+00:00", "event": "subagent_stop", "agent_id": "ab325cf1897d616f6", "agent_type": "phase0-reviewer", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-ab325cf1897d616f6.jsonl"}
+{"timestamp": "2026-03-06T02:12:14.984516+00:00", "event": "subagent_start", "agent_id": "af384b5ace7bca061", "agent_type": "phase0-reviewer", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:15:10.442757+00:00", "event": "subagent_stop", "agent_id": "afd29288c1fedfe04", "agent_type": "brain-credentials", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-afd29288c1fedfe04.jsonl"}
+{"timestamp": "2026-03-06T02:15:10.487035+00:00", "event": "subagent_start", "agent_id": "a49362b94bb75e866", "agent_type": "brain-credentials", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:15:15.418217+00:00", "event": "subagent_stop", "agent_id": "a49362b94bb75e866", "agent_type": "brain-credentials", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a49362b94bb75e866.jsonl"}
+{"timestamp": "2026-03-06T02:15:17.977027+00:00", "event": "subagent_start", "agent_id": "ac4b7a979c3ee9538", "agent_type": "brain-credentials", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:15:45.474338+00:00", "event": "subagent_start", "agent_id": "a57a4d02e0859bd65", "agent_type": "frontend-credentials", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:18:25.644160+00:00", "event": "subagent_stop", "agent_id": "a57a4d02e0859bd65", "agent_type": "frontend-credentials", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a57a4d02e0859bd65.jsonl"}
+{"timestamp": "2026-03-06T02:18:32.258592+00:00", "event": "subagent_start", "agent_id": "acc54164bb327286e", "agent_type": "frontend-credentials", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:19:06.299844+00:00", "event": "subagent_start", "agent_id": "a0f6feb7c114c9e7d", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:19:07.311137+00:00", "event": "subagent_stop", "agent_id": "a0f6feb7c114c9e7d", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a0f6feb7c114c9e7d.jsonl"}
+{"timestamp": "2026-03-06T02:19:19.341983+00:00", "event": "subagent_start", "agent_id": "a0bf1fd1a6069b080", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:19:20.376585+00:00", "event": "subagent_stop", "agent_id": "a0bf1fd1a6069b080", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a0bf1fd1a6069b080.jsonl"}
+{"timestamp": "2026-03-06T02:26:27.470263+00:00", "event": "subagent_start", "agent_id": "ab54c885613b1255e", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:26:28.178499+00:00", "event": "subagent_stop", "agent_id": "ab54c885613b1255e", "agent_type": "flow-planner", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-ab54c885613b1255e.jsonl"}
+{"timestamp": "2026-03-06T02:27:04.099829+00:00", "event": "subagent_start", "agent_id": "a995b333ce8907255", "agent_type": "ws-transport", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:28:52.559261+00:00", "event": "subagent_stop", "agent_id": "aa1505b84ed15d0ed", "agent_type": "", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-aa1505b84ed15d0ed.jsonl"}
+{"timestamp": "2026-03-06T02:30:07.748681+00:00", "event": "subagent_start", "agent_id": "ac44aa62f99eb224e", "agent_type": "explore-capability", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:30:11.674628+00:00", "event": "subagent_start", "agent_id": "a8f34095d8888c6f4", "agent_type": "explore-config", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:30:13.415008+00:00", "event": "subagent_stop", "agent_id": "a995b333ce8907255", "agent_type": "ws-transport", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a995b333ce8907255.jsonl"}
+{"timestamp": "2026-03-06T02:31:35.037715+00:00", "event": "subagent_stop", "agent_id": "ac44aa62f99eb224e", "agent_type": "explore-capability", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-ac44aa62f99eb224e.jsonl"}
+{"timestamp": "2026-03-06T02:31:39.276816+00:00", "event": "subagent_stop", "agent_id": "a8f34095d8888c6f4", "agent_type": "explore-config", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a8f34095d8888c6f4.jsonl"}
+{"timestamp": "2026-03-06T02:45:53.745817+00:00", "event": "subagent_start", "agent_id": "abed5356431cc676f", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:46:00.272866+00:00", "event": "subagent_start", "agent_id": "aea4b17ceec24e2f4", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:47:24.325220+00:00", "event": "subagent_stop", "agent_id": "abed5356431cc676f", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-abed5356431cc676f.jsonl"}
+{"timestamp": "2026-03-06T02:47:28.658059+00:00", "event": "subagent_stop", "agent_id": "aea4b17ceec24e2f4", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-aea4b17ceec24e2f4.jsonl"}
+{"timestamp": "2026-03-06T02:50:16.194358+00:00", "event": "subagent_stop", "agent_id": "a2b3009a691dad421", "agent_type": "", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a2b3009a691dad421.jsonl"}
+{"timestamp": "2026-03-06T02:52:55.674921+00:00", "event": "subagent_start", "agent_id": "aa2c2496e05a2c752", "agent_type": "general-purpose", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:53:26.664399+00:00", "event": "subagent_start", "agent_id": "ac53c2c3bc3031074", "agent_type": "general-purpose", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T02:56:25.826414+00:00", "event": "subagent_stop", "agent_id": "aa2c2496e05a2c752", "agent_type": "general-purpose", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-aa2c2496e05a2c752.jsonl"}
+{"timestamp": "2026-03-06T02:57:43.162514+00:00", "event": "subagent_stop", "agent_id": "ac53c2c3bc3031074", "agent_type": "general-purpose", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-ac53c2c3bc3031074.jsonl"}
+{"timestamp": "2026-03-06T03:21:34.221799+00:00", "event": "subagent_start", "agent_id": "a9473f04196acf3e2", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T03:23:00.733785+00:00", "event": "subagent_stop", "agent_id": "a9473f04196acf3e2", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a9473f04196acf3e2.jsonl"}
+{"timestamp": "2026-03-06T03:23:50.352403+00:00", "event": "subagent_stop", "agent_id": "a4dbaa63e1709aea5", "agent_type": "", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a4dbaa63e1709aea5.jsonl"}
+{"timestamp": "2026-03-06T03:30:59.600193+00:00", "event": "subagent_start", "agent_id": "a8ac01b7b58bba7b1", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T03:32:27.983638+00:00", "event": "subagent_stop", "agent_id": "a8ac01b7b58bba7b1", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a8ac01b7b58bba7b1.jsonl"}
+{"timestamp": "2026-03-06T03:49:52.307085+00:00", "event": "subagent_stop", "agent_id": "a501f70595acd0cea", "agent_type": "", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a501f70595acd0cea.jsonl"}
+{"timestamp": "2026-03-06T04:29:01.240185+00:00", "event": "subagent_start", "agent_id": "afe19b4a727d9302c", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T04:30:21.782836+00:00", "event": "subagent_stop", "agent_id": "afe19b4a727d9302c", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-afe19b4a727d9302c.jsonl"}
+{"timestamp": "2026-03-06T04:38:08.738488+00:00", "event": "subagent_stop", "agent_id": "a946213817f4fd2f7", "agent_type": "", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a946213817f4fd2f7.jsonl"}
+{"timestamp": "2026-03-06T04:50:20.350065+00:00", "event": "subagent_start", "agent_id": "ae228ae7b0c8b9f7c", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T04:50:28.777223+00:00", "event": "subagent_start", "agent_id": "a7e0284b63092c286", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T04:50:38.242618+00:00", "event": "subagent_start", "agent_id": "a4a00a24024c3d372", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T04:51:59.301053+00:00", "event": "subagent_stop", "agent_id": "ae228ae7b0c8b9f7c", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-ae228ae7b0c8b9f7c.jsonl"}
+{"timestamp": "2026-03-06T04:52:09.829941+00:00", "event": "subagent_stop", "agent_id": "a7e0284b63092c286", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a7e0284b63092c286.jsonl"}
+{"timestamp": "2026-03-06T04:52:10.750883+00:00", "event": "subagent_stop", "agent_id": "a4a00a24024c3d372", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a4a00a24024c3d372.jsonl"}
+{"timestamp": "2026-03-06T05:05:32.634782+00:00", "event": "subagent_stop", "agent_id": "a2ad58c2acd824760", "agent_type": "", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a2ad58c2acd824760.jsonl"}
+{"timestamp": "2026-03-06T05:10:44.392170+00:00", "event": "subagent_start", "agent_id": "a17f016b331546374", "agent_type": "code-reviewer", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T05:12:37.331191+00:00", "event": "subagent_stop", "agent_id": "a17f016b331546374", "agent_type": "code-reviewer", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a17f016b331546374.jsonl"}
+{"timestamp": "2026-03-06T05:31:18.692290+00:00", "event": "subagent_start", "agent_id": "aa3a328dc648cbda4", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T05:31:22.257096+00:00", "event": "subagent_start", "agent_id": "aee79e115456f9bf6", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T05:31:28.930763+00:00", "event": "subagent_start", "agent_id": "ada2f8e32a28b605b", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7"}
+{"timestamp": "2026-03-06T05:31:55.127143+00:00", "event": "subagent_stop", "agent_id": "aee79e115456f9bf6", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-aee79e115456f9bf6.jsonl"}
+{"timestamp": "2026-03-06T05:32:32.479009+00:00", "event": "subagent_stop", "agent_id": "aa3a328dc648cbda4", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-aa3a328dc648cbda4.jsonl"}
+{"timestamp": "2026-03-06T05:33:20.775732+00:00", "event": "subagent_stop", "agent_id": "ada2f8e32a28b605b", "agent_type": "Explore", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-ada2f8e32a28b605b.jsonl"}
+{"timestamp": "2026-03-06T05:38:41.646135+00:00", "event": "subagent_stop", "agent_id": "a8012effc3f2a977b", "agent_type": "", "session_id": "ebd1af61-616b-49c9-92a8-6d89953594d7", "agent_transcript_path": "/Users/rocky243/.claude/projects/-Users-rocky243-testing-project-aiGFproject-anima/ebd1af61-616b-49c9-92a8-6d89953594d7/subagents/agent-a8012effc3f2a977b.jsonl"}

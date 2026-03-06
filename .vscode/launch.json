@@ -31,10 +31,10 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/plugins/airi-plugin-vscode"
+        "--extensionDevelopmentPath=${workspaceFolder}/plugins/anase-plugin-vscode"
       ],
       "outFiles": [
-        "${workspaceFolder}/plugins/airi-plugin-vscode/dist/**/*.cjs"
+        "${workspaceFolder}/plugins/anase-plugin-vscode/dist/**/*.cjs"
       ]
     }
   ],

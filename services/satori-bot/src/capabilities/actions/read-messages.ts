@@ -24,7 +24,7 @@ export const readMessagesAction: ActionHandler = {
       return {
         success: true,
         shouldContinue: true,
-        result: 'AIRI System: No unread messages found.',
+        result: 'Anase System: No unread messages found.',
       }
     }
 
@@ -41,7 +41,7 @@ export const readMessagesAction: ActionHandler = {
     return {
       success: true,
       shouldContinue: true,
-      result: `AIRI System: Read ${unreadEventsForThisChannel.length} unread events from channel ${channelId}:\n${formattedMessages}`,
+      result: `Anase System: Read ${unreadEventsForThisChannel.length} unread events from channel ${channelId}:\n${formattedMessages}`,
     }
   },
 }

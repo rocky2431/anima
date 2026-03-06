@@ -68,7 +68,7 @@ describe('store character', () => {
       name: 'Hero',
       version: '1.0',
       extensions: {
-        airi: {
+        anase: {
           agents: {},
           modules: {
             consciousness: {

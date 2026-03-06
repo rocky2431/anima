@@ -1,0 +1,122 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260220-201512-feat-task-23-integration-checkpoint-phase3-iter1-iter1",
+  "timestamp": "2026-02-21T03:15:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/stage-ui/src/stores/modules/phase3-checkpoint.integration.test.ts"
+    ],
+    "total_lines_analyzed": 1533,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 4, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "ContextMerger empty-sources error path untested",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 59,
+      "description": "The ContextMerger.merge() method throws 'At least one context source is required' when called with an empty array (context-merger.ts:138-139), and the constructor throws RangeError when maxSources < 1 (context-merger.ts:129-131). Neither error path is tested in this checkpoint file. These are guard clauses protecting correctness -- callers that accidentally pass empty sources or invalid config will silently break without test coverage proving the guards work.",
+      "code_snippet": "if (sources.length === 0) {\n  throw new Error('At least one context source is required')\n}",
+      "suggestion": "Add two tests: (1) `expect(() => merger.merge([])).rejects.toThrow('At least one context source')` and (2) `expect(() => new ContextMerger({ llm, maxSources: 0 })).toThrow(RangeError)`. These are pure guard validations and need no external dependencies.",
+      "claude_md_rule": "testing.coverage.error_paths"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "MCP server error paths untested for 3 of 4 handlers",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 149,
+      "description": "The MCP server source (anima-mcp-server.ts) has try/catch error handling in all 4 handlers: search_memories, get_daily_summary, user-context resource, and memories resource. Only search_memories has an error path test (line 124). The get_daily_summary tool, user-context resource, and memories resource all have catch blocks that format errors but are never exercised. If error formatting breaks (e.g., someone changes the error message format), there is no test to catch it.",
+      "code_snippet": "// Only search_memories error path is tested:\nit('handles search errors gracefully', async () => {\n  // ... tests searchMemories throwing\n})\n// Missing: get_daily_summary error, user-context resource error, memories resource error",
+      "suggestion": "Add error path tests for the remaining 3 handlers: (1) get_daily_summary when getDailySummary throws, (2) user-context resource when getUserContext throws, (3) memories resource when getRecentMemories throws. Each should verify isError=true (for tools) or error JSON content (for resources).",
+      "claude_md_rule": "testing.coverage.error_paths"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "ChannelRegistry.unregister() method has zero test coverage",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 267,
+      "description": "The ChannelRegistry class exposes an `unregister(platform)` public method (channel-registry.ts:57-59), but no test exercises it. The test file covers register, connect/disconnect, message routing, and defensive behaviors, but the unregister lifecycle is completely missing. This means re-registration after unregister, message routing after unregister, and listAll/getByPlatform after unregister are all unverified.",
+      "code_snippet": "unregister(platform: ChannelPlatform): void {\n  this.entries.delete(platform)\n  logger.log(`channel unregistered: ${platform}`)\n}",
+      "suggestion": "Add tests: (1) `registry.unregister('whatsapp')` then `registry.getByPlatform('whatsapp')` returns undefined, (2) After unregister, `listAll()` excludes the removed platform, (3) After unregister, messages from that channel no longer route to global handlers, (4) Re-registration of the same platform succeeds after unregister.",
+      "claude_md_rule": "testing.coverage.boundary_conditions"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "ContextMerger LLM failure during merge is untested",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 59,
+      "description": "The ContextMerger.merge() method wraps all LLM calls in a try/catch (context-merger.ts:142-169) that re-throws with context information: `Context merge failed (N sources, types=[...])`. No test verifies this error wrapping behavior. If the LLM provider throws during generateText, generateStructured, or entity extraction, the error should propagate with the enriched message.",
+      "code_snippet": "catch (cause) {\n  const sourceTypes = sources.map(s => s.source).join(',')\n  throw new Error(`Context merge failed (${sources.length} sources, types=[${sourceTypes}])`, { cause })\n}",
+      "suggestion": "Add a test with a StubLlmProvider that throws: `async generateText() { throw new Error('LLM unavailable') }`. Verify that `merger.merge(sources)` rejects with a message matching /Context merge failed.*sources/ and that the original error is preserved as `cause`.",
+      "claude_md_rule": "testing.coverage.error_paths"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "Proactive trigger boundary: no test for unrecognized intimacy stage",
+      "file": "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 267,
+      "description": "The `meetsIntimacyRequirement` function (proactive-trigger.ts:33-40) returns false when either stage is not found in INTIMACY_ORDER (indexOf returns -1). This defensive branch is never tested. If a new intimacy stage is added without updating INTIMACY_ORDER, or if an upstream caller passes an invalid string, this guard silently prevents triggers from firing -- a behavior worth verifying.",
+      "code_snippet": "export function meetsIntimacyRequirement(current: IntimacyStage, required: IntimacyStage): boolean {\n  const currentIdx = INTIMACY_ORDER.indexOf(current)\n  const requiredIdx = INTIMACY_ORDER.indexOf(required)\n  if (currentIdx === -1 || requiredIdx === -1) {\n    return false\n  }",
+      "suggestion": "Add a test: `expect(meetsIntimacyRequirement('unknown' as IntimacyStage, 'friend')).toBe(false)` and `expect(meetsIntimacyRequirement('friend', 'unknown' as IntimacyStage)).toBe(false)`. This documents the defensive behavior for invalid inputs.",
+      "claude_md_rule": "testing.coverage.boundary_conditions"
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "ChannelRegistry async global handler error swallowing is untested",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 142,
+      "description": "The ChannelRegistry.register() method (channel-registry.ts:40-51) catches both sync and async errors from global message handlers, logging them instead of propagating. This fault isolation behavior is critical -- a broken handler should not crash message routing for other handlers. But no test verifies that: (1) a throwing sync handler does not prevent other handlers from receiving messages, or (2) a rejecting async handler does not crash the system.",
+      "code_snippet": "channel.onMessage((msg: IncomingMessage) => {\n  for (const handler of this.globalHandlers) {\n    try {\n      const result = handler(msg)\n      if (result instanceof Promise) {\n        result.catch(err => logger...error('async global handler error'))\n      }\n    } catch (err) { ... }",
+      "suggestion": "Add a test: register a channel, add two global handlers where the first throws an Error, verify the second handler still receives the message. Add another test where the first handler returns a rejected Promise, verify second handler still receives the message.",
+      "claude_md_rule": "testing.coverage.error_paths"
+    }
+  ],
+  "positive_observations": [
+    "All test doubles for external boundaries (LLM, channel APIs, memory/context access) include '// Test Double rationale:' comments explaining why stubs are used instead of real services",
+    "Persona-engine proactive trigger tests are pure Functional Core tests with zero mocks -- direct instantiation and input/output verification, exactly as architecture prescribes",
+    "MCP hub tests use real MCP SDK InMemoryTransport for client-server communication, verifying actual MCP protocol serialization/deserialization rather than mocking the protocol layer",
+    "Stage-UI tests use createTestingPinia with stubActions: false, meaning real Pinia store actions execute -- not stubbed out",
+    "Channels-extra tests verify fault isolation: one failing channel does not prevent others from connecting/disconnecting, with specific error message verification",
+    "Context-engine tests verify entity deduplication (case-insensitive), importance averaging, source type labeling in LLM prompts, and recency-based source selection -- thorough behavioral coverage",
+    "All 11 proactive triggers are individually tested with specific input conditions, plus cross-cutting concerns (cooldown, intimacy gating, fullscreen suppression, priority ordering)"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

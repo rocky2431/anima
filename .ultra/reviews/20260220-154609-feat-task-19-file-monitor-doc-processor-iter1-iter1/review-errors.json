@@ -1,0 +1,127 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260220-154609-feat-task-19-file-monitor-doc-processor-iter1-iter1",
+  "timestamp": "2026-02-20T15:48:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/capture/folder-monitor.ts",
+      "packages/context-engine/src/processing/document-processor.ts",
+      "packages/context-engine/src/processing/text-chunker.ts",
+      "packages/context-engine/src/__tests__/document-processor.test.ts",
+      "packages/context-engine/src/__tests__/folder-monitor.test.ts"
+    ],
+    "total_lines_analyzed": 740,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 4, "P2": 1, "P3": 1 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch-io",
+      "title": "DocumentProcessor I/O methods have no try/catch around file reads",
+      "file": "packages/context-engine/src/processing/document-processor.ts",
+      "line": 49,
+      "line_end": 81,
+      "code_snippet": "private async extractPdf(filePath: string): Promise<DocumentExtractionResult> {\n    const buffer = await readFile(filePath)\n    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')\n    const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise",
+      "description": "extractPdf performs three fallible I/O operations (readFile, dynamic import, getDocument) with no try/catch. A corrupt PDF, missing file, or missing pdfjs-dist dependency will propagate a raw, untyped library error to the caller. The same pattern repeats in extractDocx (line 83), extractXlsx (line 96), and extractPlainText (line 128). All four extraction methods let raw Node.js/library errors escape without wrapping them in a domain-specific error that includes the filePath and operation context. This makes errors from these methods hard to debug -- the caller gets 'ENOENT: no such file or directory' without knowing which extraction step failed or for which document.",
+      "suggestion": "Wrap each extraction method body in try/catch and throw a typed error: `throw new Error(`Failed to extract ${documentType} from ${filePath}: ${error.message}`, { cause: error })`. Alternatively, create a DocumentProcessorError class to distinguish extraction failures from other errors.",
+      "claude_md_rule": "error_handling.required"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "resource-leak",
+      "title": "PDF doc.destroy() not in finally block -- resource leak on error",
+      "file": "packages/context-engine/src/processing/document-processor.ts",
+      "line": 54,
+      "line_end": 73,
+      "code_snippet": "const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise\n    ...\n    for (let i = 1; i <= pageCount; i++) {\n      const page = await doc.getPage(i)\n      ...\n    }\n    await doc.destroy()",
+      "description": "If any page extraction fails (getPage or getTextContent throws), doc.destroy() on line 73 is never called. The PDF document resource leaks. This is the classic try/finally pattern omission. In a long-running process (like a folder monitor that processes many files), leaked PDF document handles will accumulate.",
+      "suggestion": "Wrap the page extraction loop in try/finally: `const doc = await pdfjsLib.getDocument(...).promise; try { ... } finally { await doc.destroy() }`. This ensures cleanup regardless of whether page extraction succeeds.",
+      "claude_md_rule": "error_handling.required"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "partial-failure",
+      "title": "FolderMonitor.start() continues silently after failed watch subscriptions",
+      "file": "packages/context-engine/src/capture/folder-monitor.ts",
+      "line": 43,
+      "line_end": 75,
+      "code_snippet": "for (const dir of this.watchPaths) {\n      try {\n        const sub = await watcher.subscribe(dir, (err, events) => {\n          ...\n        })\n        this.subscriptions.push(sub)\n      }\n      catch (error) {\n        this.onError(new Error(`Failed to watch directory: ${dir}`, { cause: error }))\n      }\n    }",
+      "description": "When watcher.subscribe fails for a directory, the error is forwarded to onError but start() continues and eventually returns normally. If all directories fail, this.subscriptions will be empty, yet isRunning returns false and the caller has no signal that monitoring is completely non-functional. The error is reported via callback but start()'s Promise resolves successfully, so the caller has no way to await and detect total failure. This is the 'error-as-callback without status return' anti-pattern.",
+      "suggestion": "After the loop, check if zero subscriptions succeeded when watchPaths was non-empty: `if (this.subscriptions.length === 0) { throw new Error('Failed to watch any directory') }`. This surfaces total failure to the caller via the returned Promise. Partial failure can remain callback-based.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch-io",
+      "title": "Dynamic imports without try/catch produce cryptic module-not-found errors",
+      "file": "packages/context-engine/src/processing/document-processor.ts",
+      "line": 52,
+      "line_end": 52,
+      "code_snippet": "const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs') as typeof import('pdfjs-dist')",
+      "description": "Three dynamic imports (pdfjs-dist line 52, mammoth line 85, exceljs line 97) are not wrapped in try/catch. If any of these optional dependencies is not installed, the caller gets a raw 'ERR_MODULE_NOT_FOUND' error with no context about which document type requires which package. Since these are document-format-specific dependencies that may reasonably be absent in some deployments, the error should clearly explain the missing dependency.",
+      "suggestion": "Wrap each dynamic import and provide a helpful error: `const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs').catch(() => { throw new Error('pdfjs-dist is required for PDF extraction. Install it with: pnpm add pdfjs-dist') })`",
+      "claude_md_rule": "error_handling.required"
+    },
+    {
+      "id": "review-errors-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "callback-in-try",
+      "title": "FolderMonitor onChange callback errors attributed to watcher, not caller",
+      "file": "packages/context-engine/src/capture/folder-monitor.ts",
+      "line": 59,
+      "line_end": 67,
+      "code_snippet": "try {\n              this.onChange({\n                filePath: event.path,\n                type: event.type,\n              })\n            }\n            catch (callbackError) {\n              this.onError(new Error('FolderMonitor onChange callback failed', { cause: callbackError }))\n            }",
+      "description": "The onChange callback is wrapped in its own try/catch, which is an improvement over the pattern seen in ScreenshotPipeline and ActivityMonitor where callback errors were caught by a catch-all. However, the error message 'FolderMonitor onChange callback failed' does not include the filePath or event type that triggered the failure. This is the same 'error messages lack input context' pattern documented across this codebase. Including event context makes debugging significantly easier when processing many files.",
+      "suggestion": "Include event context in the error message: `new Error(`FolderMonitor onChange callback failed for ${event.path} (${event.type})`, { cause: callbackError })`",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-006",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "result-pattern-opportunity",
+      "title": "DocumentProcessor.extractText could use Result pattern for expected failures",
+      "file": "packages/context-engine/src/processing/document-processor.ts",
+      "line": 35,
+      "line_end": 47,
+      "code_snippet": "async extractText(filePath: string): Promise<DocumentExtractionResult> {\n    const documentType = DocumentProcessor.detectDocumentType(filePath)\n    if (documentType === null) {\n      throw new Error(`Unsupported document type: ${extname(filePath)} (file: ${filePath})`)\n    }",
+      "description": "extractText throws for expected operational errors (unsupported type, corrupt file, missing file). Since file processing failures are expected in a folder monitor pipeline (users will have unsupported files), a Result/Either pattern would let callers handle these as normal control flow without try/catch. This aligns with CLAUDE.md's Functional Core architecture guidance: 'Use Result/Either pattern for expected failures'.",
+      "suggestion": "Consider returning `Promise<Result<DocumentExtractionResult, DocumentProcessorError>>` where DocumentProcessorError distinguishes UnsupportedType, CorruptFile, FileNotFound, and DependencyMissing. This makes the caller's error handling explicit and type-checked.",
+      "claude_md_rule": "error_handling.classification"
+    }
+  ],
+  "positive_observations": [
+    "FolderMonitor requires onError (not optional) -- avoids the silent-swallow pattern seen in ScreenshotPipeline and ActivityMonitor",
+    "FolderMonitor wraps onChange callback in its own try/catch -- avoids the callback-in-try misattribution bug seen in 3 other codebase modules",
+    "text-chunker.ts is a pure function with proper input validation and descriptive error messages -- no I/O, no error handling needed",
+    "Error wrapping uses `new Error(msg, { cause })` consistently for error chain preservation",
+    "FolderMonitor.stop() handles per-subscription errors individually rather than using Promise.all, preventing one failure from blocking remaining cleanup",
+    "Tests cover error paths: unsupported type and non-existent file in document-processor.test.ts"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

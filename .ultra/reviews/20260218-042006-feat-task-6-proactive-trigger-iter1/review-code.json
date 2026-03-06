@@ -1,0 +1,163 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260218-042006-feat-task-6-proactive-trigger-iter1",
+  "timestamp": "2026-02-18T04:25:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/persona-engine/src/proactive-trigger.ts",
+      "packages/persona-engine/src/do-not-disturb.ts",
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/index.ts",
+      "packages/persona-engine/src/response-generator.ts",
+      "packages/persona-engine/src/__tests__/proactive-trigger.test.ts",
+      "packages/persona-engine/src/__tests__/do-not-disturb.test.ts",
+      "packages/persona-engine/src/__tests__/persona-engine.test.ts",
+      "packages/persona-engine/src/__tests__/response-generator.test.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts"
+    ],
+    "total_lines_analyzed": 1653,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 8,
+    "by_severity": { "P0": 0, "P1": 4, "P2": 3, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-exports",
+      "title": "DoNotDisturb module exported but never consumed by any caller",
+      "file": "packages/persona-engine/src/do-not-disturb.ts",
+      "line": 1,
+      "line_end": 137,
+      "code_snippet": "export { canTrigger, createDefaultConfig, createDoNotDisturbState,\n  isFrequencyExceeded, isInQuietHours, recordIgnore,\n  recordTrigger, recordUserInteraction } from './do-not-disturb'",
+      "description": "The entire do-not-disturb module (8 functions) is exported from the package index but no consumer in apps/ or any other package imports these functions. The app integration at apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts does not use canTrigger, recordTrigger, recordIgnore, or any DND function. This is orphan code with no live entry point. The evaluateTriggers function also does not internally call canTrigger, so the DND system is completely disconnected from the trigger evaluation pipeline.",
+      "suggestion": "Integrate canTrigger into the evaluate() function in apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts. Call canTrigger before evaluateTriggers and pass state.cooldownMultiplier as the cooldownMultiplier parameter. Store DoNotDisturbState alongside lastTriggerTimes and call recordTrigger/recordIgnore to close the loop.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "integration",
+      "subcategory": "orphan-triggers",
+      "title": "10 of 11 triggers exported but not wired to app entry point",
+      "file": "packages/persona-engine/src/index.ts",
+      "line": 27,
+      "line_end": 43,
+      "code_snippet": "export { ALL_TRIGGERS, evaluateTriggers, INTIMACY_ORDER,\n  meetsIntimacyRequirement, T01_MORNING_GREETING, T02_NOON_CARE,\n  T03_REST_REMINDER, T04_ENTERTAINMENT_SWITCH, T05_LATE_NIGHT,\n  T06_EVENING_SUMMARY, T07_IMPORTANT_DATE, T08_TASK_DUE,\n  T09_HIGH_FREQUENCY_SWITCH, T10_BIG_TASK_COMPLETE,\n  T11_RETURN_TO_DESKTOP } from './proactive-trigger'",
+      "description": "The app integration at apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts only imports T03_REST_REMINDER (line 16: `import { ..., T03_REST_REMINDER } from '@proj-airi/persona-engine'`) and passes `const triggers = [T03_REST_REMINDER]` (line 37). The 10 new triggers (T01, T02, T04-T11) and ALL_TRIGGERS are exported but have no consumer reachable from any entry point. These triggers are dead-on-arrival in production.",
+      "suggestion": "Update apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts to import ALL_TRIGGERS instead of just T03_REST_REMINDER, and pass it to evaluateTriggers. This wires all 11 triggers to the live Electron service.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "architecture",
+      "subcategory": "in-memory-state",
+      "title": "lastTriggerTimes and intimacy state held only in closure memory",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts",
+      "line": 35,
+      "line_end": 37,
+      "code_snippet": "let intimacy = createIntimacyState()\nconst lastTriggerTimes: Record<string, number> = {}\nconst triggers = [T03_REST_REMINDER]",
+      "description": "The persona-engine service stores lastTriggerTimes (trigger cooldown tracking), intimacy state, and now implicitly would need DoNotDisturbState in closure-scoped variables. These are lost on Electron process restart. Per CLAUDE.md architecture rules, critical state must be persistable and recoverable. Intimacy score (which affects which triggers can fire) and trigger history (which prevents notification spam) are business state that affects user experience.",
+      "suggestion": "Persist lastTriggerTimes and intimacy state to electron-store or a local SQLite database. Load on startup, save after each state change. This makes the persona engine restart-safe.",
+      "claude_md_rule": "architecture.forbidden_patterns.business_state_in_memory"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "architecture",
+      "subcategory": "hardcoded-config",
+      "title": "ENTERTAINMENT_APPS hardcoded as static set, not configurable",
+      "file": "packages/persona-engine/src/proactive-trigger.ts",
+      "line": 40,
+      "line_end": 51,
+      "code_snippet": "const ENTERTAINMENT_APPS = new Set([\n  'YouTube', 'Netflix', 'Spotify', 'Bilibili',\n  'Steam', 'Discord', 'Twitter', 'TikTok',\n  'WeChat', 'Telegram',\n])",
+      "description": "The entertainment app list is hardcoded as a module-level constant. It uses exact string matching against app names, which is both fragile (app names vary by OS, locale, and version -- e.g., 'Google Chrome' vs 'Chrome') and not user-configurable. Discord and WeChat are classified as 'entertainment' but are commonly used for work communication. Users have no way to customize this classification. Additionally, T04 uses exact case-sensitive Set.has() matching, so 'youtube' or 'YOUTUBE' would not match.",
+      "suggestion": "Accept the entertainment app list as a configuration parameter (similar to DoNotDisturbConfig). Use case-insensitive matching. Consider allowing per-user overrides. At minimum, document that app names must match exactly.",
+      "claude_md_rule": "forbidden_patterns.hardcoded_config"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "response-coverage",
+      "title": "Only rest-reminder has response templates; 10 triggers have no templates",
+      "file": "packages/persona-engine/src/response-generator.ts",
+      "line": 6,
+      "line_end": 15,
+      "code_snippet": "const RESPONSE_TEMPLATES: Record<string, Partial<Record<EmotionState, string>>> = {\n  'rest-reminder': {\n    caring: '...',\n    idle: '...',\n    ...\n  },\n}",
+      "description": "RESPONSE_TEMPLATES only contains entries for 'rest-reminder'. When any of the 10 new triggers fire (morning-greeting, noon-care, entertainment-switch, late-night-work, evening-summary, important-date, task-due, high-frequency-switch, big-task-complete, return-to-desktop), generateResponse will fall through to DEFAULT_MESSAGE which is a generic Chinese string. This means all 10 new triggers produce identical, context-free messages, making the trigger-specific behavior meaningless to the user.",
+      "suggestion": "Add at least one template per trigger name in RESPONSE_TEMPLATES. Even a single emotion variant per trigger would provide meaningful differentiation. Alternatively, accept templates as a parameter to make the response generator extensible.",
+      "claude_md_rule": "code_quality"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "integration",
+      "subcategory": "missing-trigger-event-map",
+      "title": "TRIGGER_EVENT_MAP only maps rest-reminder; new triggers have no emotion events",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts",
+      "line": 24,
+      "line_end": 26,
+      "code_snippet": "const TRIGGER_EVENT_MAP: Record<string, EmotionEvent> = {\n  'rest-reminder': { type: 'TRIGGER_CONCERN' },\n}",
+      "description": "The TRIGGER_EVENT_MAP in the app integration service only handles 'rest-reminder'. When T01-T02 or T04-T11 fire, the event lookup at line 53 (`const event = TRIGGER_EVENT_MAP[result.triggerName]`) returns undefined, so emotionActor.send() is skipped. The emotion machine never transitions based on these new triggers. However, TriggerResult now includes suggestedEmotion which could drive the emotion transition but is not used by the integration service.",
+      "suggestion": "Either expand TRIGGER_EVENT_MAP to cover all 11 trigger names, or use result.suggestedEmotion to dynamically derive the emotion event instead of relying on a static map.",
+      "claude_md_rule": "integration.contract_first"
+    },
+    {
+      "id": "review-code-007",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "duplicated-constants",
+      "title": "ONE_HOUR_MS and TWENTY_FOUR_HOURS_MS duplicated across modules",
+      "file": "packages/persona-engine/src/proactive-trigger.ts",
+      "line": 10,
+      "line_end": 16,
+      "code_snippet": "const ONE_HOUR_MS = 60 * 60 * 1000\nconst THIRTY_MINUTES_MS = 30 * 60 * 1000\nconst TWENTY_FOUR_HOURS_MS = 24 * ONE_HOUR_MS",
+      "description": "The constants ONE_HOUR_MS and TWENTY_FOUR_HOURS_MS are defined identically in both proactive-trigger.ts (lines 10, 16) and do-not-disturb.ts (lines 3-4). This duplication creates a maintenance risk where one could be updated without the other.",
+      "suggestion": "Extract shared time constants to a common location (e.g., a constants.ts file in the persona-engine package) and import them in both modules.",
+      "claude_md_rule": "code_quality"
+    },
+    {
+      "id": "review-code-008",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "code-quality",
+      "subcategory": "input-validation",
+      "title": "TriggerInput fields lack boundary validation",
+      "file": "packages/persona-engine/src/proactive-trigger.ts",
+      "line": 244,
+      "line_end": 277,
+      "code_snippet": "export function evaluateTriggers(\n  input: TriggerInput,\n  triggers: TriggerCondition[],\n  lastTriggerTimes: Record<string, number>,\n  now: number,\n  cooldownMultiplier: number = 1.0,\n): TriggerResult {",
+      "description": "evaluateTriggers and individual trigger check functions do not validate that input fields are within expected ranges (e.g., currentHour should be 0-23, currentMinute 0-59, cooldownMultiplier > 0). While this is pure domain logic called from trusted internal code, a negative cooldownMultiplier or currentHour of -1 would produce incorrect results silently. This is low severity since TriggerInput is constructed internally.",
+      "suggestion": "Consider adding a debug-mode assertion or Valibot schema validation for TriggerInput at the boundary where it is constructed (in the app integration layer), not inside the pure function itself.",
+      "claude_md_rule": "security.input_validation"
+    }
+  ],
+  "positive_observations": [
+    "Excellent Functional Core design: all trigger conditions are pure functions with no side effects, making them trivially testable via direct instantiation with no mocks needed.",
+    "Discriminated union TriggerResult type makes illegal states unrepresentable -- good type design.",
+    "DoNotDisturb module uses immutable state pattern correctly: every mutation returns a new state object, enabling easy persistence and time-travel debugging.",
+    "Comprehensive boundary-value testing for all 11 triggers, including edge cases for time ranges (inclusive/exclusive bounds).",
+    "Clean separation of concerns: trigger evaluation, DND policy, emotion mapping, and response generation are each in their own module with clear single responsibilities.",
+    "TriggerInput uses readonly properties throughout, preventing accidental mutation.",
+    "The cooldownMultiplier parameter elegantly connects the DND backoff system to the trigger evaluation without coupling the modules directly."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 12
+  }
+}

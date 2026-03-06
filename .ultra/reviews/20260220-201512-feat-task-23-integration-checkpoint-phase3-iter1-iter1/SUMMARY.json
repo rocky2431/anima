@@ -1,0 +1,459 @@
+{
+  "session": "20260220-201512-feat-task-23-integration-checkpoint-phase3-iter1-iter1",
+  "timestamp": "2026-02-21T04:30:00Z",
+  "verdict": "COMMENT",
+  "summary": "Review complete: 25 findings (P0:0 P1:2 P2:15 P3:8). P1 test coverage gaps fixed. Remaining P1s are architectural scope observations.",
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "subcategory": "orphan-package",
+      "title": "channels-extra package has no app-level consumer",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 1,
+      "line_end": 304,
+      "code_snippet": "import { ChannelRegistry } from '../channel-registry'",
+      "description": "The checkpoint test verifies ChannelRegistry orchestration across all 5 channel types, but the channels-extra package is not declared as a dependency by any app (apps/stage-tamagotchi, apps/stage-web, apps/server, etc.). No package.json in apps/ references @proj-airi/channels-extra. This means the ChannelRegistry and all 5 channel implementations (WhatsApp, Slack, Email, Feishu, DingTalk) are orphan code with no live entry point. The checkpoint test validates internal consistency but cannot prove end-to-end reachability.",
+      "suggestion": "Wire channels-extra into an app entry point (e.g., apps/stage-tamagotchi DI container or apps/server) so the ChannelRegistry is instantiated and channels are registered from a live handler/listener. Until then, this entire package is dead-on-arrival code that passes tests but serves no runtime purpose.",
+      "claude_md_rule": "integration.orphan_detection",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 80,
+      "category": "integration",
+      "subcategory": "horizontal-only-checkpoint",
+      "title": "Checkpoint tests verify 5 packages in isolation, no cross-package test",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 1,
+      "line_end": 275,
+      "code_snippet": "describe('phase 3 checkpoint: multi-source context merging', () => {",
+      "description": "The Phase 3 checkpoint creates 5 separate test files, each testing one package in isolation: channels-extra (ChannelRegistry), context-engine (ContextMerger), mcp-hub (AnimaMcpServer), persona-engine (evaluateTriggers), and stage-ui (Pinia stores). None of these tests verify the cross-package data flow that Phase 3 is supposed to prove. For example: (1) ContextMerger output is never fed to persona-engine's evaluateTriggers, (2) MCP server's memoryAccess/contextAccess stubs never connect to real context-engine stores, (3) UI stores never receive data from any backend service. This is a horizontal checkpoint (validate each layer) rather than a vertical integration proof.",
+      "suggestion": "Add at least one cross-package integration test that proves the Phase 3 data flow end-to-end: e.g., ContextMerger produces MergedContext -> that context feeds evaluateTriggers -> trigger result is observable. Or: MCP server wired to real context-engine functions (not stubs) to prove the contract. A true checkpoint should verify the connections, not just the components.",
+      "claude_md_rule": "integration.vertical_slice",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-tests-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "[FIXED] ContextMerger error paths untested (empty sources + LLM failure)",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 59,
+      "code_snippet": "if (sources.length === 0) {\n  throw new Error('At least one context source is required')\n}\ncatch (cause) {\n  throw new Error(`Context merge failed (${sources.length} sources, types=[${sourceTypes}])`, { cause })\n}",
+      "description": "Two critical error paths in ContextMerger.merge() are untested: (1) The empty-sources guard clause (context-merger.ts:138-139) throws 'At least one context source is required', and the constructor RangeError for maxSources < 1 (context-merger.ts:129-131) -- neither is exercised. (2) The LLM failure path (context-merger.ts:142-169) wraps all LLM errors with context information ('Context merge failed (N sources, types=[...])') but no test verifies this error wrapping. If the LLM provider throws during generateText/generateStructured, the enriched error message and cause chain are unverified.",
+      "suggestion": "Add three tests: (1) `expect(() => merger.merge([])).rejects.toThrow('At least one context source')`, (2) `expect(() => new ContextMerger({ llm, maxSources: 0 })).toThrow(RangeError)`, (3) A test with a StubLlmProvider that throws, verifying merger.merge(sources) rejects with /Context merge failed.*sources/ and the original error preserved as `cause`.",
+      "claude_md_rule": "testing.coverage.error_paths",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "[FIXED] MCP server error paths untested for 3 of 4 handlers",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 149,
+      "code_snippet": "// Only search_memories error path is tested:\nit('handles search errors gracefully', async () => {\n  // ... tests searchMemories throwing\n})\n// Missing: get_daily_summary error, user-context resource error, memories resource error",
+      "description": "The MCP server source (anima-mcp-server.ts) has try/catch error handling in all 4 handlers: search_memories, get_daily_summary, user-context resource, and memories resource. Only search_memories has an error path test (line 124). The get_daily_summary tool, user-context resource, and memories resource all have catch blocks that format errors but are never exercised. If error formatting breaks (e.g., someone changes the error message format), there is no test to catch it.",
+      "suggestion": "Add error path tests for the remaining 3 handlers: (1) get_daily_summary when getDailySummary throws, (2) user-context resource when getUserContext throws, (3) memories resource when getRecentMemories throws. Each should verify isError=true (for tools) or error JSON content (for resources).",
+      "claude_md_rule": "testing.coverage.error_paths",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "architecture",
+      "subcategory": "in-memory-state-no-persistence",
+      "title": "UI stores checkpoint validates only ephemeral in-memory state",
+      "file": "packages/stage-ui/src/stores/modules/phase3-checkpoint.integration.test.ts",
+      "line": 59,
+      "line_end": 336,
+      "code_snippet": "describe('phase 3 checkpoint: UI stores coherence', () => {\n  beforeEach(() => {\n    const pinia = createTestingPinia({ createSpy: vi.fn, stubActions: false })\n    setActivePinia(pinia)\n  })",
+      "description": "The checkpoint verifies that 4 Pinia stores (memory, todo, activity, skills) coexist and support CRUD operations, but all data lives in Vue refs with no persistence layer. setMemories/addTodo/setActivities/setSkills all write to in-memory arrays that are lost on page refresh or app restart. The checkpoint does not test any data fetch from a backend or persistence round-trip. This was already flagged in task-21 review but the checkpoint perpetuates the gap by validating the ephemeral-only behavior as sufficient.",
+      "suggestion": "At minimum, document in the test description that persistence is deferred. Ideally, add a test that verifies the store can be hydrated from a backend fetch function (even if stubbed), proving the store API supports backend integration rather than purely in-memory CRUD.",
+      "claude_md_rule": "architecture.data_persistence",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "integration",
+      "subcategory": "missing-contract-test",
+      "title": "MCP server checkpoint uses stubs instead of real context-engine",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 23,
+      "line_end": 58,
+      "code_snippet": "function createStubDeps(overrides?: Partial<AnimaMcpServerDeps>): AnimaMcpServerDeps {\n  const memories: MemoryResult[] = [\n    makeMemoryResult({ content: 'User loves TypeScript', category: 'preference' }),\n    ...\n  ]",
+      "description": "The AnimaMcpServerDeps interface (memoryAccess, contextAccess) defines the contract between mcp-hub and context-engine. The checkpoint test creates stub implementations of these interfaces but never validates that context-engine's actual implementations (DocumentStore, VectorStore, ReportGenerator) satisfy the same contract. If context-engine changes its API shape, these tests will still pass while runtime breaks. The Test Double rationale comment acknowledges the boundary, but a Phase 3 checkpoint should prove the boundary works.",
+      "suggestion": "Add a contract test that instantiates the real context-engine implementations (or a thin wrapper) and validates they satisfy AnimaMemoryAccess and AnimaContextAccess interfaces. This could be a compile-time check (type assertion) combined with a minimal runtime call to prove the shape matches.",
+      "claude_md_rule": "integration.contract_first",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 76,
+      "category": "code-quality",
+      "subcategory": "duplicate-test-coverage",
+      "title": "Checkpoint tests substantially duplicate existing unit tests",
+      "file": "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 38,
+      "line_end": 357,
+      "code_snippet": "describe('phase 3 checkpoint: proactive trigger system', () => {\n  // ... tests for all 11 triggers, cooldown, intimacy gating\n  // Same coverage as persona-engine.test.ts and proactive-trigger.test.ts",
+      "description": "The persona-engine checkpoint test (357 lines) re-tests all 11 triggers, cooldown management, intimacy gating, fullscreen suppression, and priority ordering. These scenarios are already covered in packages/persona-engine/src/__tests__/proactive-trigger.test.ts and persona-engine.test.ts. Similarly, the channels-extra checkpoint duplicates channel-registry.test.ts, and the context-engine checkpoint duplicates context-merger.test.ts. For a checkpoint, the value should be in proving cross-boundary integration, not repeating unit-level coverage.",
+      "suggestion": "Refocus checkpoint tests on cross-boundary assertions: Does the ContextMerger output feed correctly into evaluateTriggers? Does the MCP server correctly expose context-engine data? Does the UI store correctly display data from a simulated backend event? Remove duplicated unit-level tests from checkpoint files to keep them focused on integration proof.",
+      "claude_md_rule": "testing.integration",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "ChannelRegistry.unregister() method has zero test coverage",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 267,
+      "code_snippet": "unregister(platform: ChannelPlatform): void {\n  this.entries.delete(platform)\n  logger.log(`channel unregistered: ${platform}`)\n}",
+      "description": "The ChannelRegistry class exposes an `unregister(platform)` public method (channel-registry.ts:57-59), but no test exercises it. The test file covers register, connect/disconnect, message routing, and defensive behaviors, but the unregister lifecycle is completely missing. This means re-registration after unregister, message routing after unregister, and listAll/getByPlatform after unregister are all unverified.",
+      "suggestion": "Add tests: (1) `registry.unregister('whatsapp')` then `registry.getByPlatform('whatsapp')` returns undefined, (2) After unregister, `listAll()` excludes the removed platform, (3) After unregister, messages from that channel no longer route to global handlers, (4) Re-registration of the same platform succeeds after unregister.",
+      "claude_md_rule": "testing.coverage.boundary_conditions",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "Proactive trigger boundary: no test for unrecognized intimacy stage",
+      "file": "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 267,
+      "code_snippet": "export function meetsIntimacyRequirement(current: IntimacyStage, required: IntimacyStage): boolean {\n  const currentIdx = INTIMACY_ORDER.indexOf(current)\n  const requiredIdx = INTIMACY_ORDER.indexOf(required)\n  if (currentIdx === -1 || requiredIdx === -1) {\n    return false\n  }",
+      "description": "The `meetsIntimacyRequirement` function (proactive-trigger.ts:33-40) returns false when either stage is not found in INTIMACY_ORDER (indexOf returns -1). This defensive branch is never tested. If a new intimacy stage is added without updating INTIMACY_ORDER, or if an upstream caller passes an invalid string, this guard silently prevents triggers from firing -- a behavior worth verifying.",
+      "suggestion": "Add a test: `expect(meetsIntimacyRequirement('unknown' as IntimacyStage, 'friend')).toBe(false)` and `expect(meetsIntimacyRequirement('friend', 'unknown' as IntimacyStage)).toBe(false)`. This documents the defensive behavior for invalid inputs.",
+      "claude_md_rule": "testing.coverage.boundary_conditions",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "ChannelRegistry async global handler error swallowing is untested",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 142,
+      "code_snippet": "channel.onMessage((msg: IncomingMessage) => {\n  for (const handler of this.globalHandlers) {\n    try {\n      const result = handler(msg)\n      if (result instanceof Promise) {\n        result.catch(err => logger...error('async global handler error'))\n      }\n    } catch (err) { ... }",
+      "description": "The ChannelRegistry.register() method (channel-registry.ts:40-51) catches both sync and async errors from global message handlers, logging them instead of propagating. This fault isolation behavior is critical -- a broken handler should not crash message routing for other handlers. But no test verifies that: (1) a throwing sync handler does not prevent other handlers from receiving messages, or (2) a rejecting async handler does not crash the system.",
+      "suggestion": "Add a test: register a channel, add two global handlers where the first throws an Error, verify the second handler still receives the message. Add another test where the first handler returns a rejected Promise, verify second handler still receives the message.",
+      "claude_md_rule": "testing.coverage.error_paths",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-errors-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "resource-leak-in-test",
+      "title": "Sequential cleanup in test helper leaks server on client.close() failure",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 71,
+      "line_end": 74,
+      "code_snippet": "cleanup: async () => {\n  await client.close()\n  await server.close()\n}",
+      "description": "The createConnectedPair helper's cleanup function calls client.close() then server.close() sequentially without try/finally. If client.close() throws, server.close() is never called, leaving the MCP server transport open. Every test in this file uses this helper via try/finally, so a single flaky close would leak the server and potentially hang the test suite. This is the same sequential-cleanup-in-single-block pattern previously found in McpHub.shutdown() (fixed in iter2) and Email.disconnect().",
+      "suggestion": "Wrap cleanup in try/finally to guarantee both close calls execute:\n\ncleanup: async () => {\n  try { await client.close() } finally { await server.close() }\n}",
+      "claude_md_rule": "error_handling.rules",
+      "reported_by": [
+        "review-errors"
+      ]
+    },
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "Repeated `as ChannelConfig` casts bypass discriminated union validation",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 82,
+      "line_end": 294,
+      "code_snippet": "registry.register(channel, { platform } as ChannelConfig)",
+      "description": "Encapsulation: 7/10, Expression: 3/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.5). ChannelConfig is a proper discriminated union (WhatsAppConfig | SlackConfig | EmailConfig | FeishuConfig | DingTalkConfig), each variant requiring platform-specific fields (authDir, botToken, appId, etc.). The test casts bare `{ platform }` objects as ChannelConfig 11 times, creating objects that satisfy none of the union variants. This defeats the discriminated union's purpose of preventing invalid config states. If ChannelRegistry.register() ever validates config fields, these tests will silently produce wrong results instead of catching the missing fields at compile time.",
+      "suggestion": "Create platform-specific config factory functions that produce valid config objects for each variant. For example: `function makeWhatsAppConfig(): WhatsAppConfig { return { platform: 'whatsapp', authDir: '/tmp/test-auth' } }`. This ensures tests exercise the actual discriminated union and catch regressions in config validation.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "Repeated `as Array<{type, text}>` casts on MCP SDK response content",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 91,
+      "line_end": 231,
+      "code_snippet": "const textContent = result.content as Array<{ type: string, text: string }>",
+      "description": "Encapsulation: N/A, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.0). The MCP SDK Client.callTool() returns a typed result with `content` field. The test casts this to `Array<{ type: string, text: string }>` 6 times and also uses `text as string` cast once (line 203). These casts bypass the SDK's actual content type structure and could mask shape mismatches if the SDK version changes. The `type` field should use the SDK's literal union ('text' | 'image' | 'resource') rather than widening to `string`.",
+      "suggestion": "Extract a helper function that narrows the type safely: `function extractText(content: unknown): string { const items = content as Array<{type: string, text?: string}>; const first = items.find(i => i.type === 'text'); if (!first?.text) throw new Error('Expected text content'); return first.text; }`. This centralizes the cast and adds a runtime guard.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "MemoryResult.category is plain `string` -- misses literal union opportunity",
+      "file": "packages/mcp-hub/src/anima-mcp-server.ts",
+      "line": 7,
+      "line_end": 12,
+      "code_snippet": "export interface MemoryResult {\n  content: string\n  importance: number\n  category: string\n  sourceDate: string\n}",
+      "description": "Encapsulation: 5/10, Expression: 4/10, Usefulness: 6/10, Enforcement: 4/10 (Aggregate: 4.75). MemoryResult.category is typed as plain `string` while the UI layer (stage-ui) already defines `MemoryCategory = 'preference' | 'event' | 'habit' | 'goal' | 'emotion'` as a literal union. The test creates stubs with category values ('preference', 'event', 'habit') that match MemoryCategory but the type system cannot verify this. Similarly, `sourceDate` is plain `string` with YYYY-MM-DD semantics and `importance` is a bare `number` with implicit 0-10 range. The interface has no readonly modifiers.",
+      "suggestion": "Define a shared MemoryCategory literal union (or import from context-engine where it originates) and use it for the category field: `category: MemoryCategory`. Add `readonly` modifiers to all fields since MemoryResult is a query output that should not be mutated.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "repeated-boilerplate",
+      "title": "Repeated try/finally cleanup pattern across 8 test cases",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 82,
+      "line_end": 261,
+      "code_snippet": "try {\n  const result = await client.callTool({ ... })\n  expect(result.content).toBeDefined()\n  // ... assertions ...\n}\nfinally {\n  await cleanup()\n}",
+      "description": "Every test in this file wraps its body in an identical try/finally block calling await cleanup(). This pattern is repeated 8 times across 180 lines. The cleanup logic (closing client and server) is a natural fit for afterEach, which Vitest already supports and which would eliminate the boilerplate entirely while also ensuring cleanup runs even if the test setup fails after createConnectedPair.",
+      "suggestion": "BEFORE:\nasync function createConnectedPair(deps) {\n  // ...setup...\n  return { client, server, cleanup: async () => { ... } }\n}\n\nit('test', async () => {\n  const { client, cleanup } = await createConnectedPair(deps)\n  try {\n    // assertions\n  } finally {\n    await cleanup()\n  }\n})\n\nAFTER:\nlet client: Client\nlet server: Server\n\nasync function connectPair(deps: AnimaMcpServerDeps) {\n  const s = createAnimaMcpServer(deps)\n  const c = new Client({ name: 'test-client', version: '1.0.0' })\n  const [ct, st] = InMemoryTransport.createLinkedPair()\n  await Promise.all([c.connect(ct), s.connect(st)])\n  client = c\n  server = s\n}\n\nafterEach(async () => {\n  await client?.close()\n  await server?.close()\n})\n\nit('test', async () => {\n  await connectPair(createStubDeps())\n  // assertions directly, no try/finally\n})\n\nWHY: Eliminates 8 identical try/finally blocks (~40 lines of boilerplate). afterEach is the idiomatic Vitest pattern for resource cleanup.",
+      "reported_by": [
+        "review-simplify"
+      ]
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "simplification",
+      "subcategory": "repeated-setup",
+      "title": "Near-duplicate registry+channels setup across 5 test cases",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 76,
+      "line_end": 152,
+      "code_snippet": "const registry = new ChannelRegistry()\nconst platforms: ChannelPlatform[] = ['whatsapp', 'slack', 'email', 'feishu', 'dingtalk']\nconst channels: Channel[] = []\nfor (const platform of platforms) {\n  const channel = createStubChannel(platform)\n  channels.push(channel)\n  registry.register(channel, { platform } as ChannelConfig)\n}",
+      "description": "The pattern of creating a ChannelRegistry, defining the 5 platforms array, creating stub channels, and registering them is repeated nearly identically in 5 tests (lines 77-84, 93-102, 117-126, 143-152, 196-203). The variation is small: some tests need the channels array, some need a Map. A shared helper would reduce duplication without sacrificing readability.",
+      "suggestion": "Extract into a single helper: `function createRegistryWithAllChannels()` that returns `{ registry, channels, platforms }`. Tests become one-liner setup calls.",
+      "reported_by": [
+        "review-simplify"
+      ]
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "long-test-case",
+      "title": "Single test case spans 78 lines with 15+ assertions",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 61,
+      "line_end": 139,
+      "code_snippet": "it('merges all 3 source types into a valid MergedContext', async () => {\n  // ... 78 lines of setup + 15 assertions\n})",
+      "description": "This test verifies structure, source count, entity deduplication, keyword deduplication, importance averaging, and activity classification -- all in one 78-line test. While it is an integration checkpoint (so breadth is intentional), the test is harder to diagnose on failure because a single failure message does not indicate which aspect broke. Consider splitting into 3-4 focused tests.",
+      "suggestion": "Split into focused tests: (1) structure validation, (2) entity deduplication, (3) keyword deduplication, (4) importance/activity classification. Share setup via const or beforeEach.",
+      "reported_by": [
+        "review-simplify"
+      ]
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "json-parse-without-context",
+      "title": "JSON.parse on MCP response content without descriptive assertion wrapper",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 94,
+      "line_end": 94,
+      "code_snippet": "const parsed = JSON.parse(textContent[0].text)",
+      "description": "Multiple JSON.parse calls (lines 94, 116, 203, 231) parse MCP server response text without try/catch or a descriptive wrapper. If the server returns malformed JSON, the test fails with a generic SyntaxError rather than a clear message like 'search_memories returned non-JSON: <actual text>'. This hampers debuggability when tests break.",
+      "suggestion": "Consider a small helper: `function parseJsonResponse(content, label) { try { return JSON.parse(text) } catch { throw new Error(`${label} returned invalid JSON: ${text.slice(0, 200)}`) } }`",
+      "reported_by": [
+        "review-errors"
+      ]
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "StubLlmProvider uses `as T` generic cast in generateStructured",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 43,
+      "line_end": 44,
+      "code_snippet": "return this.entityResponse as T\nreturn this.activityResponse as T",
+      "description": "Encapsulation: 7/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 5/10 (Aggregate: 5.75). The StubLlmProvider.generateStructured<T>() method returns canned responses cast via `as T`. This is a necessary pattern for test doubles implementing generic interfaces. The Test Double rationale comment is present and justified. Severity is low because this is test infrastructure, not production code.",
+      "suggestion": "No immediate action needed. This is an acceptable test double pattern. The root cause (unconstrained generic T on LlmProvider.generateStructured) was previously flagged on the production interface.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-comments-001",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Redundant comment restates what the next assertion already proves",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 111,
+      "code_snippet": "// All channels should now be connected\nfor (const channel of channels) {\n  expect(channel.status).toBe('connected')\n}",
+      "description": "The comment 'All channels should now be connected' adds no information beyond what the assertion `expect(channel.status).toBe('connected')` already communicates. In a test file, the assertion IS the documentation of expected behavior.",
+      "suggestion": "Remove the comment. The test description and assertion together are sufficient documentation.",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Multiple low-ROI inline comments in context-engine test",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 95,
+      "line_end": 137,
+      "code_snippet": "// Verify complete MergedContext structure\n...\n// All 3 sources contributed\n...\n// Activity type classified",
+      "description": "Lines 95, 113, and 137 restate what the immediately following assertion already expresses. In contrast, line 116 ('Entities from all sources deduplicated: VS Code appears in screenshot + activity -> once') is excellent because it explains the deduplication logic.",
+      "suggestion": "Remove comments on lines 95, 113, and 137. Keep valuable comments like line 116 (deduplication explanation) and line 134 (importance calculation formula).",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Duplicate ordering comment in persona-engine trigger test",
+      "file": "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 325,
+      "code_snippet": "// T07 should be evaluated before T08\nexpect(result.triggerId).toBe('T07')",
+      "description": "Line 325 is redundant with the more detailed comment block on lines 314-315 which already explains the ordering rationale.",
+      "suggestion": "Remove the comment on line 325. The block comment on lines 314-315 already fully explains the ordering expectation.",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "comments",
+      "subcategory": "negative-roi-comments",
+      "title": "Pattern of 14 redundant one-line comments in stage-ui test",
+      "file": "packages/stage-ui/src/stores/modules/phase3-checkpoint.integration.test.ts",
+      "line": 77,
+      "line_end": 329,
+      "code_snippet": "// All start empty\n...\n// Reset one store\n...\n// Populate all\n// Reset all\n// All empty",
+      "description": "This file has 14+ short comments that restate the code: '// All start empty', '// Reset one store', '// Populate all', '// Reset all', '// All empty'. Each restates what the next 1-2 lines of code clearly express.",
+      "suggestion": "Remove the redundant one-liners. Keep the CRUD-phase labels (Create/Read/Select/Delete) as lightweight section headers and keep comments that explain non-obvious behavior.",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "comments",
+      "subcategory": "redundant-comment",
+      "title": "Redundant comment before self-describing for loop",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 159,
+      "code_snippet": "// Send a message from each platform\nfor (const [platform, channel] of channels) {\n  channel._triggerMessage(makeMessage(platform, `Hello from ${platform}`))\n}",
+      "description": "The comment 'Send a message from each platform' restates what the for-loop and the call to `_triggerMessage(makeMessage(platform, ...))` already communicate.",
+      "suggestion": "Remove the comment. The code is self-documenting through its variable names and method names.",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "code-quality",
+      "subcategory": "fragile-dispatch",
+      "title": "StubLlmProvider dispatches on schemaDescription string content",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 41,
+      "line_end": 45,
+      "code_snippet": "async generateStructured<T>({ schemaDescription }: { ... }): Promise<T> {\n  if (schemaDescription.includes('persons')) {\n    return this.entityResponse as T\n  }\n  return this.activityResponse as T\n}",
+      "description": "The stub dispatches its return value by checking if the schemaDescription string includes 'persons'. This couples the test double to an implementation detail of the prompt text. If the schema description wording changes, the stub silently returns the wrong data.",
+      "suggestion": "Use call-order dispatch instead: `private callIndex = 0; return (this.callIndex++ === 0 ? this.entityResponse : this.activityResponse) as T`. This decouples from fragile string content.",
+      "reported_by": [
+        "review-simplify"
+      ]
+    }
+  ],
+  "positive_observations": [
+    "All test double usages include proper '// Test Double rationale:' comments explaining why stubs are necessary (external API boundaries)",
+    "InMemoryTransport from @modelcontextprotocol/sdk is the correct testing pattern for MCP protocol verification",
+    "createTestingPinia with stubActions: false ensures real store action execution -- no mock-based shortcuts",
+    "Persona-engine checkpoint correctly uses vi.useFakeTimers() for deterministic time-dependent trigger evaluation",
+    "ChannelRegistry fault isolation test verifies that one failing channel does not cascade to others -- good resilience coverage",
+    "StubLlmProvider uses schema-based routing to return different structured outputs -- clean test double pattern",
+    "No forbidden patterns detected: no console.log, no TODO/FIXME, no hardcoded secrets",
+    "Persona-engine tests are pure Functional Core tests with zero mocks -- direct instantiation and input/output verification, exactly as architecture prescribes",
+    "MCP hub tests use real MCP SDK InMemoryTransport for client-server communication, verifying actual protocol serialization/deserialization",
+    "Context-engine tests verify entity deduplication (case-insensitive), importance averaging, source type labeling, and recency-based source selection -- thorough behavioral coverage",
+    "All 11 proactive triggers are individually tested with specific input conditions, plus cross-cutting concerns (cooldown, intimacy gating, fullscreen suppression, priority ordering)",
+    "ContextSource and MergedContext types now use full readonly modifiers on all fields and readonly arrays -- significant improvement from earlier tasks",
+    "persona-engine test uses proper typed factory function (makeTriggerInput), no unsafe casts, leverages TriggerResult discriminated union correctly",
+    "stage-ui test uses well-typed factory functions (createMemory, createTodo, createActivity, createSkill) that produce valid typed instances",
+    "channels-extra createStubChannel() implements the Channel interface faithfully with getter-based readonly properties and proper handler lifecycle management",
+    "ChannelRegistry defensive behavior tests verify P1 fixes from Task 16/20: duplicate registration prevention, platform mismatch validation, readonly snapshot from getByPlatform()",
+    "Persona-engine tests use data-driven test generation for 11 trigger scenarios and 7 activity types, keeping tests DRY without sacrificing clarity",
+    "stage-ui tests cleanly verify store isolation -- mutations in one store do not affect others"
+  ],
+  "p0": 0,
+  "p1": 2,
+  "total": 25
+}

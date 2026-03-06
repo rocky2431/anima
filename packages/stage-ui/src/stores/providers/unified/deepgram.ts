@@ -2,7 +2,7 @@ import type { UnDeepgramOptions, VoiceProviderWithExtraOptions } from 'unspeech'
 
 import type { SpeechProviderWithExtraOptions, UnifiedProviderMetadata, ValidationResult, VoiceInfo } from '../types'
 
-import { isUrl } from '@proj-airi/stage-shared'
+import { isUrl } from '@anase/stage-shared'
 import { createUnDeepgram, listVoices } from 'unspeech'
 
 export const deepgramProvider: UnifiedProviderMetadata = {

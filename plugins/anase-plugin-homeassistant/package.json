@@ -1,0 +1,15 @@
+{
+  "name": "@anase/anase-plugin-homeassistant",
+  "type": "module",
+  "version": "0.8.4",
+  "private": true,
+  "description": "Home Assistant integration plugin for Anase server",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@guiiai/logg": "catalog:",
+    "@anase/server-sdk": "workspace:*"
+  }
+}

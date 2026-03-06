@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useModelStore } from '@proj-airi/stage-ui-three'
-import { Button, Callout, SelectTab } from '@proj-airi/ui'
+import { useModelStore } from '@anase/stage-ui-three'
+import { Button, Callout, SelectTab } from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'

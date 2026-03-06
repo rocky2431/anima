@@ -1,7 +1,7 @@
 import type { TranscriptionProviderWithExtraOptions } from '../providers/types'
 
 import { tryCatch } from '@moeru/std'
-import { useLocalStorageManualReset } from '@proj-airi/stage-shared/composables'
+import { useLocalStorageManualReset } from '@anase/stage-shared/composables'
 import { refManualReset } from '@vueuse/core'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'

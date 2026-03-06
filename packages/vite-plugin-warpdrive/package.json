@@ -1,12 +1,12 @@
 {
-  "name": "@proj-airi/vite-plugin-warpdrive",
+  "name": "@anase/vite-plugin-warpdrive",
   "type": "module",
   "version": "0.8.4",
   "private": true,
   "description": "Vite plugin to rewrite and upload heavy build assets to remote object storage",
   "author": {
-    "name": "Moeru AI Project AIRI Team",
-    "email": "airi@moeru.ai",
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
     "url": "https://github.com/moeru-ai"
   },
   "license": "MIT",

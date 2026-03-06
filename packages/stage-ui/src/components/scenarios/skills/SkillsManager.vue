@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FieldInput } from '@proj-airi/ui'
+import { FieldInput } from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 

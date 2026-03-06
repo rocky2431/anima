@@ -1,0 +1,81 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260218-020000-feat-task-3-screenshot-pipeline-iter1",
+  "timestamp": "2026-02-18T02:01:30Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "packages/context-engine/src/processing/screenshot-processor.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/__tests__/phash.test.ts",
+      "packages/context-engine/src/__tests__/screenshot-pipeline.test.ts",
+      "packages/context-engine/src/__tests__/screenshot-processor.test.ts"
+    ],
+    "total_lines_analyzed": 802,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 1, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "comments",
+      "subcategory": "misleading-comment",
+      "title": "Comment says 'log and continue' but code silently swallows errors",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 93,
+      "line_end": 94,
+      "code_snippet": "catch {\n  // Pipeline errors are non-fatal: log and continue on next tick.\n  // In production, this would use a structured logger.\n  return false\n}",
+      "description": "The comment states 'log and continue on next tick' but the catch block does not log anything -- it silently swallows the error and returns false. A future maintainer reading this comment would believe errors are being logged somewhere, when in fact they are completely discarded. Silent error swallowing also violates the error_handling rules in CLAUDE.md ('Catch -> Log with context -> Re-throw typed error or handle gracefully'). The bare catch block with no variable binding makes it impossible to log even if desired.",
+      "suggestion": "Either add actual logging (e.g., using @guiiai/logg structured logger) and keep the comment, or change the comment to accurately describe the current behavior: '// Pipeline errors are non-fatal: silently skip this tick.' Better yet, inject a logger and actually log the error with context.",
+      "claude_md_rule": "error_handling.forbidden_patterns.catch_console_log"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "aspirational-comment",
+      "title": "Forward-looking comment 'In production, this would use...' is a disguised TODO",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 94,
+      "code_snippet": "// In production, this would use a structured logger.",
+      "description": "This comment describes what the code should do rather than what it currently does. It functions as a disguised TODO ('we should add a structured logger here'). Per CLAUDE.md forbidden patterns, code should be complete or not committed -- aspirational comments about future improvements are a form of deferred work that will rot.",
+      "suggestion": "Remove the aspirational comment. Either implement structured logging now (inject a logger via constructor options) or remove the comment entirely. If logging is intentionally deferred, track it in the task system rather than in a code comment.",
+      "claude_md_rule": "forbidden_patterns.code.todo_fixme"
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "comments",
+      "subcategory": "factual-inaccuracy",
+      "title": "Test helper JSDoc incorrectly claims different colors produce different hashes",
+      "file": "packages/context-engine/src/__tests__/phash.test.ts",
+      "line": 7,
+      "line_end": 9,
+      "code_snippet": "/**\n * Create a solid-color PNG buffer for testing.\n * Different colors produce visually different images -> different hashes.\n */",
+      "description": "The JSDoc states 'Different colors produce visually different images -> different hashes' but this is factually wrong for perceptual hashing. The same test file explicitly acknowledges at line 59 that 'Solid-color images all produce the same pHash (all pixels = mean -> all 1).' A solid-color image has all pixels equal to the mean, so every bit is '1' regardless of the actual color value. This means createSolidPng(255,0,0) and createSolidPng(0,0,255) produce identical pHashes. The comment directly contradicts the known behavior documented elsewhere in the same file and will mislead anyone who tries to use this helper for hash-differentiation tests.",
+      "suggestion": "Fix the JSDoc to accurately describe the helper's behavior and limitations: '/** Create a solid-color PNG buffer for testing. Note: all solid-color images produce the same pHash (all pixels equal mean -> all bits '1'). Use images with different spatial patterns to get distinct hashes. */'"
+    }
+  ],
+  "positive_observations": [
+    "JSDoc comments on all exported interfaces and functions follow project conventions consistently",
+    "Algorithm description in computePHash JSDoc accurately matches the 3-step implementation (resize, mean, threshold)",
+    "Test Double rationale comments are present on all test doubles, following the CLAUDE.md pattern with clear justification for why a real implementation cannot be used",
+    "Interface JSDoc comments in types.ts explain 'why' (e.g., 'Implementations wrap platform-specific APIs') rather than just restating type signatures",
+    "ScreenshotUnderstanding JSDoc explains the design decision: 'without pHash (hash is added by the pipeline)' -- useful for understanding the split of responsibilities"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

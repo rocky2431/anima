@@ -7,8 +7,8 @@ import type {
   MemoryRecallResult,
   PersonaConfig,
   ProcessedContext,
-} from '@proj-airi/context-engine'
-import type { ProactiveResponse } from '@proj-airi/persona-engine'
+} from '@anase/context-engine'
+import type { ProactiveResponse } from '@anase/persona-engine'
 
 import type { EveningPipelineDeps, EveningPipelineEvent } from './evening-pipeline'
 
@@ -22,12 +22,12 @@ import {
   MemoryOrchestrator,
   ReportGenerator,
   VectorStore,
-} from '@proj-airi/context-engine'
-import { CronService } from '@proj-airi/cron-service'
+} from '@anase/context-engine'
+import { CronService } from '@anase/cron-service'
 import {
   createEmotionActor,
   generateResponse,
-} from '@proj-airi/persona-engine'
+} from '@anase/persona-engine'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { createEveningPipeline } from './evening-pipeline'

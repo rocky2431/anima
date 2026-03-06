@@ -1,0 +1,98 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260218-042006-feat-task-6-proactive-trigger-iter1",
+  "timestamp": "2026-02-18T04:25:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/persona-engine/src/proactive-trigger.ts",
+      "packages/persona-engine/src/do-not-disturb.ts",
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/index.ts",
+      "packages/persona-engine/src/__tests__/proactive-trigger.test.ts",
+      "packages/persona-engine/src/__tests__/do-not-disturb.test.ts",
+      "packages/persona-engine/src/__tests__/persona-engine.test.ts",
+      "packages/persona-engine/src/__tests__/response-generator.test.ts"
+    ],
+    "total_lines_analyzed": 1614,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "parameter-count",
+      "title": "canTrigger has 6 parameters -- consider a config/context object",
+      "file": "packages/persona-engine/src/do-not-disturb.ts",
+      "line": 69,
+      "line_end": 76,
+      "code_snippet": "export function canTrigger(\n  state: DoNotDisturbState,\n  currentHour: number,\n  isFullscreen: boolean,\n  priority: TriggerPriority,\n  now: number,\n  config: DoNotDisturbConfig,\n): boolean {",
+      "description": "The canTrigger function accepts 6 positional parameters. This exceeds the recommended threshold of 5 and forces callers to remember the exact argument order (e.g., 'currentHour' vs 'now' are both numbers, easy to swap). Grouping the context parameters into a single object would improve call-site readability and make the function easier to extend.",
+      "suggestion": "BEFORE:\nexport function canTrigger(\n  state: DoNotDisturbState,\n  currentHour: number,\n  isFullscreen: boolean,\n  priority: TriggerPriority,\n  now: number,\n  config: DoNotDisturbConfig,\n): boolean {\n\nAFTER:\ninterface CanTriggerContext {\n  currentHour: number\n  isFullscreen: boolean\n  priority: TriggerPriority\n  now: number\n}\n\nexport function canTrigger(\n  state: DoNotDisturbState,\n  context: CanTriggerContext,\n  config: DoNotDisturbConfig,\n): boolean {\n\nWHY: Reduces positional parameter count from 6 to 3, prevents accidental argument-order mistakes between two number parameters (currentHour and now), and makes the function trivially extensible."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "parameter-count",
+      "title": "evaluateTriggers has 5 parameters -- borderline for clarity",
+      "file": "packages/persona-engine/src/proactive-trigger.ts",
+      "line": 244,
+      "line_end": 250,
+      "code_snippet": "export function evaluateTriggers(\n  input: TriggerInput,\n  triggers: TriggerCondition[],\n  lastTriggerTimes: Record<string, number>,\n  now: number,\n  cooldownMultiplier: number = 1.0,\n): TriggerResult {",
+      "description": "evaluateTriggers sits at 5 parameters (the P2 threshold). Three of them (lastTriggerTimes, now, cooldownMultiplier) are evaluation context that travels together. Grouping these into an options object would keep the signature stable when more evaluation context is inevitably needed (e.g., DND state integration).",
+      "suggestion": "BEFORE:\nexport function evaluateTriggers(\n  input: TriggerInput,\n  triggers: TriggerCondition[],\n  lastTriggerTimes: Record<string, number>,\n  now: number,\n  cooldownMultiplier: number = 1.0,\n): TriggerResult {\n\nAFTER:\ninterface EvaluateOptions {\n  lastTriggerTimes: Record<string, number>\n  now: number\n  cooldownMultiplier?: number\n}\n\nexport function evaluateTriggers(\n  input: TriggerInput,\n  triggers: TriggerCondition[],\n  options: EvaluateOptions,\n): TriggerResult {\n\nWHY: Groups related evaluation context, makes the default for cooldownMultiplier explicit in the interface, and future-proofs for additional options without signature churn."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "simplification",
+      "subcategory": "duplicate-constant",
+      "title": "ONE_HOUR_MS defined in two separate modules",
+      "file": "packages/persona-engine/src/do-not-disturb.ts",
+      "line": 3,
+      "line_end": 4,
+      "code_snippet": "const ONE_HOUR_MS = 60 * 60 * 1000\nconst TWENTY_FOUR_HOURS_MS = 24 * ONE_HOUR_MS",
+      "description": "ONE_HOUR_MS and TWENTY_FOUR_HOURS_MS are independently defined in both proactive-trigger.ts (lines 10, 16) and do-not-disturb.ts (lines 3-4) with identical values. While the \"three similar lines > premature abstraction\" guideline applies to logic, shared named constants are a straightforward extract. A single time-constants module would eliminate the duplication and ensure consistency if values ever change.",
+      "suggestion": "BEFORE:\n// proactive-trigger.ts\nconst ONE_HOUR_MS = 60 * 60 * 1000\nconst THIRTY_MINUTES_MS = 30 * 60 * 1000\nconst TWENTY_FOUR_HOURS_MS = 24 * ONE_HOUR_MS\n\n// do-not-disturb.ts\nconst ONE_HOUR_MS = 60 * 60 * 1000\nconst TWENTY_FOUR_HOURS_MS = 24 * ONE_HOUR_MS\n\nAFTER:\n// time-constants.ts\nexport const ONE_HOUR_MS = 60 * 60 * 1000\nexport const THIRTY_MINUTES_MS = 30 * 60 * 1000\nexport const TWENTY_FOUR_HOURS_MS = 24 * ONE_HOUR_MS\n\nWHY: Eliminates duplication across two modules, ensures a single source of truth for time constants within the persona-engine package."
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "guard-clause",
+      "title": "canTrigger could use early returns instead of if-else chain",
+      "file": "packages/persona-engine/src/do-not-disturb.ts",
+      "line": 77,
+      "line_end": 91,
+      "code_snippet": "  if (isFullscreen) {\n    return false\n  }\n\n  if (isInQuietHours(currentHour, config) && priority !== 'critical') {\n    return false\n  }\n\n  const freq = isFrequencyExceeded(state, now, config)\n  if (freq.hourlyExceeded || freq.dailyExceeded) {\n    return false\n  }\n\n  return true",
+      "description": "This is already well-structured with guard clauses. The only minor simplification is that the final frequency check assigns to a temporary variable used once. Inlining it marginally reduces cognitive load, though the current form is perfectly readable. This is a very minor observation.",
+      "suggestion": "BEFORE:\n  const freq = isFrequencyExceeded(state, now, config)\n  if (freq.hourlyExceeded || freq.dailyExceeded) {\n    return false\n  }\n\n  return true\n\nAFTER:\n  const { hourlyExceeded, dailyExceeded } = isFrequencyExceeded(state, now, config)\n  return !hourlyExceeded && !dailyExceeded\n\nWHY: Replaces an intermediate variable + if/return with destructuring and a single return expression. Slightly more concise without sacrificing clarity. The variable name 'freq' is generic; destructuring makes intent clearer."
+    }
+  ],
+  "positive_observations": [
+    "All functions are short (under 30 lines), with consistently low cyclomatic complexity (1-4 per function)",
+    "Excellent use of early returns and guard clauses throughout both proactive-trigger.ts and do-not-disturb.ts",
+    "Named constants are used consistently instead of magic numbers for all time durations",
+    "The NOT_TRIGGERED constant avoids repeated object allocation and communicates intent",
+    "TriggerResult is a well-designed discriminated union making illegal states unrepresentable",
+    "Immutable state pattern in do-not-disturb.ts -- all state transitions return new objects",
+    "Test helper functions (makeTriggerInput, stateWith) effectively reduce test boilerplate with clean partial-override patterns",
+    "Clear separation: trigger conditions are pure data + pure check functions, no side effects"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

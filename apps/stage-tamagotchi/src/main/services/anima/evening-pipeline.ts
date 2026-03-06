@@ -5,12 +5,12 @@ import type {
   MemoryOrchestrator,
   ProcessedContext,
   ReportGenerator,
-} from '@proj-airi/context-engine'
-import type { CronService } from '@proj-airi/cron-service'
-import type { EmotionActor, PersonaEmotion, ProactiveResponse } from '@proj-airi/persona-engine'
+} from '@anase/context-engine'
+import type { CronService } from '@anase/cron-service'
+import type { EmotionActor, PersonaEmotion, ProactiveResponse } from '@anase/persona-engine'
 
 import { useLogg } from '@guiiai/logg'
-import { generateResponse, T06_EVENING_SUMMARY } from '@proj-airi/persona-engine'
+import { generateResponse, T06_EVENING_SUMMARY } from '@anase/persona-engine'
 
 /** Dependencies required to construct an EveningPipeline. All services must be initialized before injection. */
 export interface EveningPipelineDeps {

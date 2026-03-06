@@ -1,0 +1,152 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260218-004201-feat-task-1-walking-skeleton-iter1",
+  "timestamp": "2026-02-18T00:48:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/activity/duration.ts",
+      "packages/context-engine/src/activity/activity-context.ts",
+      "packages/context-engine/src/capture/screenshot.ts",
+      "packages/context-engine/src/storage/vector-store.ts",
+      "packages/persona-engine/src/index.ts",
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/proactive-trigger.ts",
+      "packages/persona-engine/src/emotion-state-machine.ts",
+      "packages/persona-engine/src/response-generator.ts",
+      "apps/stage-tamagotchi/src/main/index.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/context-engine.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts",
+      "vitest.config.ts"
+    ],
+    "total_lines_analyzed": 630,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 4, "P2": 3, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "architecture",
+      "subcategory": "stateful-in-memory",
+      "title": "Business state (emotion, cooldown) stored only in memory",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts",
+      "line": 21,
+      "line_end": 23,
+      "code_snippet": "let currentEmotion: EmotionState = INITIAL_EMOTION\nconst lastTriggerTimes: Record<string, number> = {}\nconst triggers = [T03_REST_REMINDER]",
+      "description": "The persona engine stores currentEmotion and lastTriggerTimes in closure-scoped variables. If the Electron app restarts or crashes, all emotion state and trigger cooldown history is lost. CLAUDE.md explicitly forbids 'Business state in memory' and requires persistence to DB. The cooldown state is particularly critical: without persistence, the rest-reminder trigger could fire immediately after restart even if it just fired 5 minutes ago.",
+      "suggestion": "Persist currentEmotion and lastTriggerTimes to a local SQLite database (e.g., better-sqlite3) or electron-store. Load on startup, write on mutation. This also enables observability of the persona state across sessions.",
+      "claude_md_rule": "forbidden_patterns.arch.business_state_in_memory"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "no-end-to-end-path",
+      "title": "Context engine and persona engine are not connected end-to-end",
+      "file": "apps/stage-tamagotchi/src/main/index.ts",
+      "line": 79,
+      "line_end": 80,
+      "code_snippet": "const contextEngine = injeca.provide('modules:context-engine', () => setupContextEngine())\nconst personaEngine = injeca.provide('modules:persona-engine', () => setupPersonaEngine())",
+      "description": "Both engines are registered via injeca but never connected. setupContextEngine returns { screenshotCapture } and setupPersonaEngine returns { evaluate, getEmotionState }, but no timer, IPC handler, or event listener ever invokes personaEngine.evaluate() with data from contextEngine. There is no periodic activity polling, no screenshot trigger loop, and no IPC channel exposing these services to the renderer. The walking skeleton declares connectivity but does not deliver a working end-to-end data flow from activity observation through trigger evaluation to response generation.",
+      "suggestion": "Add a periodic timer (e.g., setInterval) in a wiring module that: (1) polls activity events or captures screenshots via contextEngine, (2) builds an ActivityContext via buildActivityContext, (3) maps it to TriggerInput, (4) calls personaEngine.evaluate(input), and (5) sends any response to the renderer via IPC. This completes the vertical slice.",
+      "claude_md_rule": "integration.walking_skeleton"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "buildActivityContext exported but never consumed anywhere",
+      "file": "packages/context-engine/src/activity/activity-context.ts",
+      "line": 11,
+      "line_end": 34,
+      "code_snippet": "export function buildActivityContext(\n  events: ActivityEvent[],\n  gapThresholdMs: number = 5 * 60 * 1000,\n): ActivityContext {",
+      "description": "buildActivityContext is exported from the context-engine package index but has zero consumers in the entire codebase. No module imports or calls it. Per integration rules, code written but not reachable from any entry point is dead-on-arrival. This function is the critical bridge between raw ActivityEvents and the TriggerInput that persona-engine needs, yet it is never used.",
+      "suggestion": "Wire buildActivityContext into the app-level integration layer. The periodic evaluation loop (see finding review-code-002) should call buildActivityContext(events) to produce an ActivityContext, then map it to TriggerInput for persona-engine.evaluate(). Also add unit tests for this function.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "VectorStore interface defined but no implementation or consumer exists",
+      "file": "packages/context-engine/src/storage/vector-store.ts",
+      "line": 1,
+      "line_end": 10,
+      "code_snippet": "export interface VectorStore {\n  store(embedding: number[], metadata: Record<string, unknown>): Promise<string>\n  search(query: number[], topK: number): Promise<Array<{ id: string, score: number, metadata: Record<string, unknown> }>>\n}",
+      "description": "VectorStore is an interface-only definition with no implementation and no consumer. The comment says 'Walking skeleton: defines the contract for future LanceDB implementation' but per CLAUDE.md rules, 'I'll wire it up later' is a red flag. An interface without a consumer or a contract test is dead code that may drift from actual requirements when implementation time comes.",
+      "suggestion": "Either (a) remove VectorStore from this PR and add it when there is a real consumer and implementation, or (b) if it is intended for this walking skeleton, add a minimal implementation (even a no-op that persists to SQLite) with a contract test proving the interface shape. At minimum, add a TODO-free comment explaining the delivery timeline.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "silent-failure",
+      "title": "Screenshot capture returns empty buffer instead of throwing on failure",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/context-engine.ts",
+      "line": 17,
+      "line_end": 20,
+      "code_snippet": "const primarySource = sources[0]\nif (!primarySource) {\n  return Buffer.alloc(0)\n}",
+      "description": "When desktopCapturer.getSources returns no sources (headless environment, permission denied, no display), ElectronScreenshotProvider silently returns an empty buffer. Callers receive a ScreenshotResult that looks like success (timestamp is set, buffer exists) but contains no useful data. This converts an operational error into an invalid state, violating the error handling rules that forbid 'catch (e) { return null }' patterns.",
+      "suggestion": "Throw a typed error (e.g., ScreenshotCaptureError) when no primary source is available. The caller can then decide whether to retry, skip, or log. Example: throw new Error('No screen capture source available: desktopCapturer returned 0 sources')",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "missing-test",
+      "title": "buildActivityContext has no unit test despite being functional core",
+      "file": "packages/context-engine/src/activity/activity-context.ts",
+      "line": 11,
+      "line_end": 34,
+      "code_snippet": "export function buildActivityContext(\n  events: ActivityEvent[],\n  gapThresholdMs: number = 5 * 60 * 1000,\n): ActivityContext {",
+      "description": "buildActivityContext is a pure function in the functional core layer that aggregates ActivityEvents into an ActivityContext. CLAUDE.md mandates 100% coverage for the functional core, but there is no test file for this function. The existing duration.test.ts only covers calculateContinuousWorkDuration. The empty-events edge case, the delegation to calculateContinuousWorkDuration, and the correct mapping of the last event's fields are all untested.",
+      "suggestion": "Create packages/context-engine/src/__tests__/activity-context.test.ts with tests covering: (1) empty events returns zeroed context, (2) single event returns correct app/title/fullscreen with 0 duration, (3) multiple events returns last event fields and correct duration, (4) custom gapThresholdMs is passed through correctly.",
+      "claude_md_rule": "testing.coverage.100_functional_core"
+    },
+    {
+      "id": "review-code-007",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "missing-trace-id",
+      "title": "Log call in persona-engine service missing traceId and structured fields",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts",
+      "line": 41,
+      "line_end": 45,
+      "code_snippet": "log.info('Proactive trigger fired', {\n  triggerId: result.triggerId,\n  emotion: currentEmotion,\n  message: response.message,\n})",
+      "description": "CLAUDE.md observability rules require every log entry to include traceId for request correlation, plus timestamp, level, service, and context as required fields. The log.info call passes a context object but omits traceId. While @guiiai/logg may add some fields automatically, traceId propagation must be explicit per the rules.",
+      "suggestion": "Add a traceId to the log context. If this is a periodic background task without an incoming request, generate a correlation ID for each evaluation cycle: const cycleId = crypto.randomUUID(); log.info('Proactive trigger fired', { traceId: cycleId, triggerId: result.triggerId, emotion: currentEmotion })",
+      "claude_md_rule": "observability.required.traceId"
+    }
+  ],
+  "positive_observations": [
+    "Clean Functional Core / Imperative Shell separation: domain logic (duration calculation, trigger evaluation, emotion state machine, response generation) is implemented as pure functions with no side effects, while platform-specific code (Electron desktopCapturer) is isolated in the shell layer.",
+    "Well-designed ScreenshotProvider interface enables dependency inversion: the context-engine package depends on an abstraction, not the Electron API directly. The test correctly uses a Test Double with rationale comment for the external platform boundary.",
+    "persona-engine functional core has thorough unit tests with good edge case coverage: cooldown periods, fullscreen suppression, emotion transitions from all states, and an end-to-end integration test within the package proving trigger-to-response flow.",
+    "TriggerInput is intentionally decoupled from ActivityContext, keeping persona-engine independent of context-engine at the type level. This is a sound architectural boundary.",
+    "vitest.config.ts correctly registers both new packages as test projects.",
+    "All pure functions accept explicit parameters (including 'now' timestamp) rather than calling Date.now() internally, making them fully deterministic and testable."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

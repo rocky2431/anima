@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { SpeechProviderWithExtraOptions } from '@proj-airi/stage-ui/stores/providers/types'
+import type { SpeechProviderWithExtraOptions } from '@anase/stage-ui/stores/providers/types'
 
 import {
   SpeechPlayground,
   SpeechProviderSettings,
-} from '@proj-airi/stage-ui/components'
-import { useSpeechStore } from '@proj-airi/stage-ui/stores/modules/speech'
-import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
+} from '@anase/stage-ui/components'
+import { useSpeechStore } from '@anase/stage-ui/stores/modules/speech'
+import { useProvidersStore } from '@anase/stage-ui/stores/providers'
 import { storeToRefs } from 'pinia'
 import { computed, watch } from 'vue'
 

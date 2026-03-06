@@ -1,14 +1,14 @@
 import localforage from 'localforage'
 
-import { loadLive2DModelPreview as generateLive2DPreview } from '@proj-airi/stage-ui-live2d/utils/live2d-preview'
-import { loadVrmModelPreview as generateVrmPreview } from '@proj-airi/stage-ui-three/utils/vrm-preview'
+import { loadLive2DModelPreview as generateLive2DPreview } from '@anase/stage-ui-live2d/utils/live2d-preview'
+import { loadVrmModelPreview as generateVrmPreview } from '@anase/stage-ui-three/utils/vrm-preview'
 import { until } from '@vueuse/core'
 import { nanoid } from 'nanoid'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import '@proj-airi/stage-ui-live2d/utils/live2d-zip-loader'
-import '@proj-airi/stage-ui-live2d/utils/live2d-opfs-registration'
+import '@anase/stage-ui-live2d/utils/live2d-zip-loader'
+import '@anase/stage-ui-live2d/utils/live2d-opfs-registration'
 
 export enum DisplayModelFormat {
   Live2dZip = 'live2d-zip',

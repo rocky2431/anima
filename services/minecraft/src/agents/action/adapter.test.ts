@@ -22,7 +22,7 @@ describe('openAI agent', { timeout: 0 }, () => {
       bot.bot.once('spawn', async () => {
         const text = await agent.handle(
           messages(
-            system(generateSystemBasicPrompt('airi')),
+            system(generateSystemBasicPrompt('anase')),
             user('Hello, who are you?'),
           ),
           async (c) => {
@@ -31,7 +31,7 @@ describe('openAI agent', { timeout: 0 }, () => {
           },
         )
 
-        expect(text?.toLowerCase()).toContain('airi')
+        expect(text?.toLowerCase()).toContain('anase')
 
         resolve()
       })

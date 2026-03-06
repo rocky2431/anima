@@ -2,7 +2,7 @@ import type { UnVolcengineOptions, VoiceProviderWithExtraOptions } from 'unspeec
 
 import type { ModelInfo, UnifiedProviderMetadata, ValidationResult, VoiceInfo } from '../types'
 
-import { isUrl } from '@proj-airi/stage-shared'
+import { isUrl } from '@anase/stage-shared'
 import { createUnVolcengine, listVoices } from 'unspeech'
 
 export const volcengineProvider: UnifiedProviderMetadata = {

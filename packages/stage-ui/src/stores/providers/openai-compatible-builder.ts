@@ -22,7 +22,7 @@ function normalizeBaseUrl(value: unknown): string {
 function shouldLog(): boolean {
   try {
     // Opt-in via localStorage to minimize I/O in production
-    return typeof localStorage !== 'undefined' && localStorage.getItem('airi:debug') === '1'
+    return typeof localStorage !== 'undefined' && localStorage.getItem('anase:debug') === '1'
   }
   catch {
     return false

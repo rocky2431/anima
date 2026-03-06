@@ -1,0 +1,196 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260304-170355-main-iter1",
+  "findings": [
+    {
+      "id": "RT-001",
+      "severity": "P0",
+      "confidence": 95,
+      "category": "test-quality",
+      "title": "Entire airi-brain service has zero test files",
+      "file": "services/airi-brain/src/store.ts",
+      "line": 51,
+      "code_snippet": "export class BrainStore {\n  private db: Database.Database\n  constructor(db: Database.Database) {\n    this.db = db\n    this.initTables()\n  }",
+      "description": "The services/airi-brain package contains 8 new/modified source files (store.ts, pipeline.ts, adapters.ts, providers.ts, handlers/embedding.ts, handlers/llm.ts, handlers/providers.ts, handlers/evening-pipeline.ts) with approximately 800 lines of new business logic and ZERO test files anywhere in the service. BrainStore is a critical SQLite-backed persistence layer managing activity events, summaries, LLM configs, embedding configs, provider configs, skills state, and vision config. It performs SQL operations, JSON serialization/deserialization, and date-based filtering -- all untested. This is a data persistence layer that must have integration tests with a real SQLite database.",
+      "suggestion": "Create services/airi-brain/src/__tests__/store.test.ts with Vitest. Use a real SQLite database (better-sqlite3 in-memory via ':memory:' or temp file). Test every method: initTables idempotency, setSkillActive/getSkillActiveState round-trip, insertActivityEvent/getActivityEvents with date filtering, upsertActivitySummary/getActivitySummary JSON serialization, setEmbeddingConfig/getEmbeddingConfig, setLlmConfig/getLlmConfig, setProviderConfigs/getProviderConfigs (including the hasCredentials filter logic), and updateActivityEventDuration. Verify boundary conditions: empty table reads, duplicate inserts, date boundary edge cases."
+    },
+    {
+      "id": "RT-002",
+      "severity": "P0",
+      "confidence": 92,
+      "category": "test-quality",
+      "title": "Evening pipeline (critical business workflow) completely untested",
+      "file": "services/airi-brain/src/handlers/evening-pipeline.ts",
+      "line": 18,
+      "code_snippet": "async function runEveningPipeline(\n  brainStore: BrainStore,\n  pipeline: PipelineComponents,\n  client: Client,\n): Promise<void> {",
+      "description": "runEveningPipeline is a multi-phase critical business workflow: (1) fetch today's activities, (2) generate daily summary via LLM, (3) extract memories via ML pipeline, (4) persist to vector DB, (5) push results to frontend. This is the core data pipeline that transforms raw activity events into user-facing summaries and long-term memories. It has zero tests. The cron registration (registerEveningPipeline) also has no tests. Failures here would silently corrupt or lose user memory data.",
+      "suggestion": "Create an integration test that: (a) sets up a real BrainStore with test activities, (b) uses Test Double LLM/embedding providers with '// Test Double rationale: LLM/embedding are external APIs' comments, (c) verifies the full pipeline produces correct summaries and persists them, (d) tests the early-return path when no events exist, (e) tests the early-return when pipeline components are null. Test registerEveningPipeline's cron registration and manual trigger via client event."
+    },
+    {
+      "id": "RT-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "title": "LLM and Embedding adapter HTTP logic untested",
+      "file": "services/airi-brain/src/adapters.ts",
+      "line": 9,
+      "code_snippet": "export function createLlmProviderAdapter(providers: BrainProviders): LlmProvider | null {\n  if (!providers.llm)\n    return null\n  const handle = providers.llm\n  return {\n    async generateText({ system, prompt }) {",
+      "description": "createLlmProviderAdapter and createEmbeddingProviderAdapter contain critical HTTP integration logic: URL construction with base URL normalization, Authorization header injection, OpenAI-compatible API request/response parsing, JSON structured output handling, and error handling for HTTP failures and invalid JSON responses. The cachedDimension mutation in the embedding adapter is also untested. These adapters form the bridge between the brain service and external LLM/embedding APIs.",
+      "suggestion": "Create services/airi-brain/src/__tests__/adapters.test.ts. Test: (1) null return when providers.llm/embedding is null, (2) correct URL construction with and without trailing slash on baseURL, (3) correct Authorization header format, (4) successful generateText response parsing, (5) generateStructured JSON parsing and error on invalid JSON, (6) embed response parsing and dimension caching, (7) HTTP error handling (non-ok responses). Use a local HTTP test server or MSW for the fetch calls with '// Test Double rationale: external LLM API endpoint'."
+    },
+    {
+      "id": "RT-004",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "test-quality",
+      "title": "New embedding module store has no tests",
+      "file": "packages/stage-ui/src/stores/modules/embedding.ts",
+      "line": 8,
+      "code_snippet": "export const useEmbeddingStore = defineStore('embedding-module', () => {\n  const activeProvider = useLocalStorage('settings/embedding/provider', '')\n  const activeModel = useLocalStorage('settings/embedding/model', '')",
+      "description": "The embedding module store is a new Pinia store (109 lines) with config validation logic (sendEmbeddingConfig checks provider, model, apiKey, baseURL), WebSocket event subscription (embedding:config:status), initialization guards (prevents double-init), dispose cleanup, and resetState. Other module stores (memory, activity, todo, skills) all have dedicated test files, but this new store has none. The sendEmbeddingConfig function has 4 distinct error paths that need testing.",
+      "suggestion": "Create packages/stage-ui/src/stores/modules/embedding.test.ts following the pattern in memory.test.ts and activity.test.ts. Test: initial state (empty provider/model, not configured), sendEmbeddingConfig with missing provider, missing model, missing provider config, missing API key, and successful send. Test resetState clears all fields. Test configured computed property logic."
+    },
+    {
+      "id": "RT-005",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "test-quality",
+      "title": "New LLM module store has no tests",
+      "file": "packages/stage-ui/src/stores/modules/llm.ts",
+      "line": 8,
+      "code_snippet": "export const useLlmStore = defineStore('llm-module', () => {\n  const activeProvider = useLocalStorage('settings/llm/provider', '')\n  const activeModel = useLocalStorage('settings/llm/model', '')",
+      "description": "The LLM module store is structurally identical to the embedding store (109 lines) with the same config validation pattern, WebSocket subscriptions, and lifecycle methods. It has zero tests. Since this controls which LLM provider the entire application uses, config validation errors could silently break AI functionality.",
+      "suggestion": "Create packages/stage-ui/src/stores/modules/llm.test.ts following the same pattern. Test: initial state, sendLlmConfig validation paths (missing provider, missing config, missing apiKey), resetState, configured computed. Consider extracting the shared config-send pattern to reduce duplication between embedding.ts and llm.ts."
+    },
+    {
+      "id": "RT-006",
+      "severity": "P1",
+      "confidence": 87,
+      "category": "test-quality",
+      "title": "Provider sync store handles credential data with no tests",
+      "file": "packages/stage-ui/src/stores/modules/provider-sync.ts",
+      "line": 7,
+      "code_snippet": "export const useProviderSyncStore = defineStore('provider-sync-module', () => {\n  const disposers = ref<Array<() => void>>([])\n  const restored = ref(false)\n  let syncPaused = false",
+      "description": "useProviderSyncStore manages bidirectional sync of provider credentials (API keys) between frontend localStorage and backend SQLite. It contains complex logic: pushConfigsToBackend filters for meaningful configs, restoreFromBackend checks if local already has credentials before overwriting, syncPaused prevents echo loops during restore, and a debounced watcher triggers sync on config changes. This touches security-sensitive data (API keys) and has zero tests. The credential-checking logic (lines 21-23, 42-47) and the sync-pause mechanism are particularly error-prone.",
+      "suggestion": "Create packages/stage-ui/src/stores/modules/provider-sync.test.ts. Test: pushConfigsToBackend skips when syncPaused, pushConfigsToBackend skips when no credentials, restoreFromBackend does not overwrite when local has credentials, restoreFromBackend correctly restores when local is empty, syncPaused prevents echo during restore. Consider the security aspect: verify API keys are never exposed in unexpected ways."
+    },
+    {
+      "id": "RT-007",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "title": "createBrainProviders env-var logic untested",
+      "file": "services/airi-brain/src/providers.ts",
+      "line": 57,
+      "code_snippet": "export function createBrainProviders(): BrainProviders {\n  const llmProvider = env.AIRI_LLM_PROVIDER ?? ''\n  const llmApiKey = env.AIRI_LLM_API_KEY ?? ''\n  const llmModel = env.AIRI_LLM_MODEL ?? ''",
+      "description": "createBrainProviders reads 8 environment variables with fallback logic (embedding vars fall back to LLM vars for provider and apiKey). It creates ModelHandle objects with requestDefaults closures. createEmbeddingHandle and createLlmHandle create runtime-updatable handles. None of this is tested. The env-var fallback logic (lines 63-66) is especially important: embedding provider/apiKey fall back to LLM values, but model/baseURL do not. This asymmetric fallback behavior is a subtle bug risk.",
+      "suggestion": "Create services/airi-brain/src/__tests__/providers.test.ts. Test createBrainProviders with: all vars set, no vars set, only LLM vars set (verify embedding falls back for provider/apiKey but not model/baseURL), partial vars (some missing). Test createLlmHandle and createEmbeddingHandle return handles with correct requestDefaults. These are pure functions (Functional Core) and need no mocks."
+    },
+    {
+      "id": "RT-008",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "title": "Embedding handler CORS proxy logic untested",
+      "file": "services/airi-brain/src/handlers/embedding.ts",
+      "line": 58,
+      "code_snippet": "client.onEvent('embedding:models:list', async (event) => {\n    const { provider, apiKey, baseURL } = event.data as { provider: string, apiKey: string, baseURL: string }\n    log.withFields({ provider }).log('Embedding models list requested')",
+      "description": "registerEmbeddingHandler contains a multi-strategy model listing proxy (tries /embeddings/models first, falls back to /models with filtering), a model validation endpoint that sends real embedding requests, and config persistence with runtime provider updates. The two-strategy fallback (lines 69-115) and the model validation (lines 128-173) involve HTTP requests, response parsing, and error handling. The pushStatus function determines 'configured' status from 4 fields. All untested.",
+      "suggestion": "Test the pushStatus logic (configured = all 4 fields present), the config:update handler (persistence + provider creation), and the model:validate flow. For HTTP endpoints, use Test Doubles with rationale comments since they're external API calls."
+    },
+    {
+      "id": "RT-009",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "title": "Memory store test does not cover new embedding config and search result features",
+      "file": "packages/stage-ui/src/stores/modules/memory.test.ts",
+      "line": 1,
+      "code_snippet": "import { useMemoryModuleStore } from './memory'",
+      "description": "The existing memory.test.ts covers the original store API (setMemories, deleteMemory, selectMemory, filteredMemories, resetState) but the diff adds several new features that are untested: (1) embeddingProvider, embeddingModel, embeddingConfigured refs, (2) sendEmbeddingConfig function with validation logic, (3) embedding:config:status event handler, (4) searchResults integration with filteredMemories computed (line 30: when searchQuery + searchResults exist, use server results instead of local filter), (5) isSearching state, (6) resetState now also clears embedding fields. The filteredMemories logic now has a dual-mode behavior that the existing tests do not exercise.",
+      "suggestion": "Add tests to memory.test.ts for: (1) resetState clears embeddingProvider, embeddingModel, embeddingConfigured, (2) filteredMemories returns searchResults when searchQuery is set and searchResults exist, (3) filteredMemories falls back to local filter when no searchResults, (4) initial embeddingProvider/embeddingModel/embeddingConfigured values."
+    },
+    {
+      "id": "RT-010",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "title": "Activity store test does not cover new summaryStatus and triggerSummary",
+      "file": "packages/stage-ui/src/stores/modules/activity.test.ts",
+      "line": 1,
+      "code_snippet": "import { useActivityModuleStore } from './activity'",
+      "description": "The diff adds summaryStatus (state machine: idle -> running -> completed/error) and triggerSummary (sends WebSocket event + sets 60s timeout). The activity.test.ts does not test: (1) summaryStatus initial value is 'idle', (2) triggerSummary sets status to 'running', (3) timeout transitions to 'error' after 60s, (4) receiving activity:summary event transitions from 'running' to 'completed' and clears timeout. This is a state machine with timeout side effects that could cause subtle UI bugs if untested.",
+      "suggestion": "Add tests to activity.test.ts: verify summaryStatus starts as 'idle', verify triggerSummary is exposed on the store. The timeout and WebSocket interactions require integration-style tests with the server channel mock/stub."
+    },
+    {
+      "id": "RT-011",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "title": "Pipeline creation and rebuild logic untested",
+      "file": "services/airi-brain/src/pipeline.ts",
+      "line": 30,
+      "code_snippet": "export async function createPipeline(opts: {\n  vectorStore: VectorStore\n  documentStore: DocumentStore\n  providers: BrainProviders\n  persona?: PersonaConfig\n}): Promise<PipelineComponents> {",
+      "description": "createPipeline has conditional initialization logic: MemoryOrchestrator only when embeddingAdapter exists, ReportGenerator only when llmAdapter exists, MemoryExtractor only when both exist. Each has try/catch error handling. rebuildPipeline delegates to createPipeline. The conditional composition creates 4 possible component states (none, orchestrator-only, report-only, all). None tested.",
+      "suggestion": "Test createPipeline with: providers with no LLM/embedding (all nulls), only embedding (orchestrator created, report/extractor null), only LLM (report created, orchestrator/extractor null), both (all created). Test rebuildPipeline returns new pipeline. These tests would need Test Double imports for context-engine classes with rationale comments."
+    },
+    {
+      "id": "RT-012",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "title": "DashScope provider metadata untested",
+      "file": "packages/stage-ui/src/stores/providers/unified/dashscope.ts",
+      "line": 12,
+      "code_snippet": "export const dashscopeProvider: UnifiedProviderMetadata = {\n  id: 'dashscope',\n  tier: 'primary',\n  name: 'DashScope',",
+      "description": "New DashScope provider definition (93 lines) includes: normalizeBaseUrl utility, createProviders for chat and embedding, listModels that returns empty for embedding capability (CORS bypass), and validateProviderConfig with API key/URL validation and a real HTTP validation call. The normalizeBaseUrl function (shared logic) and the validateProviderConfig error accumulation pattern are testable Functional Core logic.",
+      "suggestion": "Create a test for normalizeBaseUrl (empty string, no trailing slash, with trailing slash, whitespace). Test validateProviderConfig with missing apiKey, missing baseUrl, and verify error message format. The listModels returning [] for embedding capability is an important contract that should be verified."
+    },
+    {
+      "id": "RT-013",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "title": "New plugin-protocol event types added without contract tests",
+      "file": "packages/plugin-protocol/src/types/events.ts",
+      "line": 1,
+      "code_snippet": "import { defineEventa } from '@moeru/eventa'",
+      "description": "101 lines of new event type definitions were added to the plugin protocol (LLM config events, embedding config events, provider sync events, activity summary trigger). These define the contract between frontend and backend. There are no contract tests verifying that the event shapes defined here match what the handlers in airi-brain actually send/receive. A mismatch would cause silent runtime failures.",
+      "suggestion": "Add contract tests that verify the event type definitions in plugin-protocol match the actual event payloads sent by airi-brain handlers (embedding.ts, llm.ts, providers.ts, evening-pipeline.ts). At minimum, verify the event type strings are consistent between the two packages."
+    },
+    {
+      "id": "RT-014",
+      "severity": "P2",
+      "confidence": 76,
+      "category": "test-quality",
+      "title": "server-runtime superjson.parse change untested for edge cases",
+      "file": "packages/server-runtime/src/index.ts",
+      "line": 203,
+      "code_snippet": "event = superjsonParse<WebSocketEvent>(message.text())",
+      "description": "The WebSocket message deserialization was changed from JSON.parse to superjson.parse (commit dce599c / 6ff9d79). This changes how certain data types are deserialized (Date objects, BigInt, Map, Set, etc.). The existing test file (route.test.ts) tests routing middleware only, not the WebSocket message parsing. If any client sends standard JSON (not superjson-encoded), the parse behavior may differ, potentially causing silent data corruption or failures.",
+      "suggestion": "Add a test to verify that superjsonParse correctly handles both standard JSON messages and superjson-encoded messages (with metadata like Date objects). Verify error handling for malformed messages still works correctly after the parser change."
+    }
+  ],
+  "summary": {
+    "total_findings": 14,
+    "by_severity": {
+      "P0": 2,
+      "P1": 6,
+      "P2": 6,
+      "P3": 0
+    },
+    "verdict": "FAIL -- 10 commits adding ~800 lines of new business logic across services/airi-brain and packages/stage-ui with ZERO test file changes. The airi-brain service (store, pipeline, adapters, handlers) has no test files at all. Critical data persistence (BrainStore with SQLite), LLM/embedding adapter HTTP logic, and the evening summary pipeline are completely untested. Two new frontend stores (embedding, llm) and the provider-sync store also lack tests. Existing tests for memory and activity stores do not cover newly added features (embedding config, summaryStatus state machine). This represents a significant regression in test coverage for security-sensitive (API key management) and data-critical (memory pipeline) code."
+  },
+  "positive_observations": [
+    "Existing Pinia store tests (memory.test.ts, activity.test.ts, skills.test.ts, todo.test.ts, phase3-checkpoint.integration.test.ts) follow good patterns: real Pinia instances via createTestingPinia with stubActions:false, behavioral assertions, and comprehensive state lifecycle coverage.",
+    "The vi.fn usage in existing tests is limited to createTestingPinia's createSpy parameter, which is an acceptable framework integration pattern -- not mocking repositories or domain logic.",
+    "BrainStore uses parameterized SQL queries (prepared statements with ?/$1) throughout, which is a correct security practice even though it lacks test verification.",
+    "Error handling in adapters.ts is thorough -- HTTP status codes, response body extraction with fallback, and typed error messages for invalid JSON -- it just needs tests to verify this behavior."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

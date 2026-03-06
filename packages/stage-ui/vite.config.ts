@@ -8,15 +8,15 @@ import Unocss from 'unocss/vite'
 import Yaml from 'unplugin-yaml/vite'
 import Inspect from 'vite-plugin-inspect'
 
-import { createS3Provider, WarpDrivePlugin } from '@proj-airi/vite-plugin-warpdrive'
+import { createS3Provider, WarpDrivePlugin } from '@anase/vite-plugin-warpdrive'
 import { defineConfig } from 'vite'
 
 // For Histoire
 export default defineConfig({
   resolve: {
     alias: {
-      '@proj-airi/i18n': resolve(join(import.meta.dirname, '..', '..', 'packages', 'i18n', 'src')),
-      '@proj-airi/stage-shared': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-shared', 'src')),
+      '@anase/i18n': resolve(join(import.meta.dirname, '..', '..', 'packages', 'i18n', 'src')),
+      '@anase/stage-shared': resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-shared', 'src')),
     },
   },
   server: {
@@ -62,7 +62,7 @@ export default defineConfig({
       ? []
       : [
           WarpDrivePlugin({
-            prefix: env.STAGE_UI_WARP_DRIVE_PREFIX || 'proj-airi/stage-ui/main/',
+            prefix: env.STAGE_UI_WARP_DRIVE_PREFIX || 'anase/stage-ui/main/',
             include: [/\.wasm$/i, /\.ttf$/i, /\.vrm$/i, /\.zip$/i], // in existing assets, wasm, ttf, vrm files are the largest ones
             manifest: true,
             contentTypeBy: (filename: string) => {

@@ -1,0 +1,186 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260304-170355-main-iter1",
+  "findings": [
+    {
+      "id": "rc-001",
+      "severity": "P0",
+      "confidence": 99,
+      "category": "forbidden-pattern",
+      "title": "TODO comment in use-modules-list.ts",
+      "file": "packages/stage-ui/src/composables/use-modules-list.ts",
+      "line": 176,
+      "code_snippet": "// TODO(Makito): We can make this a reactive value from a synthetic store.",
+      "description": "Forbidden TODO pattern found in production code. Per CLAUDE.md and project rules, TODO/FIXME/HACK/XXX comments must not be committed. This comment has persisted from prior code and was not removed during this diff's changes to the same file.",
+      "suggestion": "Either implement the reactive store approach now, or remove the comment entirely. If the work is tracked, reference a ticket number in a non-TODO comment (e.g., '// See PROJ-123 for planned reactive store migration')."
+    },
+    {
+      "id": "rc-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "comments",
+      "title": "Misleading 'pre-stringified responses' comment in server-runtime",
+      "file": "packages/server-runtime/src/index.ts",
+      "line": 44,
+      "code_snippet": "// pre-stringified responses, make sure to use the `send` helper function to send them",
+      "description": "The comment says 'pre-stringified responses' but the RESPONSES object contains functions that return plain objects, not pre-stringified strings. The `send` helper at line 71 calls `stringify(event)` on these objects at send-time. The responses are never pre-stringified.",
+      "suggestion": "Change to: '// Response factory functions. Use the `send` helper to serialize and transmit.'"
+    },
+    {
+      "id": "rc-003",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "comments",
+      "title": "Misleading eslint-disable-next-line around console.log in channel-server",
+      "file": "packages/stage-ui/src/stores/mods/api/channel-server.ts",
+      "line": 131,
+      "code_snippet": "// eslint-disable-next-line no-console\nconsole.log('WebSocket server connection established and authenticated')",
+      "description": "The project's no-console rule exists for a reason: structured logging. This eslint-disable bypasses the rule to use console.log for a significant lifecycle event (authentication success). Per CLAUDE.md, production code should use structured logging, not console.log. The eslint-disable comment is enabling a forbidden pattern rather than documenting a legitimate exception.",
+      "suggestion": "Replace with console.info (which is allowed per project conventions), or better yet use a structured logger if available in the browser context. At minimum, document why console.log is acceptable here."
+    },
+    {
+      "id": "rc-004",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "title": "Placeholder comment disguising incomplete implementation in initializeListeners",
+      "file": "packages/stage-ui/src/stores/mods/api/channel-server.ts",
+      "line": 164,
+      "code_snippet": "// No-op for now; keep placeholder for future shared listeners.",
+      "description": "This comment explicitly labels the code as a 'placeholder for future' work. This is a disguised TODO that indicates incomplete implementation. The function initializeListeners() does nothing but has a comment promising future behavior, which will rot and mislead maintainers.",
+      "suggestion": "Either implement shared listeners now, or remove the comment and the function body entirely. If the function is kept as a hook point, document the pattern clearly: '// Intentionally empty: listeners are registered per-feature in individual stores.'"
+    },
+    {
+      "id": "rc-005",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "comments",
+      "title": "Missing JSDoc on exported BrainStore class methods",
+      "file": "services/airi-brain/src/store.ts",
+      "line": 51,
+      "code_snippet": "export class BrainStore {\n  ...\n  setSkillActive(id: string, active: boolean): void {\n  ...\n  getSkillActiveState(id: string): boolean | null {",
+      "description": "BrainStore is a major exported class with 16+ public methods, none of which have JSDoc documentation. Per project convention, JSDoc is used consistently on all exported interfaces and functions. The class-level JSDoc exists (line 47-50) but individual methods like setSkillActive, getActivityEvents, upsertActivitySummary, setEmbeddingConfig, setProviderConfigs, setLlmConfig, etc. all lack documentation of their parameters, return values, and behavior.",
+      "suggestion": "Add JSDoc to at least the public API methods that cross module boundaries: setProviderConfigs, getProviderConfigs, setEmbeddingConfig, getEmbeddingConfig, setLlmConfig, getLlmConfig, and updateActivityEventDuration."
+    },
+    {
+      "id": "rc-006",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "title": "Missing JSDoc on exported registerEmbeddingHandler function",
+      "file": "services/airi-brain/src/handlers/embedding.ts",
+      "line": 24,
+      "code_snippet": "export function registerEmbeddingHandler(\n  client: Client,\n  brainStore: BrainStore,\n  providers: BrainProviders,\n): void {",
+      "description": "New exported function registerEmbeddingHandler lacks JSDoc despite being a key public API. The companion registerDesktopShellHandler in desktop-shell.ts has thorough JSDoc describing what it does, the platform constraints, and the polling behavior. This handler similarly deserves documentation explaining that it restores persisted config, handles config updates, proxies model listing for CORS bypass, and validates models.",
+      "suggestion": "Add JSDoc similar to registerDesktopShellHandler's style: describe the three event handlers it registers (config:update, models:list, model:validate), the persistence restoration on startup, and the CORS proxy purpose."
+    },
+    {
+      "id": "rc-007",
+      "severity": "P2",
+      "confidence": 83,
+      "category": "comments",
+      "title": "Missing JSDoc on exported registerLlmHandler and registerProvidersHandler",
+      "file": "services/airi-brain/src/handlers/llm.ts",
+      "line": 24,
+      "code_snippet": "export function registerLlmHandler(\n  client: Client,\n  brainStore: BrainStore,\n  providers: BrainProviders,\n): void {",
+      "description": "Both registerLlmHandler (llm.ts:24) and registerProvidersHandler (providers.ts:21) are newly exported public API functions without JSDoc. The project convention is to document all exported interfaces and functions. Both functions handle significant lifecycle responsibilities (persistence, runtime configuration, frontend sync).",
+      "suggestion": "Add JSDoc describing: (1) what event handlers are registered, (2) the persistence behavior, (3) the initial status push pattern. For registerProvidersHandler, document the bidirectional sync protocol between frontend and backend."
+    },
+    {
+      "id": "rc-008",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "title": "Missing JSDoc on exported useEmbeddingStore and useLlmStore",
+      "file": "packages/stage-ui/src/stores/modules/embedding.ts",
+      "line": 8,
+      "code_snippet": "export const useEmbeddingStore = defineStore('embedding-module', () => {",
+      "description": "Two new Pinia stores (useEmbeddingStore in embedding.ts and useLlmStore in llm.ts) are exported without any JSDoc. These are public API surfaces that other modules depend on. Other stores in the project (e.g., useActivityModuleStore) include JSDoc at least on the initialize() method. Neither new store documents the provider resolution logic, the config validation flow, or the sendError reactive state.",
+      "suggestion": "Add a store-level JSDoc comment explaining the store's purpose and key reactive state. At minimum, document the sendEmbeddingConfig/sendLlmConfig methods which have non-obvious provider resolution logic."
+    },
+    {
+      "id": "rc-009",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "comments",
+      "title": "Missing JSDoc on exported useProviderSyncStore",
+      "file": "packages/stage-ui/src/stores/modules/provider-sync.ts",
+      "line": 7,
+      "code_snippet": "export const useProviderSyncStore = defineStore('provider-sync-module', () => {",
+      "description": "The new useProviderSyncStore implements a bidirectional credential sync protocol between frontend localStorage and backend SQLite -- a complex and important feature. It has inline comments explaining individual decisions but no store-level JSDoc documenting the overall sync strategy, the precedence rules (local credentials win over backend), or the echo-prevention mechanism.",
+      "suggestion": "Add a JSDoc block at the store level explaining: (1) the bidirectional sync protocol, (2) that local credentials take precedence over backend, (3) the syncPaused mechanism to prevent echo loops, (4) the debounced watch pattern."
+    },
+    {
+      "id": "rc-010",
+      "severity": "P3",
+      "confidence": 85,
+      "category": "comments",
+      "title": "Redundant comment '// Initialize stores' in use-modules-list.ts",
+      "file": "packages/stage-ui/src/composables/use-modules-list.ts",
+      "line": 34,
+      "code_snippet": "// Initialize stores\nconst consciousnessStore = useConsciousnessStore()",
+      "description": "The comment '// Initialize stores' adds no value since the subsequent lines of `const xStore = useXStore()` are self-documenting. This is a textbook redundant comment that restates what the code obviously does.",
+      "suggestion": "Remove the comment."
+    },
+    {
+      "id": "rc-011",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "comments",
+      "title": "Redundant comment '// Define category display names' in use-modules-list.ts",
+      "file": "packages/stage-ui/src/composables/use-modules-list.ts",
+      "line": 170,
+      "code_snippet": "// Define category display names\nconst categoryNames = computed(() => ({",
+      "description": "The comment '// Define category display names' restates what the variable name `categoryNames` already communicates. The code is self-documenting.",
+      "suggestion": "Remove the comment."
+    },
+    {
+      "id": "rc-012",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "title": "Redundant inline comment '// verify' in server-runtime",
+      "file": "packages/server-runtime/src/index.ts",
+      "line": 272,
+      "code_snippet": "// verify\nconst { name, index, identity } = event.data as { name: string, index?: number, identity?: MetadataEventSource }",
+      "description": "The comment '// verify' is vague and redundant. The subsequent validation code (checking name, index, identity fields) is self-explanatory. A more useful comment would explain why these validations exist or what the announce event contract requires.",
+      "suggestion": "Either remove the comment or replace with something meaningful like: '// Validate module:announce payload against required contract fields'."
+    },
+    {
+      "id": "rc-013",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "title": "Redundant comment '// helper send function' in server-runtime",
+      "file": "packages/server-runtime/src/index.ts",
+      "line": 70,
+      "code_snippet": "// helper send function\nfunction send(peer: Peer, event: WebSocketEvent<Record<string, unknown>> | string) {",
+      "description": "The comment '// helper send function' restates the function signature. It adds no insight into what makes this helper necessary (i.e., that it handles the superjson serialization).",
+      "suggestion": "Replace with: '// Serialize via superjson and send to peer' or remove entirely."
+    }
+  ],
+  "summary": {
+    "total_findings": 13,
+    "by_severity": {
+      "P0": 1,
+      "P1": 1,
+      "P2": 7,
+      "P3": 4
+    },
+    "verdict": "The diff introduces a large amount of new code across the brain service and stage-ui stores. One P0 forbidden TODO pattern persists in use-modules-list.ts. The main comment quality concern is the lack of JSDoc on newly exported public APIs (stores, handler registration functions, BrainStore methods), which is inconsistent with the project convention. The existing server-runtime has a factually inaccurate comment about 'pre-stringified responses'. Several redundant comments restate obvious code. The inline comments that explain 'why' (e.g., CORS bypass rationale, sync echo prevention) are well-written and valuable."
+  },
+  "positive_observations": [
+    "The evening-pipeline.ts JSDoc on runEveningPipeline is excellent: it uses a numbered list to clearly describe the 5-phase pipeline, making the architecture immediately understandable.",
+    "Phase comments inside runEveningPipeline ('// Phase 1: Generate daily summary', '// Phase 2: Extract memories', etc.) are valuable navigation aids in a long async function.",
+    "The adapters.ts file has clear JSDoc on both exported functions explaining the adaptation pattern (BrainProviders.llm -> context-engine's LlmProvider) and the API used (OpenAI-compatible).",
+    "Strategy comments in embedding handler ('// Strategy 1: Try dedicated /embeddings/models endpoint', '// Strategy 2: Fall back to /models and filter') explain the fallback logic clearly.",
+    "The 'Restore from backend: pause sync to avoid echo' comment in provider-sync.ts explains a subtle race condition prevention pattern that would otherwise be non-obvious.",
+    "Comments like '// Embedding model listing is handled via backend proxy (CORS bypass)' in openrouter.ts and dashscope.ts effectively explain why the function returns an empty array, preventing future maintainers from thinking it's a bug."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

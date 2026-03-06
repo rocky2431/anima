@@ -1,0 +1,199 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260304-170355-main-iter1",
+  "findings": [
+    {
+      "id": "RC-001",
+      "severity": "P0",
+      "confidence": 90,
+      "category": "security",
+      "title": "SSRF via untrusted baseURL in embedding handler proxy",
+      "file": "services/airi-brain/src/handlers/embedding.ts",
+      "line": 63,
+      "code_snippet": "let base = (baseURL || '').trim()\nif (base && !base.endsWith('/'))\n  base += '/'\nconst headers = { Authorization: `Bearer ${apiKey}` }\nconst embeddingsUrl = new URL('embeddings/models', base)\nconst embeddingsResponse = await fetch(embeddingsUrl, { headers })",
+      "description": "The embedding:models:list and embedding:model:validate handlers accept a baseURL from WebSocket event data and use it directly in server-side fetch calls with the user's API key attached as an Authorization header. A malicious client could supply a baseURL pointing to an attacker-controlled server, causing the brain service to send the API key to that server (credential leak). Additionally, the baseURL could point to internal network addresses (SSRF), allowing scanning of internal services.",
+      "suggestion": "Validate baseURL against an allowlist of known provider domains (e.g., openrouter.ai, dashscope.aliyuncs.com, api.openai.com). Alternatively, use the persisted/trusted provider config from BrainStore instead of accepting baseURL from the event payload. At minimum, block private/internal IP ranges and non-HTTPS URLs."
+    },
+    {
+      "id": "RC-002",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "security",
+      "title": "API keys stored in plaintext in SQLite without encryption",
+      "file": "services/airi-brain/src/store.ts",
+      "line": 105,
+      "code_snippet": "CREATE TABLE IF NOT EXISTS embedding_config (\n  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),\n  provider TEXT NOT NULL DEFAULT '',\n  api_key TEXT NOT NULL DEFAULT '',\n  base_url TEXT NOT NULL DEFAULT '',\n  model TEXT NOT NULL DEFAULT ''\n);",
+      "description": "API keys for LLM, embedding, and provider configs are stored as plaintext in the SQLite database (embedding_config, llm_config, provider_configs tables). The provider_configs table stores entire config JSON blobs including API keys. If the database file is compromised (e.g., backup leak, directory traversal), all API keys are exposed in the clear.",
+      "suggestion": "Encrypt API keys at rest using a key derived from a machine-level secret (e.g., OS keychain, DPAPI, or an environment variable). At minimum, document the security implication and ensure the database file has restrictive permissions (0600)."
+    },
+    {
+      "id": "RC-003",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "code-quality",
+      "title": "Duplicate sendEmbeddingConfig logic in memory and embedding stores",
+      "file": "packages/stage-ui/src/stores/modules/memory.ts",
+      "line": 93,
+      "code_snippet": "function sendEmbeddingConfig(): void {\n  const providerId = embeddingProvider.value\n  const model = embeddingModel.value\n  if (!providerId || !model)\n    return\n  const unifiedStore = useUnifiedProvidersStore()\n  const config = unifiedStore.getProviderConfig(providerId)\n  ...\n}",
+      "description": "The sendEmbeddingConfig function is duplicated nearly identically in both useMemoryModuleStore (memory.ts) and useEmbeddingStore (embedding.ts). Both stores also independently listen to the 'embedding:config:status' event and maintain their own embeddingProvider/embeddingModel refs. This violates DRY and SRP -- the memory store should delegate to the embedding store instead of maintaining its own parallel embedding config.",
+      "suggestion": "Remove the embedding config logic from the memory store entirely. Have the memory settings page use the dedicated useEmbeddingStore for embedding state. The memory store should only consume embedding status from the embedding store rather than maintaining its own parallel state."
+    },
+    {
+      "id": "RC-004",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "architecture",
+      "title": "Stale adapter closure after provider reconfiguration",
+      "file": "services/airi-brain/src/adapters.ts",
+      "line": 12,
+      "code_snippet": "const handle = providers.llm\nreturn {\n  async generateText({ system, prompt }) {\n    const { apiKey, baseURL, model } = handle.requestDefaults()\n    ...\n  },\n}",
+      "description": "createLlmProviderAdapter and createEmbeddingProviderAdapter capture the current providers.llm/providers.embedding handle at creation time via closure. When a user reconfigures the provider (llm:config:update), the providers object gets a new handle, but the adapters already given to MemoryOrchestrator/ReportGenerator/MemoryExtractor still hold the old closure reference. Although rebuildPipeline recreates the pipeline, the 200ms debounce in scheduleRebuild means that during the debounce window, the old adapter is used. More critically, any error in rebuildPipeline leaves the stale adapters permanently active.",
+      "suggestion": "Instead of capturing the handle at creation time, have the adapters read from the providers object dynamically: `const { apiKey, baseURL, model } = providers.llm!.requestDefaults()` with a null check. This way adapters always reflect the latest provider config without requiring a full pipeline rebuild."
+    },
+    {
+      "id": "RC-005",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "architecture",
+      "title": "Unhandled VectorStore.create() failure silently disables memory features",
+      "file": "services/airi-brain/src/index.ts",
+      "line": 132,
+      "code_snippet": "VectorStore.create(dataDir).then(async (vectorStore) => {\n  ...\n  registerEveningPipeline(brainStore, pipelineRef, client)\n  ...\n}).catch((err) => {\n  const msg = err instanceof Error ? err.message : String(err)\n  log.withFields({ error: msg }).warn('Failed to initialize VectorStore/Pipeline')\n})",
+      "description": "If VectorStore.create() fails, the entire evening pipeline and memory extraction subsystem is silently disabled. The error is logged at 'warn' level only. The frontend has no way to know that memory features are unavailable. The activity:summary:trigger event will never get a handler registered, so manual triggers will silently do nothing. This is a silent degradation with no user feedback.",
+      "suggestion": "1) Log at 'error' level rather than 'warn' for this critical initialization failure. 2) Send a status event to the frontend indicating that memory/pipeline features are unavailable. 3) Consider retrying VectorStore creation with exponential backoff."
+    },
+    {
+      "id": "RC-006",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "code-quality",
+      "title": "Hardcoded embedding dimension default (1536) may cause vector DB mismatch",
+      "file": "services/airi-brain/src/adapters.ts",
+      "line": 82,
+      "code_snippet": "let cachedDimension = 1536\n\nreturn {\n  get dimension() {\n    return cachedDimension\n  },\n  async embed(text: string) {\n    ...\n    if (embedding.length > 0)\n      cachedDimension = embedding.length\n    return embedding\n  },\n}",
+      "description": "The embedding adapter starts with a hardcoded dimension of 1536. This value is returned by the `dimension` getter before any actual embedding call is made. If the VectorStore or MemoryOrchestrator uses `dimension` during initialization to create tables/indices, it will use 1536 even if the actual model produces different dimensions (e.g., 768, 1024, 3072). This mismatch could cause vector insertion failures or silent data corruption once real embeddings arrive.",
+      "suggestion": "Make the dimension lazy-initialized: either perform a probe embed call during adapter creation (embed a single test token to discover dimension), or make consumers handle dimension-unknown state. Alternatively, let the user configure the expected dimension alongside the model."
+    },
+    {
+      "id": "RC-007",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "title": "Evening pipeline has no cron service wired -- only manual trigger works",
+      "file": "services/airi-brain/src/handlers/evening-pipeline.ts",
+      "line": 103,
+      "code_snippet": "if (cronService) {\n  cronService.registerHandler('evening-summary', handler)\n  cronService.cron('0 23 * * *', { ... })\n} else {\n  log.log('Evening pipeline registered (manual trigger only, no cron service)')\n}",
+      "description": "registerEveningPipeline accepts an optional cronService parameter for scheduling daily summaries. However, the caller in index.ts (line ~141) never passes a cronService: `registerEveningPipeline(brainStore, pipelineRef, client)`. This means the daily 23:00 cron job is never registered, and the evening pipeline can only be triggered manually via the 'activity:summary:trigger' event. The automatic daily summary feature is effectively dead code.",
+      "suggestion": "Wire a real cron service (e.g., node-cron or the existing CronService from context-engine) and pass it to registerEveningPipeline. If the cron service is intentionally deferred, add a comment explaining when it will be wired and ensure the manual trigger path is prominently surfaced to users."
+    },
+    {
+      "id": "RC-008",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "code-quality",
+      "title": "Unsafe `as` casts on model listing response without type guard",
+      "file": "packages/stage-ui/src/stores/providers/unified/dashscope.ts",
+      "line": 63,
+      "code_snippet": "name: (model as any).name || model.id,\ncontextLength: (model as any).context_length || 0,",
+      "description": "The DashScope provider's listModels operation casts model objects to `any` to access `.name` and `.context_length` properties. The imported `listModels` function returns typed objects, but the actual API response may include these extra fields. Using `as any` bypasses type safety and hides the fact that the listModels return type is incomplete.",
+      "suggestion": "Extend the listModels return type to include optional `name` and `context_length` fields, or create a proper type for the raw API response and map it explicitly. Avoid `as any` at package boundaries."
+    },
+    {
+      "id": "RC-009",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "architecture",
+      "title": "In-memory mutable state in desktop-shell handler (closure-scoped let variables)",
+      "file": "services/airi-brain/src/handlers/desktop-shell.ts",
+      "line": 18,
+      "code_snippet": "let lastSwitchTime = Date.now()\nlet lastEventId = ''",
+      "description": "The desktop-shell handler maintains `lastSwitchTime` and `lastEventId` as module-level closure variables. These are not persisted and will be lost on service restart, meaning the duration of the last activity event before a crash/restart will never be backfilled. This continues the existing pattern of in-memory state in this handler (lastAppName, lastWindowTitle) but makes it worse by adding state that affects data correctness (duration backfill).",
+      "suggestion": "Persist lastSwitchTime and lastEventId in BrainStore so they survive restarts. Alternatively, calculate duration from the previous event's timestamp at query time rather than requiring backfill."
+    },
+    {
+      "id": "RC-010",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "integration",
+      "title": "Dual initialization of embedding and LLM stores (App.vue + onboarding.ts)",
+      "file": "packages/stage-ui/src/stores/onboarding.ts",
+      "line": 116,
+      "code_snippet": "try {\n  useEmbeddingStore().initialize()\n  enabledModules.push('embedding')\n}\ncatch (err) {\n  console.error('Failed to initialize embedding module:', err)\n}",
+      "description": "Both App.vue (line ~117) and the onboarding store (line ~116) call useEmbeddingStore().initialize() and useLlmStore().initialize(). The initialize() functions have a guard (`if (disposers.value.length > 0) return`) that prevents double-registration, but this pattern is fragile and confusing. It also means initialization order depends on which code path runs first. App.vue calls initialize unconditionally, while onboarding.ts calls it in autoEnableModules. If autoEnableModules runs first, the App.vue call becomes a no-op.",
+      "suggestion": "Centralize module initialization in a single location. Either let App.vue be the sole initializer (removing the calls from onboarding.ts), or have onboarding.ts be the sole initializer and remove the explicit calls from App.vue."
+    },
+    {
+      "id": "RC-011",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "code-quality",
+      "title": "Provider config sync sends all API keys over WebSocket on every change",
+      "file": "packages/stage-ui/src/stores/modules/provider-sync.ts",
+      "line": 15,
+      "code_snippet": "function pushConfigsToBackend(): void {\n  if (syncPaused) return\n  const unifiedStore = useUnifiedProvidersStore()\n  const configs = unifiedStore.providers\n  const added = unifiedStore.addedProviders\n  ...\n  serverChannel.send({\n    type: 'providers:configs:sync',\n    data: { configs, added },\n  })\n}",
+      "description": "The provider-sync store watches the entire providers object (deep: true) and sends ALL provider configs including API keys to the backend on every change, debounced by 2 seconds. This means any edit to any provider field triggers a full sync of all API keys over the WebSocket. While the WebSocket may be local, this is a large blast radius for credential exposure if the connection is intercepted.",
+      "suggestion": "Only sync the specific provider that changed, not all providers. Consider sending only the provider ID and a hash of the config, then let the backend request the full config if needed. At minimum, ensure the WebSocket uses TLS (wss://) when not on localhost."
+    },
+    {
+      "id": "RC-012",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "architecture",
+      "title": "Unbounded activity_events table with no cleanup or rotation",
+      "file": "services/airi-brain/src/store.ts",
+      "line": 67,
+      "code_snippet": "CREATE TABLE IF NOT EXISTS activity_events (\n  id TEXT PRIMARY KEY,\n  app_name TEXT NOT NULL,\n  window_title TEXT NOT NULL DEFAULT '',\n  description TEXT NOT NULL DEFAULT '',\n  duration_ms INTEGER NOT NULL DEFAULT 0,\n  timestamp INTEGER NOT NULL\n);",
+      "description": "Activity events are inserted every time the active window changes (every 10 seconds when polling). Over weeks/months of use, this table will grow unbounded. The evening pipeline fetches up to 500 events per day, but old events are never deleted. With window polling every 10s, that is ~8640 events/day, accumulating ~250k rows/month.",
+      "suggestion": "Add a retention policy: either delete events older than N days after they've been summarized, or add an index on timestamp and implement periodic cleanup. Consider adding a `summarized` flag to events so the cleanup knows which events are safe to purge."
+    },
+    {
+      "id": "RC-013",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "title": "console.error used in production code paths (onboarding.ts)",
+      "file": "packages/stage-ui/src/stores/onboarding.ts",
+      "line": 120,
+      "code_snippet": "catch (err) {\n  console.error('Failed to initialize embedding module:', err)\n}",
+      "description": "The new initialization blocks in onboarding.ts use console.error for error reporting. While the CLAUDE.md rules state console.error is allowed (only console.log is forbidden), this is inconsistent with the project's established logging approach. The brain service uses @guiiai/logg consistently, but the frontend uses raw console calls for important initialization failures.",
+      "suggestion": "Consider using the project's established logging utility (if available on frontend) for consistency. At minimum, this is a minor inconsistency, not a violation. Low priority."
+    },
+    {
+      "id": "RC-014",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "code-quality",
+      "title": "Redundant type assertion in index.ts",
+      "file": "services/airi-brain/src/index.ts",
+      "line": 59,
+      "code_snippet": "const providers = createBrainProviders() as ReturnType<typeof createBrainProviders>",
+      "description": "The cast `as ReturnType<typeof createBrainProviders>` is redundant -- TypeScript already infers the return type of createBrainProviders(). The comment says 'Use mutable binding so handlers can update providers at runtime', but the cast doesn't make the binding mutable (it's already `const` on a mutable object). The `as` cast provides no additional type information.",
+      "suggestion": "Remove the redundant cast: `const providers = createBrainProviders()`. If the intent is to signal mutability, add a comment instead of a no-op type assertion."
+    }
+  ],
+  "summary": {
+    "total_findings": 14,
+    "by_severity": {
+      "P0": 1,
+      "P1": 5,
+      "P2": 6,
+      "P3": 2
+    },
+    "verdict": "REQUEST_CHANGES - One P0 SSRF vulnerability in the embedding handler proxy that accepts untrusted baseURLs from WebSocket events and forwards API keys to them. Five P1 issues including API key plaintext storage, stale adapter closures, hardcoded embedding dimension, and dead cron wiring. Architecture is generally sound with good vertical slice delivery (UI settings -> WebSocket events -> brain handlers -> SQLite persistence -> context-engine pipeline), but the security boundary around credential handling needs hardening."
+  },
+  "positive_observations": [
+    "Clean vertical slice delivery: LLM and embedding configuration flows end-to-end from settings UI through WebSocket protocol to brain service persistence and context-engine pipeline initialization.",
+    "Proper use of @guiiai/logg structured logging throughout all new brain service handlers with consistent field-based context.",
+    "Good error handling patterns: all async handlers have try/catch blocks, errors are logged with context, and status is pushed to the frontend.",
+    "Protocol events properly typed in plugin-protocol/events.ts with shared interface definitions for both UI and backend consumers.",
+    "SQLite persistence for provider configs, LLM config, and embedding config ensures configuration survives restarts -- a significant improvement over previous in-memory-only patterns.",
+    "Pipeline rebuild on config change uses debouncing (200ms) to avoid unnecessary reconstructions during rapid edits.",
+    "Clean removal of unused gaming modules (Factorio, Minecraft) and memory short/long-term split -- reduces maintenance surface."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260221-054200-feat-task-24-performance-cost-control-iter1",
+  "timestamp": "2026-02-21T05:42:30.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/model-router.ts",
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/model-router.test.ts",
+      "packages/context-engine/src/__tests__/dedup-stats.test.ts",
+      "packages/context-engine/src/__tests__/performance-benchmark.test.ts"
+    ],
+    "total_lines_analyzed": 728,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "immutability",
+      "title": "RoutingStats output interface lacks readonly modifiers",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 19,
+      "line_end": 29,
+      "code_snippet": "export interface RoutingStats {\n  totalCalls: number\n  callsByTier: Record<ModelTier, number>\n  callsByTaskType: Record<TaskType, number>\n  estimatedSavingsRatio: number\n}",
+      "description": "Encapsulation: 8/10, Expression: 7/10, Usefulness: 7/10, Enforcement: 6/10 (Aggregate: 7.0). RoutingStats is a read-only output from getStats() but all fields are mutable. This regresses from Task 19's readonly standard (DocumentExtractionResult, TextChunk, FileChangeEvent). Consumers can accidentally mutate the returned stats object's nested Records, even though getStats() spreads the top-level counters. The inner Record values within callsByTier/callsByTaskType are new objects (due to spread), but the interface does not communicate immutability intent.",
+      "suggestion": "Add readonly modifiers to all fields: `readonly totalCalls: number`, `readonly callsByTier: Readonly<Record<ModelTier, number>>`, etc. Alternatively, use `Readonly<RoutingStats>` as the return type of getStats()."
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "immutability",
+      "title": "DeduplicationStats output interface lacks readonly modifiers",
+      "file": "packages/context-engine/src/capture/phash.ts",
+      "line": 78,
+      "line_end": 87,
+      "code_snippet": "export interface DeduplicationStats {\n  totalComparisons: number\n  duplicatesFound: number\n  uniqueFound: number\n  deduplicationRate: number\n}",
+      "description": "Encapsulation: 8/10, Expression: 5/10, Usefulness: 5/10, Enforcement: 6/10 (Aggregate: 6.0). DeduplicationStats is returned from getStats() as a snapshot and should be immutable. All four fields are mutable. The deduplicationRate field is a bare number with a 0-1 range documented only in JSDoc -- same primitive obsession pattern as ContextSource.importance from Task 22. Consistent with codebase pattern but regresses from Task 19's readonly output types.",
+      "suggestion": "Add readonly modifiers to all fields. Consider a branded type or at minimum document the 0-1 invariant with a type alias like `type Ratio = number` to signal intent, even if not enforced at compile time."
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "invalid-state-representable",
+      "title": "routingOverrides can specify 'local' tier without a local provider",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 16,
+      "line_end": 17,
+      "code_snippet": "routingOverrides?: Partial<Record<TaskType, ModelTier>>",
+      "description": "Encapsulation: 8/10, Expression: 7/10, Usefulness: 7/10, Enforcement: 6/10 (Aggregate: 7.0). The routingOverrides field accepts any ModelTier value including 'local', but the local provider is optional. If a consumer configures `routingOverrides: { summarization: 'local' }` without providing a local provider, getProvider() silently falls back to the lightweight provider (line 180: `return this.providers.local ?? this.providers.lightweight`). This violates the principle of making illegal states unrepresentable -- the override promises 'local' routing but delivers lightweight routing without any warning. The constructor does not validate that override tiers have corresponding providers.",
+      "suggestion": "Add constructor validation: iterate over routingOverrides entries and throw if any override specifies 'local' when `providers.local` is undefined. Alternatively, constrain the override type based on the available providers, though this is harder in plain TypeScript without conditional types at the value level."
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "unconstrained-generic",
+      "title": "ModelRouter.generateStructured<T> inherits unconstrained generic",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 146,
+      "line_end": 159,
+      "code_snippet": "async generateStructured<T>(options: {\n    system: string\n    prompt: string\n    schemaDescription: string\n  }): Promise<T> {\n    ...\n    return provider.generateStructured<T>(options)\n  }",
+      "description": "Encapsulation: 8/10, Expression: 7/10, Usefulness: 7/10, Enforcement: 6/10 (Aggregate: 7.0). ModelRouter faithfully passes through the unconstrained generic T from LlmProvider.generateStructured. This is inherited from the LlmProvider interface (already flagged in Task 13). Callers get no compile-time guarantee that the LLM output matches T. The gold-standard pattern in this codebase is runtime validation (SmartTip.isValidSmartTipResult, MemoryExtractor.validateExtractionResult). ModelRouter itself cannot add validation since it is a transparent proxy, but consumers using ModelRouter as their LlmProvider must remember to validate outputs themselves.",
+      "suggestion": "Informational. Consumers of ModelRouter.generateStructured should always add runtime validation of the returned value, following the SmartTip/MemoryExtractor pattern. Consider adding a JSDoc warning on the method."
+    }
+  ],
+  "positive_observations": [
+    "TaskType and ModelTier are proper literal unions -- consistent with codebase best practices (ScheduleMode, DocumentType, ShortcutAction pattern)",
+    "ModelRouter class has good encapsulation: private readonly fields, private getProvider(), implements LlmProvider interface for transparent substitution",
+    "getStats() returns spread copies of internal counters, preventing external mutation of tracking state",
+    "DeduplicationTracker has clean minimal API with private counters, correct Functional Core / Imperative Shell split (pure hash functions + stateful tracker)",
+    "classifyTask is a well-structured pure function with clear keyword priority ordering, labeled as Functional Core",
+    "LOCAL_ELIGIBLE_TASKS uses ReadonlySet -- good immutability pattern for constant configuration",
+    "ModelRouterOptions.routingOverrides uses Partial<Record<TaskType, ModelTier>> for type-safe configuration mapping"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

@@ -14,7 +14,7 @@ interface OpenAIConfig {
   reasoningModel: string
 }
 
-interface AiriConfig {
+interface AnaseConfig {
   wsBaseUrl: string
   clientName: string
 }
@@ -22,7 +22,7 @@ interface AiriConfig {
 interface Config {
   openai: OpenAIConfig
   bot: BotOptions
-  airi: AiriConfig
+  anase: AnaseConfig
 }
 
 // Helper functions for type-safe environment variable parsing
@@ -43,13 +43,13 @@ const defaultConfig: Config = {
     reasoningModel: '',
   },
   bot: {
-    username: 'airi-bot',
+    username: 'anase-bot',
     host: 'localhost',
     port: 25565,
     password: '',
     version: '1.20',
   },
-  airi: {
+  anase: {
     wsBaseUrl: 'ws://localhost:6121/ws',
     clientName: 'minecraft-bot',
   },
@@ -78,9 +78,9 @@ export function initEnv(): void {
     version: getEnvVar('BOT_VERSION', defaultConfig.bot.version as string),
   }
 
-  config.airi = {
-    wsBaseUrl: getEnvVar('AIRI_WS_BASEURL', defaultConfig.airi.wsBaseUrl)!,
-    clientName: getEnvVar('AIRI_CLIENT_NAME', defaultConfig.airi.clientName)!,
+  config.anase = {
+    wsBaseUrl: getEnvVar('ANASE_WS_BASEURL', defaultConfig.airi.wsBaseUrl)!,
+    clientName: getEnvVar('ANASE_CLIENT_NAME', defaultConfig.airi.clientName)!,
   }
 
   logger.withFields({ config }).log('Environment variables initialized')

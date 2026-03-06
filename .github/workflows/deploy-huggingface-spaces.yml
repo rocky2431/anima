@@ -17,7 +17,7 @@ jobs:
           lfs: true
 
       - run: |-
-          git clone https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/moeru-ai/airi --depth 1 apps/stage-web/dist
+          git clone https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/rocky2431/anima --depth 1 apps/stage-web/dist
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_USERNAME: ${{ secrets.HF_USERNAME }}

@@ -1,0 +1,81 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260221-054200-feat-task-24-performance-cost-control-iter1",
+  "timestamp": "2026-02-21T06:00:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/model-router.ts",
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/model-router.test.ts",
+      "packages/context-engine/src/__tests__/dedup-stats.test.ts",
+      "packages/context-engine/src/__tests__/performance-benchmark.test.ts"
+    ],
+    "total_lines_analyzed": 1133,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 3,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 1, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch-on-io",
+      "title": "ModelRouter.generateText/generateStructured lack try/catch on LLM I/O",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 135,
+      "line_end": 159,
+      "code_snippet": "async generateText(options: { system: string, prompt: string }): Promise<string> {\n    const taskType = classifyTask(options.system)\n    const tier = resolveTier(taskType, this.hasLocal, this.overrides)\n    const provider = this.getProvider(tier)\n    this.tierCalls[tier]++\n    this.taskCalls[taskType]++\n    return provider.generateText(options)\n  }",
+      "description": "Both generateText() and generateStructured() call external LLM providers (network I/O) without any try/catch. Raw provider errors propagate without routing context -- a caller seeing 'Model overloaded' has no idea which tier, task type, or provider failed. This is the same recurring pattern as AiOrchestrator, capture modules, and channel modules. Additionally, the test titled 'propagates provider errors with routing context' is misleading: it only asserts the raw error message, confirming no context is actually added.",
+      "suggestion": "Wrap provider calls in try/catch and re-throw with routing context:\n\ntry {\n  return await provider.generateText(options)\n} catch (error) {\n  throw new Error(\n    `ModelRouter: ${tier} provider failed for ${taskType} task`,\n    { cause: error }\n  )\n}",
+      "claude_md_rule": "error_handling.required"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "subcategory": "stats-corruption-on-error",
+      "title": "Routing stats incremented before I/O -- corrupted on provider failure",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 140,
+      "line_end": 143,
+      "code_snippet": "this.tierCalls[tier]++\n    this.taskCalls[taskType]++\n\n    return provider.generateText(options)",
+      "description": "In both generateText() (lines 140-141) and generateStructured() (lines 155-156), tierCalls and taskCalls counters are incremented BEFORE the async provider call. If the provider throws, the stats record a call that never completed. This corrupts the estimatedSavingsRatio and callsByTier/callsByTaskType metrics, which are the core deliverable of this performance/cost-control task. The cost estimation tests all use non-failing providers so this bug is not caught.",
+      "suggestion": "Move stat increments after the await, or use try/finally to only count on success:\n\nconst result = await provider.generateText(options)\nthis.tierCalls[tier]++\nthis.taskCalls[taskType]++\nreturn result\n\nAlternatively, track both attempted and succeeded counts for observability.",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "silent-fallback",
+      "title": "Override to 'local' tier silently falls back when local provider absent",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 177,
+      "line_end": 186,
+      "code_snippet": "private getProvider(tier: ModelTier): LlmProvider {\n    switch (tier) {\n      case 'local':\n        return this.providers.local ?? this.providers.lightweight\n      case 'lightweight':\n        return this.providers.lightweight\n      case 'standard':\n        return this.providers.standard\n    }\n  }",
+      "description": "When routingOverrides explicitly maps a task to 'local' but no local provider is configured, resolveTier() returns 'local' (line 98 honors the override) and getProvider() silently falls back to lightweight via the ?? operator (line 180). The user's explicit routing configuration is silently ignored with no warning, log, or error. This could cause unexpected cost increases if the user believes classification calls are going to a free local model but they're actually hitting the paid lightweight tier.",
+      "suggestion": "Either (a) validate in the constructor that any tier referenced in routingOverrides has a corresponding provider, or (b) log a warning when getProvider falls back:\n\ncase 'local':\n  if (!this.providers.local) {\n    console.warn('ModelRouter: local provider not configured, falling back to lightweight')\n  }\n  return this.providers.local ?? this.providers.lightweight"
+    }
+  ],
+  "positive_observations": [
+    "DeduplicationTracker is a clean pure-data class with no I/O -- no error handling needed, error-free by design",
+    "classifyTask is a pure function with deterministic behavior -- good Functional Core / Imperative Shell separation",
+    "getStats() returns shallow copies of internal state ({ ...this.tierCalls }), preventing external mutation",
+    "Division-by-zero is correctly guarded in both getStats() and DeduplicationTracker.getStats() with total > 0 checks",
+    "Test file includes an explicit error propagation test (model-router.test.ts line 308-331), showing awareness of error handling even if the implementation doesn't add context yet"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

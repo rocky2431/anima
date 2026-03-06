@@ -1,4 +1,4 @@
-import type { ActivityEvent, ScreenshotProvider, VlmProvider, VlmResult } from '@proj-airi/context-engine'
+import type { ActivityEvent, ScreenshotProvider, VlmProvider, VlmResult } from '@anase/context-engine'
 
 import type { AnimaProactiveEvent } from './orchestrator'
 

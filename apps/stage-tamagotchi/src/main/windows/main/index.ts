@@ -14,7 +14,7 @@ import clickDragPlugin from 'electron-click-drag-plugin'
 import { is } from '@electron-toolkit/utils'
 import { defineInvokeHandler } from '@moeru/eventa'
 import { createContext } from '@moeru/eventa/adapters/electron/main'
-import { initScreenCaptureForWindow } from '@proj-airi/electron-screen-capture/main'
+import { initScreenCaptureForWindow } from '@anase/electron-screen-capture/main'
 import { defu } from 'defu'
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { isLinux, isMacOS } from 'std-env'
@@ -61,10 +61,10 @@ export async function setupMainWindow(params: {
 
   setupConfig()
 
-  const mainWindowConfig = getConfig().windows?.find(w => w.title === 'AIRI' && w.tag === 'main')
+  const mainWindowConfig = getConfig().windows?.find(w => w.title === 'Anase' && w.tag === 'main')
 
   const window = new BrowserWindow({
-    title: 'AIRI',
+    title: 'Anase',
     width: mainWindowConfig?.width ?? 450.0,
     height: mainWindowConfig?.height ?? 600.0,
     x: mainWindowConfig?.x,
@@ -103,11 +103,11 @@ export async function setupMainWindow(params: {
       config.windows = []
     }
 
-    const existingConfigIndex = config.windows.findIndex(w => w.title === 'AIRI' && w.tag === 'main')
+    const existingConfigIndex = config.windows.findIndex(w => w.title === 'Anase' && w.tag === 'main')
 
     if (existingConfigIndex === -1) {
       config.windows.push({
-        title: 'AIRI',
+        title: 'Anase',
         tag: 'main',
         x: newBounds.x,
         y: newBounds.y,
@@ -116,7 +116,7 @@ export async function setupMainWindow(params: {
       })
     }
     else {
-      const mainWindowConfig = defu(config.windows[existingConfigIndex], { title: 'AIRI', tag: 'main' })
+      const mainWindowConfig = defu(config.windows[existingConfigIndex], { title: 'Anase', tag: 'main' })
 
       mainWindowConfig.x = newBounds.x
       mainWindowConfig.y = newBounds.y

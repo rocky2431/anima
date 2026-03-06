@@ -134,7 +134,7 @@ export function sharedUnoConfig() {
         scale: 1.2,
         collections: {
           ...createExternalPackageIconLoader('@proj-airi/lobe-icons'),
-          ...createExternalPackageIconLoader('@proj-airi/iconify-meteocons'),
+          ...createExternalPackageIconLoader('@anase/iconify-meteocons'),
         },
       }),
       presetScrollbar(),

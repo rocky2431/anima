@@ -1,17 +1,17 @@
 {
-  "name": "@proj-airi/component-calling",
+  "name": "@anase/component-calling",
   "type": "module",
   "private": true,
   "description": "Realtime audio",
   "author": {
-    "name": "Moeru AI Project AIRI Team",
-    "email": "airi@moeru.ai",
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
     "url": "https://github.com/moeru-ai"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/moeru-ai/airi.git",
+    "url": "https://github.com/rocky2431/anima.git",
     "directory": "apps/component-calling"
   },
   "scripts": {
@@ -21,8 +21,8 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "@proj-airi/stage-ui": "workspace:^",
-    "@proj-airi/ui": "workspace:^",
+    "@anase/stage-ui": "workspace:^",
+    "@anase/ui": "workspace:^",
     "@valibot/to-json-schema": "1.0.0-rc.0",
     "@vueuse/core": "^14.1.0",
     "es-toolkit": "^1.44.0",

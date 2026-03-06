@@ -1,0 +1,197 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260304-170355-main-iter1",
+  "findings": [
+    {
+      "id": "simplify-001",
+      "severity": "P2",
+      "confidence": 95,
+      "category": "simplification",
+      "title": "Near-duplicate LLM and Embedding store modules (~90% identical)",
+      "file": "packages/stage-ui/src/stores/modules/llm.ts",
+      "line": 1,
+      "code_snippet": "// llm.ts (109 lines) vs embedding.ts (109 lines)\n// Both follow the exact same structure:\n// - useLocalStorage for activeProvider/activeModel\n// - ref for configured state + disposers\n// - sendConfig() resolves provider via unifiedStore\n// - initialize() listens for config:status event\n// - dispose() / resetState() identical pattern",
+      "description": "packages/stage-ui/src/stores/modules/llm.ts and packages/stage-ui/src/stores/modules/embedding.ts are ~90% identical. The only differences are: (1) localStorage key prefix ('settings/llm/' vs 'settings/embedding/'), (2) event names ('llm:config:update' vs 'embedding:config:update'), (3) ref name (llmConfigured vs embeddingConfigured), and (4) exported function name (sendLlmConfig vs sendEmbeddingConfig). The sendConfig functions at lines 21-56 in both files are structurally identical, including the same apiKey/baseURL extraction logic from config. This is a 10+ line near-duplicate block spanning the entire file structure.",
+      "suggestion": "BEFORE (in both llm.ts and embedding.ts, lines 37-39):\n```ts\nconst apiKey = (config.apiKey ?? config['api-key'] ?? '') as string\nconst baseURL = (config.baseUrl ?? config['base-url'] ?? '') as string\n```\n\nAFTER:\nExtract a shared factory function or composable that creates these config stores:\n```ts\n// create-config-module-store.ts\nexport function createConfigModuleStore(kind: 'llm' | 'embedding') {\n  const storagePrefix = `settings/${kind}`\n  const configUpdateEvent = `${kind}:config:update`\n  const configStatusEvent = `${kind}:config:status`\n  // ... shared logic\n}\n```\n\nAlternatively, extract the shared apiKey/baseURL resolution into a utility:\n```ts\nexport function resolveProviderCredentials(config: Record<string, unknown>) {\n  return {\n    apiKey: (config.apiKey ?? config['api-key'] ?? '') as string,\n    baseURL: (config.baseUrl ?? config['base-url'] ?? '') as string,\n  }\n}\n```\n\nWHY: Both stores are 109 lines and structurally identical. This violates DRY and means any bug fix or feature addition must be applied twice. The apiKey/baseURL extraction pattern also appears in memory.ts (line 104-105), making it a 3-site duplication -- crossing the threshold for extraction."
+    },
+    {
+      "id": "simplify-002",
+      "severity": "P2",
+      "confidence": 92,
+      "category": "simplification",
+      "title": "Triplicated apiKey/baseURL extraction from provider config",
+      "file": "packages/stage-ui/src/stores/modules/memory.ts",
+      "line": 104,
+      "code_snippet": "const apiKey = (config.apiKey ?? config['api-key'] ?? '') as string\nconst baseURL = (config.baseUrl ?? config['base-url'] ?? '') as string",
+      "description": "The exact same 2-line pattern for extracting apiKey and baseURL from a provider config appears in three separate files: packages/stage-ui/src/stores/modules/llm.ts (line 37-38), packages/stage-ui/src/stores/modules/embedding.ts (line 37-38), and packages/stage-ui/src/stores/modules/memory.ts (line 104-105). This dual-key lookup ('apiKey' vs 'api-key', 'baseUrl' vs 'base-url') is a form of defensive coding against inconsistent provider config shape, and the 3-site repetition meets the extraction threshold.",
+      "suggestion": "BEFORE (3 locations):\n```ts\nconst apiKey = (config.apiKey ?? config['api-key'] ?? '') as string\nconst baseURL = (config.baseUrl ?? config['base-url'] ?? '') as string\n```\n\nAFTER:\n```ts\n// In a shared utility (e.g., packages/stage-ui/src/utils/provider-config.ts)\nexport function resolveProviderCredentials(config: Record<string, unknown>): { apiKey: string, baseURL: string } {\n  return {\n    apiKey: (config.apiKey ?? config['api-key'] ?? '') as string,\n    baseURL: (config.baseUrl ?? config['base-url'] ?? '') as string,\n  }\n}\n\n// Usage:\nconst { apiKey, baseURL } = resolveProviderCredentials(config)\n```\n\nWHY: 3 sites of identical defensive extraction logic. A shared function centralizes the mapping and makes it easy to fix if the provider config shape stabilizes."
+    },
+    {
+      "id": "simplify-003",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "title": "Near-duplicate LLM and Embedding backend handler modules",
+      "file": "services/airi-brain/src/handlers/llm.ts",
+      "line": 1,
+      "code_snippet": "// llm.ts (59 lines) mirrors embedding.ts first 55 lines:\n// - pushStatus() function (identical structure)\n// - registerHandler() function:\n//   - load persisted config from brainStore\n//   - listen for config:update event\n//   - persist, create handle, push status\n//   - setTimeout push initial status",
+      "description": "services/airi-brain/src/handlers/llm.ts and services/airi-brain/src/handlers/embedding.ts share nearly identical structure for their first ~55 lines. Both have: (1) a pushStatus() function that checks the same 4 fields (provider, apiKey, baseURL, model), (2) a registerHandler that loads persisted config, applies it if complete, listens for config:update, persists new config, creates a handle, and pushes status. The 4-field completeness check `!!(config.provider && config.apiKey && config.baseURL && config.model)` appears 4 times across both files. The embedding handler has extra model-listing/validation logic, but the core config management is duplicated.",
+      "suggestion": "BEFORE (pushStatus in llm.ts, lines 12-22):\n```ts\nfunction pushStatus(client: Client, config: LlmConfig): void {\n  const configured = !!(config.provider && config.apiKey && config.baseURL && config.model)\n  client.send({\n    type: 'llm:config:status',\n    data: {\n      configured,\n      provider: configured ? config.provider : undefined,\n      model: configured ? config.model : undefined,\n    },\n  })\n}\n```\n\nAFTER:\nExtract a shared helper for the repeated config-completeness check and status push:\n```ts\nfunction isConfigComplete(config: { provider: string, apiKey: string, baseURL: string, model: string }): boolean {\n  return !!(config.provider && config.apiKey && config.baseURL && config.model)\n}\n\nfunction pushConfigStatus(client: Client, eventType: string, config: { provider: string, model: string }, configured: boolean): void {\n  client.send({\n    type: eventType,\n    data: {\n      configured,\n      provider: configured ? config.provider : undefined,\n      model: configured ? config.model : undefined,\n    },\n  })\n}\n```\n\nWHY: The isConfigComplete check appears 4 times total (2 in llm.ts, 2 in embedding.ts), and pushStatus is structurally identical between the two. Extracting these reduces the risk of the patterns diverging and simplifies both handler files."
+    },
+    {
+      "id": "simplify-004",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "simplification",
+      "title": "Repeated try/catch error message extraction pattern (6+ occurrences)",
+      "file": "services/airi-brain/src/pipeline.ts",
+      "line": 58,
+      "code_snippet": "catch (err) {\n  const msg = err instanceof Error ? err.message : String(err)\n  log.withFields({ error: msg }).warn('Failed to initialize MemoryOrchestrator')\n}",
+      "description": "The pattern `const msg = err instanceof Error ? err.message : String(err)` appears 6+ times across the brain service files: pipeline.ts (lines 58, 73, 93), index.ts (line 156, 166), evening-pipeline.ts (line 108), embedding.ts (line 118, 169). Each time it extracts a string message from an unknown error. While individually simple, this is a pervasive micro-duplication.",
+      "suggestion": "BEFORE (6+ locations):\n```ts\ncatch (err) {\n  const msg = err instanceof Error ? err.message : String(err)\n  log.withFields({ error: msg }).warn('...')\n}\n```\n\nAFTER:\n```ts\n// utils.ts\nexport function errorMessage(err: unknown): string {\n  return err instanceof Error ? err.message : String(err)\n}\n\n// usage:\ncatch (err) {\n  log.withFields({ error: errorMessage(err) }).warn('...')\n}\n```\n\nWHY: 6+ identical inline expressions. A one-liner utility would reduce repetition and centralize any future changes to error message formatting (e.g., adding cause chain extraction). This is a common enough pattern across the brain service to warrant extraction."
+    },
+    {
+      "id": "simplify-005",
+      "severity": "P2",
+      "confidence": 93,
+      "category": "simplification",
+      "title": "createPipeline has 3 near-identical try/catch blocks for component init",
+      "file": "services/airi-brain/src/pipeline.ts",
+      "line": 46,
+      "code_snippet": "if (embeddingAdapter) {\n  try {\n    const { MemoryOrchestrator: OrchestratorClass } = await import('@proj-airi/context-engine')\n    orchestrator = new OrchestratorClass({ ... })\n    await orchestrator.init()\n    log.log('MemoryOrchestrator initialized')\n  }\n  catch (err) { ... }\n}\nelse {\n  log.log('MemoryOrchestrator skipped ...')\n}",
+      "description": "The createPipeline function (lines 30-102, 72 lines) contains three structurally identical blocks: each checks adapter availability, dynamically imports a class from context-engine, instantiates it, logs success, catches errors with the same pattern, and logs a skip message in the else branch. This is a clear case of copy-paste-modify across three pipeline components (MemoryOrchestrator, ReportGenerator, MemoryExtractor) spanning lines 46-99.",
+      "suggestion": "BEFORE (3 blocks, ~18 lines each):\n```ts\nif (embeddingAdapter) {\n  try {\n    const { MemoryOrchestrator: OrchestratorClass } = await import('@proj-airi/context-engine')\n    orchestrator = new OrchestratorClass({...})\n    log.log('MemoryOrchestrator initialized')\n  } catch (err) {\n    const msg = err instanceof Error ? err.message : String(err)\n    log.withFields({ error: msg }).warn('Failed to initialize MemoryOrchestrator')\n  }\n} else {\n  log.log('MemoryOrchestrator skipped -- ...')\n}\n```\n\nAFTER:\n```ts\nasync function initComponent<T>(\n  name: string,\n  condition: boolean,\n  factory: () => Promise<T>,\n  skipReason: string,\n): Promise<T | null> {\n  if (!condition) {\n    log.log(`${name} skipped -- ${skipReason}`)\n    return null\n  }\n  try {\n    const instance = await factory()\n    log.log(`${name} initialized`)\n    return instance\n  } catch (err) {\n    log.withFields({ error: errorMessage(err) }).warn(`Failed to initialize ${name}`)\n    return null\n  }\n}\n\norchestrator = await initComponent('MemoryOrchestrator', !!embeddingAdapter, async () => { ... }, 'embedding not configured')\n```\n\nWHY: Three 18-line blocks with the same structure. A generic init helper would cut ~36 lines and make adding new pipeline components trivial."
+    },
+    {
+      "id": "simplify-006",
+      "severity": "P2",
+      "confidence": 95,
+      "category": "code-quality",
+      "title": "autoEnableModules has 8 identical try/catch blocks",
+      "file": "packages/stage-ui/src/stores/onboarding.ts",
+      "line": 65,
+      "code_snippet": "function autoEnableModules(): void {\n  const enabledModules: string[] = []\n  try {\n    useTodoModuleStore().initialize()\n    enabledModules.push('todo')\n  } catch (err) {\n    console.error('Failed to initialize todo module:', err)\n  }\n  try {\n    useMemoryModuleStore().initialize()\n    enabledModules.push('memory')\n  } catch (err) {\n    console.error('Failed to initialize memory module:', err)\n  }\n  // ... 6 more identical blocks\n}",
+      "description": "The autoEnableModules function (lines 65-133, 68 lines) contains 8 structurally identical try/catch blocks. Each block calls a store's initialize(), pushes the module name to an array, and catches with console.error. This is the most obvious copy-paste pattern in the diff and accounts for the function exceeding the 50-line threshold.",
+      "suggestion": "BEFORE (68 lines with 8 try/catch blocks):\n```ts\ntry {\n  useTodoModuleStore().initialize()\n  enabledModules.push('todo')\n} catch (err) {\n  console.error('Failed to initialize todo module:', err)\n}\n// ... repeated 7 more times\n```\n\nAFTER (~15 lines):\n```ts\nfunction autoEnableModules(): void {\n  const modules: Array<[string, () => void]> = [\n    ['todo', () => useTodoModuleStore().initialize()],\n    ['memory', () => useMemoryModuleStore().initialize()],\n    ['activity', () => useActivityModuleStore().initialize()],\n    ['skills', () => useSkillsModuleStore().initialize()],\n    ['persona', () => usePersonaModuleStore().initialize()],\n    ['contextDisplay', () => useContextDisplayStore().initialize()],\n    ['embedding', () => useEmbeddingStore().initialize()],\n    ['llm', () => useLlmStore().initialize()],\n  ]\n\n  const enabledModules: string[] = []\n  for (const [name, init] of modules) {\n    try {\n      init()\n      enabledModules.push(name)\n    } catch (err) {\n      console.error(`Failed to initialize ${name} module:`, err)\n    }\n  }\n\n  console.info('[Onboarding] Auto-enabled modules:', enabledModules.join(', '))\n}\n```\n\nWHY: Reduces 68 lines to ~15. Eliminates 8 identical try/catch blocks. Adding a new module becomes a single array entry instead of 5 new lines. Per CLAUDE.md, three similar lines are acceptable; eight identical blocks are not."
+    },
+    {
+      "id": "simplify-007",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "simplification",
+      "title": "createLlmHandle and createEmbeddingHandle are identical functions",
+      "file": "services/airi-brain/src/providers.ts",
+      "line": 120,
+      "code_snippet": "export function createEmbeddingHandle(config: EmbeddingConfig): EmbeddingModelHandle {\n  const cfg = { ...config }\n  log.log('Embedding provider updated at runtime', { provider: cfg.provider, model: cfg.model })\n  return {\n    config: cfg,\n    requestDefaults: () => ({\n      apiKey: cfg.apiKey,\n      baseURL: cfg.baseURL,\n      model: cfg.model,\n    }),\n  }\n}\n\nexport function createLlmHandle(config: LlmConfig): LlmModelHandle {\n  const cfg = { ...config }\n  log.log('LLM provider updated at runtime', { provider: cfg.provider, model: cfg.model })\n  return {\n    config: cfg,\n    requestDefaults: () => ({\n      apiKey: cfg.apiKey,\n      baseURL: cfg.baseURL,\n      model: cfg.model,\n    }),\n  }\n}",
+      "description": "createEmbeddingHandle (lines 120-131) and createLlmHandle (lines 137-148) in providers.ts are structurally identical. They both spread config, log a message, and return an object with config and requestDefaults(). The only difference is the log message text. The LlmConfig and EmbeddingConfig interfaces (lines 7-19) are also identical in shape (provider, apiKey, baseURL, model). Additionally, the same handle-creation pattern appears inline in createBrainProviders (lines 78-85, 102-109), making this a 4-site duplication.",
+      "suggestion": "BEFORE:\n```ts\nexport interface LlmConfig { provider: string, apiKey: string, baseURL: string, model: string }\nexport interface EmbeddingConfig { provider: string, apiKey: string, baseURL: string, model: string }\n\nexport function createEmbeddingHandle(config: EmbeddingConfig): EmbeddingModelHandle { ... }\nexport function createLlmHandle(config: LlmConfig): LlmModelHandle { ... }\n```\n\nAFTER:\n```ts\nexport interface ProviderConfig { provider: string, apiKey: string, baseURL: string, model: string }\nexport type LlmConfig = ProviderConfig\nexport type EmbeddingConfig = ProviderConfig\n\nfunction createModelHandle<T extends ProviderConfig>(kind: string, config: T) {\n  const cfg = { ...config }\n  log.log(`${kind} provider updated at runtime`, { provider: cfg.provider, model: cfg.model })\n  return {\n    config: cfg,\n    requestDefaults: () => ({ apiKey: cfg.apiKey, baseURL: cfg.baseURL, model: cfg.model }),\n  }\n}\n\nexport const createLlmHandle = (c: LlmConfig) => createModelHandle('LLM', c)\nexport const createEmbeddingHandle = (c: EmbeddingConfig) => createModelHandle('Embedding', c)\n```\n\nWHY: The two interfaces are identical and the two functions are identical. Unifying them eliminates duplication while preserving the public API via type aliases."
+    },
+    {
+      "id": "simplify-008",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "title": "Duplicated normalizeBaseUrl function across frontend providers",
+      "file": "packages/stage-ui/src/stores/providers/unified/dashscope.ts",
+      "line": 5,
+      "code_snippet": "function normalizeBaseUrl(value: string): string {\n  let base = value.trim()\n  if (base && !base.endsWith('/'))\n    base += '/'\n  return base\n}",
+      "description": "The normalizeBaseUrl function is duplicated verbatim in two provider files: packages/stage-ui/src/stores/providers/unified/dashscope.ts (lines 5-9) and packages/stage-ui/src/stores/providers/unified/openrouter.ts (lines 8-12). The same logic also appears inline in the backend at services/airi-brain/src/adapters.ts (lines 16, 41, 90) as `baseURL.endsWith('/') ? baseURL : baseURL + '/'` and in embedding.ts (lines 63-65). This is the same URL normalization concern appearing in 4+ locations.",
+      "suggestion": "BEFORE (2 files, same function):\n```ts\nfunction normalizeBaseUrl(value: string): string {\n  let base = value.trim()\n  if (base && !base.endsWith('/'))\n    base += '/'\n  return base\n}\n```\n\nAFTER:\n```ts\n// In a shared utility (e.g., packages/stage-shared/src/utils/url.ts)\nexport function normalizeBaseUrl(value: string): string {\n  let base = value.trim()\n  if (base && !base.endsWith('/'))\n    base += '/'\n  return base\n}\n\n// Import in both provider files\nimport { normalizeBaseUrl } from '@proj-airi/stage-shared'\n```\n\nWHY: Identical function duplicated across provider definitions and appearing inline in backend adapters. Centralizing it ensures consistent URL normalization behavior across the entire codebase."
+    },
+    {
+      "id": "simplify-009",
+      "severity": "P2",
+      "confidence": 87,
+      "category": "simplification",
+      "title": "Repeated dispose pattern across all module stores",
+      "file": "packages/stage-ui/src/stores/modules/activity.ts",
+      "line": 87,
+      "code_snippet": "function dispose(): void {\n  for (const d of disposers.value) {\n    d()\n  }\n  disposers.value = []\n}",
+      "description": "The exact same dispose() function pattern (iterate disposers array, call each, reset array) appears in 5 module stores: activity.ts (line 87-91), embedding.ts (line 85-89), llm.ts (line 85-89), memory.ts (line 180-184), and provider-sync.ts (line 113-117). All use `ref<Array<() => void>>([])` for disposers and the same cleanup loop. While each instance is only 5 lines, the pattern is used 5 times, totaling 25 lines of identical code.",
+      "suggestion": "BEFORE (5 stores, same pattern):\n```ts\nconst disposers = ref<Array<() => void>>([])\n\nfunction dispose(): void {\n  for (const d of disposers.value) {\n    d()\n  }\n  disposers.value = []\n}\n```\n\nAFTER:\n```ts\n// composable: useDisposers.ts\nexport function useDisposers() {\n  const disposers = ref<Array<() => void>>([])\n  function add(fn: () => void) { disposers.value.push(fn) }\n  function dispose() {\n    for (const d of disposers.value) d()\n    disposers.value = []\n  }\n  return { disposers, add, dispose }\n}\n\n// Usage in stores:\nconst { add: addDisposer, dispose } = useDisposers()\naddDisposer(serverChannel.onEvent('activity:state', ...))\n```\n\nWHY: 5 identical implementations of the same disposer lifecycle pattern. A shared composable would standardize the pattern and allow adding safety features (e.g., error handling during dispose) in one place."
+    },
+    {
+      "id": "simplify-010",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "code-quality",
+      "title": "Duplicated LlmConfig and EmbeddingConfig types across store.ts and providers.ts",
+      "file": "services/airi-brain/src/store.ts",
+      "line": 19,
+      "code_snippet": "// store.ts:\nexport interface LlmConfig {\n  provider: string\n  apiKey: string\n  baseURL: string\n  model: string\n}\nexport interface EmbeddingConfig {\n  provider: string\n  apiKey: string\n  baseURL: string\n  model: string\n}\n\n// providers.ts:\nexport interface LlmConfig {\n  provider: string\n  apiKey: string\n  baseURL: string\n  model: string\n}\nexport interface EmbeddingConfig {\n  provider: string\n  apiKey: string\n  baseURL: string\n  model: string\n}",
+      "description": "The interfaces LlmConfig and EmbeddingConfig are defined identically in both services/airi-brain/src/store.ts (lines 19-24, 34-39) and services/airi-brain/src/providers.ts (lines 7-12, 14-19). Both files export these interfaces. This means there are 4 identical interface definitions (2 names x 2 files), all with the same 4 fields. The embedding handler imports from store.ts while providers.ts defines its own copies.",
+      "suggestion": "BEFORE (4 identical interface definitions across 2 files):\n```ts\n// store.ts\nexport interface LlmConfig { provider: string, apiKey: string, baseURL: string, model: string }\nexport interface EmbeddingConfig { provider: string, apiKey: string, baseURL: string, model: string }\n\n// providers.ts\nexport interface LlmConfig { provider: string, apiKey: string, baseURL: string, model: string }\nexport interface EmbeddingConfig { provider: string, apiKey: string, baseURL: string, model: string }\n```\n\nAFTER:\n```ts\n// types.ts (new shared types file)\nexport interface ProviderConfig {\n  provider: string\n  apiKey: string\n  baseURL: string\n  model: string\n}\nexport type LlmConfig = ProviderConfig\nexport type EmbeddingConfig = ProviderConfig\n\n// Both store.ts and providers.ts import from types.ts\nimport type { EmbeddingConfig, LlmConfig } from './types'\n```\n\nWHY: 4 identical interface definitions. Having a single source of truth prevents drift and makes it clear these types share the same shape intentionally."
+    },
+    {
+      "id": "simplify-011",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "code-quality",
+      "title": "Duplicated fetch request pattern in LLM adapter methods",
+      "file": "services/airi-brain/src/adapters.ts",
+      "line": 14,
+      "code_snippet": "async generateText({ system, prompt }) {\n  const { apiKey, baseURL, model } = handle.requestDefaults()\n  const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`\n  const url = new URL('chat/completions', base)\n  const response = await fetch(url, {\n    method: 'POST',\n    headers: {\n      'Authorization': `Bearer ${apiKey}`,\n      'Content-Type': 'application/json',\n    },\n    body: JSON.stringify({ model, messages: [...] }),\n  })\n  if (!response.ok) {\n    const body = await response.text().catch(() => '')\n    throw new Error(`LLM generateText failed: HTTP ${response.status} -- ${body}`)\n  }\n  // ...\n}",
+      "description": "In services/airi-brain/src/adapters.ts, the createLlmProviderAdapter function has two methods (generateText lines 14-38, generateStructured lines 39-70) that share nearly identical fetch setup: extracting requestDefaults, normalizing baseURL, constructing URL, building headers, checking response.ok, extracting error body. The request setup + error handling accounts for ~15 lines duplicated between the two methods. The embedding adapter (lines 88-109) shares the same pattern too.",
+      "suggestion": "BEFORE (duplicated in generateText and generateStructured):\n```ts\nconst { apiKey, baseURL, model } = handle.requestDefaults()\nconst base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`\nconst url = new URL('chat/completions', base)\nconst response = await fetch(url, {\n  method: 'POST',\n  headers: {\n    'Authorization': `Bearer ${apiKey}`,\n    'Content-Type': 'application/json',\n  },\n  body: JSON.stringify({ model, ...body }),\n})\nif (!response.ok) {\n  const body = await response.text().catch(() => '')\n  throw new Error(`... failed: HTTP ${response.status} -- ${body}`)\n}\n```\n\nAFTER:\n```ts\nasync function postApi(\n  handle: { requestDefaults: () => { apiKey: string, baseURL: string, model: string } },\n  path: string,\n  body: Record<string, unknown>,\n  errorPrefix: string,\n): Promise<unknown> {\n  const { apiKey, baseURL, model } = handle.requestDefaults()\n  const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`\n  const response = await fetch(new URL(path, base), {\n    method: 'POST',\n    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },\n    body: JSON.stringify({ model, ...body }),\n  })\n  if (!response.ok) {\n    const text = await response.text().catch(() => '')\n    throw new Error(`${errorPrefix}: HTTP ${response.status} -- ${text}`)\n  }\n  return response.json()\n}\n```\n\nWHY: Three methods (generateText, generateStructured, embed) all build the same fetch request with the same headers and error handling. A shared helper would cut ~30 duplicated lines and centralize retry/timeout logic if added later."
+    },
+    {
+      "id": "simplify-012",
+      "severity": "P1",
+      "confidence": 82,
+      "category": "code-quality",
+      "title": "setupApp message handler exceeds 100 lines with deep nesting",
+      "file": "packages/server-runtime/src/index.ts",
+      "line": 198,
+      "code_snippet": "message: (peer, message) => {\n  const authenticatedPeer = peers.get(peer.id)\n  // ... parse, switch, broadcast\n  // Lines 198-413 (215 lines)\n}",
+      "description": "The WebSocket message handler in packages/server-runtime/src/index.ts spans lines 198-413, approximately 215 lines. It contains a switch statement with 4 cases (heartbeat, authenticate, announce, ui:configure), followed by a default routing/broadcast section. The announce case (lines 264-306) has 4 levels of nesting (handler > switch > if > if). While each individual case is reasonable, the combined handler is a P1 due to exceeding 100 lines.",
+      "suggestion": "BEFORE:\n```ts\nmessage: (peer, message) => {\n  // 215 lines of parsing, switching, routing\n}\n```\n\nAFTER:\nExtract each switch case into a named function:\n```ts\nfunction handleHeartbeat(peer, event, p): boolean { ... }\nfunction handleAuthenticate(peer, event, authPeer): boolean { ... }\nfunction handleAnnounce(peer, event, p): boolean { ... }\nfunction handleUiConfigure(peer, event): boolean { ... }\nfunction broadcastEvent(peer, event, p): void { ... }\n\nmessage: (peer, message) => {\n  const { event, authenticatedPeer } = parseAndValidate(peer, message)\n  if (!event) return\n\n  switch (event.type) {\n    case 'transport:connection:heartbeat': return handleHeartbeat(...)\n    case 'module:authenticate': return handleAuthenticate(...)\n    case 'module:announce': return handleAnnounce(...)\n    case 'ui:configure': return handleUiConfigure(...)\n  }\n\n  broadcastEvent(peer, event, authenticatedPeer)\n}\n```\n\nWHY: At 215 lines, this is the most complex single function in the diff, exceeding the 100-line P1 threshold. Extracting named handler functions improves readability and makes each case independently testable."
+    },
+    {
+      "id": "simplify-013",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "simplification",
+      "title": "Magic number 0.85 for dedup threshold in pipeline",
+      "file": "services/airi-brain/src/pipeline.ts",
+      "line": 89,
+      "code_snippet": "memoryExtractor = new ExtractorClass({\n  llm: llmAdapter,\n  embedding: embeddingAdapter,\n  persona,\n  dedupThreshold: 0.85,\n})",
+      "description": "The dedup threshold 0.85 on line 89 of services/airi-brain/src/pipeline.ts is a magic number with no named constant. Per project convention, named constants are preferred over magic numbers.",
+      "suggestion": "BEFORE:\n```ts\ndedupThreshold: 0.85,\n```\n\nAFTER:\n```ts\nconst DEFAULT_DEDUP_THRESHOLD = 0.85\n// ...\ndedupThreshold: DEFAULT_DEDUP_THRESHOLD,\n```\n\nWHY: Named constant communicates intent and makes the threshold discoverable for tuning. Consistent with the project's convention of named constants over magic numbers."
+    },
+    {
+      "id": "simplify-014",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "title": "Duplicate possibleEvents arrays in client and server channel store",
+      "file": "packages/stage-ui/src/stores/mods/api/channel-server.ts",
+      "line": 23,
+      "code_snippet": "const basePossibleEvents: Array<keyof WebSocketEvents> = [\n  'context:update',\n  'error',\n  // ... ~40 event names\n]",
+      "description": "The possibleEvents array in packages/stage-ui/src/stores/mods/api/channel-server.ts (lines 23-83, ~40 entries) and services/airi-brain/src/index.ts (lines 68-114, ~40 entries) both list a largely overlapping set of event types. While they serve different roles (frontend vs backend), many event names are duplicated between them. If the event type system enforces a shared contract, these could be derived from a shared constant.",
+      "suggestion": "BEFORE:\n```ts\n// channel-server.ts: ~40 event names\n// index.ts: ~40 event names (overlapping)\n```\n\nAFTER:\nConsider defining shared event name groups in the server-shared or plugin-protocol package:\n```ts\n// server-shared/events.ts\nexport const BRAIN_EVENTS = [\n  'memory:list', 'memory:search', ...\n] as const\nexport const ACTIVITY_EVENTS = [...] as const\n```\n\nThen import and spread in both locations. Only do this if maintaining event parity between frontend and backend is important.\n\nWHY: Reduces the risk of event names drifting between frontend and backend. The event types were already added to packages/plugin-protocol/src/types/events.ts in this diff, suggesting shared event typing is desired."
+    }
+  ],
+  "summary": {
+    "total_findings": 14,
+    "by_severity": {
+      "P0": 0,
+      "P1": 1,
+      "P2": 10,
+      "P3": 3
+    },
+    "verdict": "The diff introduces substantial new functionality (Activity pipeline, LLM/Embedding config, provider sync, evening pipeline) but contains significant structural duplication. The most impactful issue is the P1 message handler in server-runtime at 215 lines. The dominant pattern across P2 findings is near-identical code between LLM and Embedding variants -- the frontend stores (llm.ts vs embedding.ts), backend handlers (llm.ts vs embedding.ts), provider handle factories (createLlmHandle vs createEmbeddingHandle), and type definitions (LlmConfig/EmbeddingConfig duplicated across files) all follow the same structure with minimal variation. Extracting shared utilities for: (1) provider credential resolution, (2) config completeness checking, (3) model handle creation, (4) error message extraction, and (5) disposer lifecycle management would eliminate the majority of duplication. The autoEnableModules function in onboarding.ts is also a straightforward data-driven refactor opportunity that would cut 68 lines to ~15."
+  },
+  "positive_observations": [
+    "Individual functions are generally short and well-scoped -- most are under 30 lines, consistent with project conventions.",
+    "Guard clauses and early returns are used effectively throughout (e.g., pipeline.ts checks for adapter availability, embedding.ts checks for config completeness before proceeding).",
+    "The pipeline architecture cleanly separates concerns: providers.ts for config, adapters.ts for protocol adaptation, pipeline.ts for orchestration, handlers/ for event routing.",
+    "Named constants are used for timing values (WINDOW_POLL_INTERVAL_MS, DEFAULT_HEARTBEAT_TTL_MS, DEV_DEFAULT_WS), following project convention.",
+    "The BrainStore class in store.ts uses parameterized SQL queries throughout -- no string concatenation vulnerabilities."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

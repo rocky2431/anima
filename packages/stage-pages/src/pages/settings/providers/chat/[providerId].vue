@@ -9,9 +9,9 @@ import {
   ProviderBasicSettings,
   ProviderSettingsContainer,
   ProviderSettingsLayout,
-} from '@proj-airi/stage-ui/components'
-import { useProviderValidation } from '@proj-airi/stage-ui/composables/use-provider-validation'
-import { resolveProviderId, useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
+} from '@anase/stage-ui/components'
+import { useProviderValidation } from '@anase/stage-ui/composables/use-provider-validation'
+import { resolveProviderId, useProvidersStore } from '@anase/stage-ui/stores/providers'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'

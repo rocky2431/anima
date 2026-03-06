@@ -1,7 +1,7 @@
-import type { McpServerConfigInput, RecommendedMcpServer, TransportType } from '@proj-airi/mcp-hub'
+import type { McpServerConfigInput, RecommendedMcpServer, TransportType } from '@anase/mcp-hub'
 
-import { getRecommendedServers } from '@proj-airi/mcp-hub'
-import { useLocalStorageManualReset } from '@proj-airi/stage-shared/composables'
+import { getRecommendedServers } from '@anase/mcp-hub'
+import { useLocalStorageManualReset } from '@anase/stage-shared/composables'
 import { nanoid } from 'nanoid'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'

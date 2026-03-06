@@ -1,0 +1,128 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260221-030900-feat-task-22-context-merger-iter1",
+  "timestamp": "2026-02-21T03:09:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/context-merger.ts",
+      "packages/context-engine/src/processing/entity-extractor.ts",
+      "packages/context-engine/src/processing/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/context-merger.test.ts",
+      "packages/context-engine/src/__tests__/entity-extractor.test.ts",
+      "packages/context-engine/src/__tests__/context-merger-utils.test.ts"
+    ],
+    "total_lines_analyzed": 935,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 3, "P3": 1 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "ContextMerger and EntityExtractor have no live consumer",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 108,
+      "line_end": 189,
+      "code_snippet": "export class ContextMerger {\n  // ...\n}\n// Exported from index.ts but no import in apps/ or other packages/",
+      "description": "ContextMerger and EntityExtractor are exported from the context-engine barrel (index.ts) but no module in apps/ or any other package imports them. The classes are dead-on-arrival: no HTTP handler, event listener, cron job, or Electron service instantiates them. Grep across the entire monorepo (apps/, packages/, services/) returns zero import matches outside context-engine itself and its tests.",
+      "suggestion": "Wire ContextMerger into an existing live entry point, such as the AnimaOrchestrator in apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts, which already consumes other context-engine modules (ScreenshotPipeline, ActivityMonitor). Even a minimal call like `orchestrator.getMergedContext()` would prove the wiring works end-to-end.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "subcategory": "horizontal-only",
+      "title": "Horizontal-only change: no vertical slice integration",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 1,
+      "line_end": 189,
+      "code_snippet": "// New files: context-merger.ts, entity-extractor.ts, types.ts\n// No wiring in orchestrator, no IPC handler, no event listener",
+      "description": "This task adds a complete context-merging layer (ContextMerger, EntityExtractor, types) with tests, but delivers zero vertical integration. There is no entry point that calls ContextMerger.merge(), no IPC handler exposes it to the UI, and no scheduled job triggers it. This is a horizontal layer addition (pure library code) rather than a vertical slice that proves end-to-end connectivity.",
+      "suggestion": "Add at least one vertical integration point: (1) call ContextMerger.merge() from AnimaOrchestrator when processing a context update cycle, passing the outputs of ScreenshotPipeline + ActivityMonitor as ContextSource[], or (2) add an IPC handler that the UI can invoke. Include one integration test proving the wiring.",
+      "claude_md_rule": "integration.vertical_slice"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "code-quality",
+      "subcategory": "duplicate-computation",
+      "title": "combinedText built twice with identical logic",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 130,
+      "line_end": 131,
+      "code_snippet": "const combinedText = selected\n  .map(s => `[${s.source}] ${s.summary}`)\n  .join('\\n')\n// ...later in generateSummary():\nconst sourceSummaries = sources\n  .map(s => `[${s.source}] ${s.summary}`)\n  .join('\\n')",
+      "description": "The merge() method builds `combinedText` at line 130-131, then passes `selected` to generateSummary() which rebuilds the identical string at lines 173-175. The same string formatting logic `[${s.source}] ${s.summary}` is duplicated. This is a minor DRY violation that also means the LLM receives the same text computed twice.",
+      "suggestion": "Pass the already-computed `combinedText` string directly to generateSummary() instead of passing `sources` and recomputing. Change the signature to `private async generateSummary(combinedText: string): Promise<string>` and call `this.llm.generateText({ system: SUMMARY_SYSTEM_PROMPT, prompt: combinedText })`.",
+      "claude_md_rule": "code_quality"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "missing-logging",
+      "title": "No structured logging in ContextMerger or EntityExtractor",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 108,
+      "line_end": 189,
+      "code_snippet": "export class ContextMerger {\n  async merge(sources: ContextSource[]): Promise<MergedContext> {\n    // No logging of source count, LLM call duration, errors\n  }\n}",
+      "description": "Neither ContextMerger nor EntityExtractor include any structured logging. The merge pipeline makes 3 concurrent LLM calls (entity extraction, activity classification, summary generation), but there is no visibility into: how many sources were merged, how long each LLM call took, which step failed on error. The catch block at line 151-156 re-throws with context but does not log. This is consistent with the broader context-engine package (no logging anywhere), but these classes perform expensive external I/O (LLM calls) where observability is critical.",
+      "suggestion": "Add @guiiai/logg structured logging: (1) INFO at merge start with sourceCount, (2) DEBUG with LLM call durations, (3) ERROR in the catch block before re-throwing. Example: `const logger = useLogg('ContextMerger')` and `logger.info('Merge started', { sourceCount: sources.length })`.",
+      "claude_md_rule": "logging"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "architecture",
+      "subcategory": "unsafe-as-cast",
+      "title": "Unsafe `as ActivityType` cast in validateActivityType",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 183,
+      "line_end": 188,
+      "code_snippet": "private validateActivityType(type: string): ActivityType {\n  if (VALID_ACTIVITY_TYPES.has(type)) {\n    return type as ActivityType\n  }\n  return 'other'\n}",
+      "description": "The `as ActivityType` cast at line 185 is technically safe because of the Set guard, but the VALID_ACTIVITY_TYPES Set is typed as `Set<string>` (line 16) rather than `Set<ActivityType>`. If someone adds a new ActivityType to the union but forgets to update the Set, the cast would silently allow the unvalidated value through. The Set and the type are not structurally linked.",
+      "suggestion": "Type the set as `Set<ActivityType>` to get compile-time enforcement: `const VALID_ACTIVITY_TYPES: ReadonlySet<ActivityType> = new Set<ActivityType>([...])`. This way, adding a new value to the ActivityType union without updating the Set would produce a type error (or at least make the mismatch reviewable). Alternatively, use a type guard function: `function isActivityType(s: string): s is ActivityType`.",
+      "claude_md_rule": "architecture"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "unnecessary-rethrow-check",
+      "title": "Redundant error identity check in catch block",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 151,
+      "line_end": 156,
+      "code_snippet": "catch (cause) {\n  if (cause instanceof Error && cause.message === 'At least one context source is required') {\n    throw cause\n  }\n  throw new Error('Context merge failed', { cause })\n}",
+      "description": "The catch block at line 151-156 checks if the caught error is the empty-sources validation error thrown at line 121 and re-throws it unwrapped. However, this validation error is thrown before any async work begins (line 120-122), so it exits the function before entering the try block. The only way to reach the catch is if one of the three LLM calls fails. The string-matching guard `cause.message === 'At least one context source is required'` is dead code -- this condition can never be true in the catch block.",
+      "suggestion": "Remove the identity check and simplify the catch to just: `catch (cause) { throw new Error('Context merge failed', { cause }) }`. Move the empty-sources guard above the try block (which it already is at line 120-122, so the guard in catch is already unreachable)."
+    }
+  ],
+  "positive_observations": [
+    "Clean Functional Core / Imperative Shell separation: pure utility functions (deduplicateStrings, mergeKeywords, computeImportance, selectTopSources) are properly extracted and independently testable without any mocking.",
+    "LLM calls use Test Doubles with proper rationale comments in both test files, consistent with project conventions for external API boundaries.",
+    "Comprehensive unit test coverage for all pure functions (context-merger-utils.test.ts) with edge cases: empty input, single element, whitespace trimming, case-insensitive dedup, clamping.",
+    "Error handling wraps LLM failures with contextual messages using the cause chain pattern (Error cause), enabling debuggable error traces.",
+    "Well-defined TypeScript interfaces (ContextSource, MergedContext, ExtractedEntities) with JSDoc documentation provide clear contracts for the merging pipeline.",
+    "Concurrent LLM calls via Promise.all for entity extraction, activity classification, and summary generation -- good performance optimization."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

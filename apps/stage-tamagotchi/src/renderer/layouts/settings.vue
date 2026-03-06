@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { isStageTamagotchi } from '@proj-airi/stage-shared'
-import { PageHeader } from '@proj-airi/stage-ui/components'
-import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
+import { isStageTamagotchi } from '@anase/stage-shared'
+import { PageHeader } from '@anase/stage-ui/components'
+import { useProvidersStore } from '@anase/stage-ui/stores/providers'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterView, useRoute } from 'vue-router'

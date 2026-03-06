@@ -1,0 +1,424 @@
+{
+  "session": "20260218-034854-feat-task-5-persona-engine-iter1",
+  "timestamp": "2026-02-18T03:58:00.000Z",
+  "verdict": "APPROVE",
+  "summary": {
+    "total_findings": 22,
+    "deduplicated_from": 22,
+    "by_severity": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 9,
+      "P3": 6
+    },
+    "resolved": {
+      "P0": 1,
+      "P1": 6
+    },
+    "agents_run": [
+      "review-code",
+      "review-tests",
+      "review-errors",
+      "review-types",
+      "review-comments",
+      "review-simplify"
+    ],
+    "agents_failed": []
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P0",
+      "confidence": 99,
+      "category": "architecture",
+      "subcategory": "breaking-export",
+      "title": "Removed exports break existing app-level consumer",
+      "file": "packages/persona-engine/src/index.ts",
+      "line": 31,
+      "line_end": 32,
+      "code_snippet": "export { evaluateTriggers, T03_REST_REMINDER } from './proactive-trigger'\nexport { generateResponse } from './response-generator'",
+      "description": "The previous index.ts exported `INITIAL_EMOTION` and `transitionEmotion` from `./emotion-state-machine`. This commit removes those exports entirely. However, the app-level consumer at `apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts` (lines 4-6) still imports both `INITIAL_EMOTION` and `transitionEmotion` from `@proj-airi/persona-engine`. The build will fail with 'Module has no exported member' errors. This is a breaking change that was not propagated to the only live consumer.",
+      "suggestion": "Either (a) update `apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts` to use the new `emotionMachine` (xstate actor) and `mapToAnimaEmotion` instead of the removed pure-function API, or (b) add backwards-compatible re-exports. The app service needs to be rewritten to create an xstate actor, send events to it, and use `mapToAnimaEmotion` for the bridge. This is the critical missing piece.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "emotionMachine, emotion-bridge, intimacy-tracker, persona-template have no app-level consumer",
+      "file": "packages/persona-engine/src/index.ts",
+      "line": 16,
+      "line_end": 29,
+      "code_snippet": "export { emotionMachine } from './emotion-state-machine'\nexport { applyScoreChange, createIntimacyState, getStageForScore, INTIMACY_SCORE_CHANGES, INTIMACY_STAGES } from './intimacy-tracker'\nexport { getPersonaTemplate, PERSONA_TEMPLATES } from './persona-template'\nexport { mapToAnimaEmotion } from './emotion-bridge'",
+      "description": "Four new modules (emotion-state-machine as xstate machine, emotion-bridge, intimacy-tracker, persona-template) are exported from the package index but have zero consumers outside the persona-engine package itself. The only live consumer (`apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts`) has not been updated to use any of these. Per integration rules, code exported but not reachable from any entry point is an orphan. These modules are only exercised by their own unit tests.",
+      "suggestion": "Update `apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts` to: (1) create an xstate actor from `emotionMachine`, (2) use `mapToAnimaEmotion` to bridge to the Anima emotion system, (3) integrate `createIntimacyState` and `applyScoreChange` for tracking relationship progression, (4) use `getPersonaTemplate` to select character personality. Wire the intimacy state to persistence (even if just an initial JSON file) to satisfy the critical-state-persistable rule.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "test-quality",
+      "subcategory": "missing-test-file",
+      "title": "response-generator.ts has no dedicated test file",
+      "file": "packages/persona-engine/src/response-generator.ts",
+      "line": 1,
+      "line_end": 39,
+      "code_snippet": "const RESPONSE_TEMPLATES: Record<string, Partial<Record<EmotionState, string>>> = {\n  'rest-reminder': {\n    caring: '...',\n    idle: '...',\n    ...\n  },\n}",
+      "description": "response-generator.ts contains generateResponse() with template lookup, two levels of fallback logic (templates?.[emotion] -> templates?.idle -> DEFAULT_MESSAGE), and a default message constant. The only test coverage comes from a single test case in persona-engine.test.ts (line 76-81) that tests 'caring' emotion with 'rest-reminder' trigger. This leaves the following untested: (1) fallback to templates?.idle when the emotion key is missing, (2) fallback to DEFAULT_MESSAGE when no template exists for the trigger name, (3) behavior with unknown trigger names, (4) all other emotion variants (idle, curious, worried, excited, sleepy) for rest-reminder. This is Functional Core code where 100% coverage is required per project rules.",
+      "suggestion": "Create packages/persona-engine/src/__tests__/response-generator.test.ts with tests covering: (1) each emotion variant for 'rest-reminder' trigger returns the correct template message, (2) an unknown trigger name falls back to DEFAULT_MESSAGE, (3) a known trigger with an unmapped emotion falls back to the idle template, (4) a known trigger with neither the emotion nor idle key falls back to DEFAULT_MESSAGE. All pure function tests -- no mocks needed.",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-comments-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "comments",
+      "subcategory": "factual-inaccuracy",
+      "title": "EmotionState alias comment claims backwards-compatibility that does not exist",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 7,
+      "line_end": 10,
+      "code_snippet": "/**\n * Backwards-compatible alias for use in response-generator and proactive-trigger.\n * Maps to the same 6 persona emotion states.\n */\nexport type EmotionState = PersonaEmotion",
+      "description": "The comment says 'Backwards-compatible alias' but the underlying values changed entirely in this diff: the previous EmotionState was 'neutral' | 'happy' | 'caring' | 'playful' | 'worried' | 'sad', while PersonaEmotion is 'idle' | 'curious' | 'caring' | 'worried' | 'sleepy' | 'excited'. Only 'caring' and 'worried' survived. This is a breaking rename, not backwards compatibility. The comment will mislead future maintainers into thinking existing consumers of EmotionState are unaffected.",
+      "suggestion": "Rewrite to: 'Type alias so response-generator and proactive-trigger can refer to emotion states without importing PersonaEmotion directly. Note: the emotion values were renamed in this iteration (idle replaces neutral, curious replaces happy, etc.).'",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "integration",
+      "subcategory": "missing-contract",
+      "title": "AnimaEmotionPayload uses string name but stage-ui EmotionPayload uses Emotion enum",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 50,
+      "line_end": 56,
+      "code_snippet": "export interface AnimaEmotionPayload {\n  readonly name: string\n  readonly intensity: number\n}",
+      "description": "The `AnimaEmotionPayload` interface declares `name: string`, but its documented purpose is to match `stage-ui`'s `EmotionPayload` interface, which uses `name: Emotion` (a string enum from `packages/stage-ui/src/constants/emotions.ts`). While the runtime string values ('happy', 'sad', 'surprised', etc.) do match the enum values, the types are not structurally connected. There is no shared type import, no contract test, and a typo in the mapping values would not be caught at compile time. The `emotion-bridge.ts` maps `excited` to `'surprised'` but the stage-ui enum value is `Emotion.Surprise = 'surprised'` -- correct at runtime but fragile without type checking.",
+      "suggestion": "Either (1) import the `Emotion` enum from `@proj-airi/stage-ui` and use it as the `name` type in `AnimaEmotionPayload`, establishing a real type-level contract, or (2) extract a shared interface into a shared package (e.g., `packages/stage-shared`) that both persona-engine and stage-ui import. Add a contract test that validates all mapped values are valid Emotion enum members.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "architecture",
+      "subcategory": "in-memory-state",
+      "title": "IntimacyState has no persistence path -- score resets on restart",
+      "file": "packages/persona-engine/src/intimacy-tracker.ts",
+      "line": 46,
+      "line_end": 53,
+      "code_snippet": "export function createIntimacyState(initialScore: number = 0): IntimacyState {\n  const clamped = Math.max(0, Math.min(100, initialScore))\n  return {\n    score: clamped,\n    stage: getStageForScore(clamped),\n  }\n}",
+      "description": "The intimacy tracker creates pure immutable state objects (good functional core design), but there is no persistence adapter, no save/load mechanism, and no consumer that would persist the score. The intimacy score (stranger -> soulmate progression) is business-critical relationship state. Per CLAUDE.md rules, critical state must be persistable/recoverable/observable. On app restart, all intimacy progress would be lost. The functional core is correct to not handle IO directly, but the imperative shell layer must provide persistence, and currently no shell consumer exists.",
+      "suggestion": "In the imperative shell layer (the app service), add a persistence adapter that saves IntimacyState to disk or DB. A minimal approach: (1) add a `serializeIntimacyState` / `deserializeIntimacyState` pair in the functional core, (2) in the app service, load state from a JSON file or electron-store on startup and save after each `applyScoreChange`. At minimum, acknowledge this gap in a task tracker -- but per CLAUDE.md, 'Store in memory first' -> 'You'll forget; persist now'.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "subcategory": "horizontal-only",
+      "title": "Change is horizontal-only: no end-to-end path exercises new modules",
+      "file": "packages/persona-engine/src/index.ts",
+      "line": 1,
+      "line_end": 32,
+      "code_snippet": "export { emotionMachine } from './emotion-state-machine'\nexport { mapToAnimaEmotion } from './emotion-bridge'\nexport { getPersonaTemplate, PERSONA_TEMPLATES } from './persona-template'\nexport { applyScoreChange, createIntimacyState } from './intimacy-tracker'",
+      "description": "This change adds 4 new functional core modules to persona-engine (xstate emotion machine, emotion-bridge, intimacy-tracker, persona-template) but does not update any imperative shell layer to consume them. The app-level service still uses the old API (which is now broken, see review-code-001). No IPC handler, event listener, or timer invokes any of the new code. Per the vertical slice principle, every task must deliver a thin working end-to-end path. This change builds a full horizontal layer (domain logic) without connecting it to any entry point.",
+      "suggestion": "Update `apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts` to: (1) create and manage an xstate emotion actor, (2) send events based on trigger results and context, (3) use `mapToAnimaEmotion` to bridge persona emotion to the Anima display system, (4) integrate intimacy tracking. Wire this to the existing IPC/event system so the new emotion states flow to the renderer process.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "AnimaEmotionPayload.name is plain string, not literal union",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 53,
+      "line_end": 56,
+      "code_snippet": "export interface AnimaEmotionPayload {\n  readonly name: string\n  readonly intensity: number\n}",
+      "description": "Encapsulation: 7/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.75). The `name` field accepts any string, but the emotion-bridge.ts mapping shows only 5 valid Anima emotion names are used: 'neutral', 'curious', 'happy', 'sad', 'surprised'. Without a literal union type, consumers can pass arbitrary strings that will silently propagate invalid emotion names to stage-ui. The `intensity` field is typed as bare `number` but semantically constrained to [0, 1] -- any out-of-range value would be accepted. This is primitive obsession on a domain concept that has a well-defined value space.",
+      "suggestion": "Define a literal union type for valid Anima emotion names and constrain intensity:\n\nexport type AnimaEmotionName = 'happy' | 'sad' | 'angry' | 'think' | 'surprised' | 'awkward' | 'question' | 'curious' | 'neutral'\n\nexport interface AnimaEmotionPayload {\n  readonly name: AnimaEmotionName\n  readonly intensity: number  // semantically [0, 1], enforce at construction if needed\n}",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "factual-inaccuracy",
+      "title": "AnimaEmotionPayload JSDoc claims it matches stage-ui EmotionPayload but types differ",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 50,
+      "line_end": 56,
+      "code_snippet": "/**\n * Anima Emotion payload matching the stage-ui EmotionPayload interface.\n */\nexport interface AnimaEmotionPayload {\n  readonly name: string\n  readonly intensity: number\n}",
+      "description": "The comment says this interface 'matching the stage-ui EmotionPayload interface', but stage-ui's EmotionPayload defines name as type Emotion (an enum), not string. AnimaEmotionPayload.name is 'string' which is a wider type. This mismatch means the comment overstates the contract alignment -- a future maintainer might assume these are interchangeable when they are not structurally identical.",
+      "suggestion": "Either change the comment to 'Loosely models the stage-ui EmotionPayload. name is kept as string to avoid a direct dependency on stage-ui.' to explain the deliberate widening, or import and use the Emotion enum type directly.",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "hardcoded-config",
+      "title": "Hardcoded intimacy stage boundaries and score deltas",
+      "file": "packages/persona-engine/src/intimacy-tracker.ts",
+      "line": 6,
+      "line_end": 21,
+      "code_snippet": "export const INTIMACY_SCORE_CHANGES: Record<IntimacyInteraction, number> = {\n  conversation: 1,\n  deepConversation: 3,\n} as const\n\nexport const INTIMACY_STAGES: readonly IntimacyStageBoundary[] = [\n  { stage: 'stranger', min: 0, max: 15 },\n  ...\n] as const",
+      "description": "The intimacy score deltas (1 for conversation, 3 for deepConversation) and stage boundary ranges (0-15 stranger, 16-35 acquaintance, etc.) are hardcoded as module-level constants. While exporting them as named constants is better than inline magic numbers, these are persona-tuning parameters that different PersonaTemplates might want to configure differently. A 'caring' persona like Xiaorou might build intimacy faster than a reserved one. Currently there is no mechanism to vary these per template.",
+      "suggestion": "Consider making intimacy configuration part of the PersonaTemplate interface, with these constants as defaults. For example: `interface PersonaTemplate { ...; intimacyConfig?: { scoreChanges: Record<IntimacyInteraction, number>; stages: IntimacyStageBoundary[] } }`. The current constants become the fallback. This is not blocking but would prevent a future refactor when persona differentiation becomes needed.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-errors-001",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "missing-try-catch-on-callback",
+      "title": "User-supplied trigger.check() called without error protection",
+      "file": "packages/persona-engine/src/proactive-trigger.ts",
+      "line": 50,
+      "line_end": 50,
+      "code_snippet": "if (trigger.check(input)) {\n  return {\n    triggered: true,\n    triggerId: trigger.id,\n    triggerName: trigger.name,\n  }\n}",
+      "description": "The evaluateTriggers function invokes trigger.check(input) where check is a function defined on TriggerCondition, an interface consumers can implement. If a custom check function throws (e.g., accessing a property on null input data, or a logic error in the check), the exception propagates without any context about which trigger failed or what input was provided. Since evaluateTriggers is part of the Functional Core, this is mitigated by the fact that the imperative shell caller should handle errors, but the lack of contextual wrapping here makes debugging harder when triggers come from external sources.",
+      "suggestion": "Wrap trigger.check(input) in a try/catch that re-throws with context: try { if (trigger.check(input)) ... } catch (e) { throw new Error(`Trigger '${trigger.id}' (${trigger.name}) check failed`, { cause: e }) }. Alternatively, document that callers must handle exceptions from evaluateTriggers.",
+      "reported_by": [
+        "review-errors"
+      ]
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "Emotion state machine missing unhandled event behavior test",
+      "file": "packages/persona-engine/src/__tests__/emotion-state-machine.test.ts",
+      "line": 181,
+      "line_end": 188,
+      "code_snippet": "describe('snapshot.can() for valid transitions', () => {\n  it('reports valid transitions from idle', () => {\n    const actor = createEmotionActor()\n    expect(actor.getSnapshot().can({ type: 'USER_ACTIVE' })).toBe(true)\n    expect(actor.getSnapshot().can({ type: 'USER_SHARES_PERSONAL' })).toBe(false)\n    actor.stop()\n  })\n})",
+      "description": "The test file verifies snapshot.can() only for the idle state. It does not test what happens when an unhandled event is sent to a state (e.g., sending USER_SHARES_PERSONAL to idle, or CALM_DOWN to idle). xstate v5 silently ignores unhandled events by default, but this behavior should be explicitly verified. Additionally, snapshot.can() is not tested for any state other than idle. The caring state has a GOOD_NEWS transition but no test for it. Several states have transitions that are not covered in the test matrix.",
+      "suggestion": "Add tests verifying: (1) sending an unhandled event to a state does not change the state (e.g., actor in idle receives USER_SHARES_PERSONAL, remains idle), (2) snapshot.can() for at least one other state (e.g., caring, worried), (3) caring -> excited on GOOD_NEWS, worried -> excited on GOOD_NEWS, sleepy -> excited on GOOD_NEWS transitions that exist in the machine but have no dedicated tests.",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "missing-readonly",
+      "title": "TriggerInput fields are mutable, breaking Functional Core",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 63,
+      "line_end": 70,
+      "code_snippet": "export interface TriggerInput {\n  continuousWorkDurationMs: number\n  isFullscreen: boolean\n  currentApp: string\n}",
+      "description": "Encapsulation: 4/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 4/10 (Aggregate: 4.75). TriggerInput is consumed by pure `check` functions in the Functional Core, but its fields lack `readonly` modifiers. All other interfaces in this file (IntimacyState, IntimacyStageBoundary, PersonaTemplate, AnimaEmotionPayload) correctly use `readonly`. TriggerInput and TriggerCondition are the only two interfaces that break this consistency. In a Functional Core, input data should be immutable to prevent accidental mutation within pure functions.",
+      "suggestion": "Add readonly modifiers to all fields:\n\nexport interface TriggerInput {\n  readonly continuousWorkDurationMs: number\n  readonly isFullscreen: boolean\n  readonly currentApp: string\n}",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-code-007",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "code-quality",
+      "subcategory": "missing-negative-score-handling",
+      "title": "applyScoreChange only clamps upward; no mechanism for score decrease",
+      "file": "packages/persona-engine/src/intimacy-tracker.ts",
+      "line": 63,
+      "line_end": 73,
+      "code_snippet": "export function applyScoreChange(\n  state: IntimacyState,\n  interaction: IntimacyInteraction,\n): IntimacyState {\n  const delta = INTIMACY_SCORE_CHANGES[interaction]\n  const newScore = Math.min(100, state.score + delta)\n  return { score: newScore, stage: getStageForScore(newScore) }\n}",
+      "description": "The `applyScoreChange` function only uses `Math.min(100, ...)` to cap the upper bound, but does not use `Math.max(0, ...)` for the lower bound. Currently all deltas are positive (conversation: +1, deepConversation: +3), so this is not exploitable. However, the `IntimacyInteraction` type and `INTIMACY_SCORE_CHANGES` record could be extended with negative interactions (e.g., 'neglect': -2, 'conflict': -5). If a negative delta is added, scores could go below zero, which would cause `getStageForScore` to clamp at the input level but the `IntimacyState.score` field would store a negative value, creating an inconsistency between `state.score` and `state.stage`.",
+      "suggestion": "Add lower-bound clamping: `const newScore = Math.max(0, Math.min(100, state.score + delta))`. This makes the function robust against future negative deltas and maintains consistency between the stored score and the computed stage.",
+      "reported_by": [
+        "review-code"
+      ]
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "missing-readonly",
+      "title": "TriggerCondition fields lack readonly, inconsistent with other types",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 75,
+      "line_end": 84,
+      "code_snippet": "export interface TriggerCondition {\n  id: string\n  name: string\n  check: (input: TriggerInput) => boolean\n  cooldownMs: number\n}",
+      "description": "Encapsulation: 4/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 4/10 (Aggregate: 4.75). TriggerCondition defines a domain concept (a rule with an ID, check function, and cooldown) but allows mutation of all fields. A TriggerCondition should be immutable once created -- changing its `check` function or `cooldownMs` at runtime would break invariants. The existing T03_REST_REMINDER constant uses `as const` semantics via the object literal, but the type itself permits mutation by any consumer.",
+      "suggestion": "Add readonly modifiers:\n\nexport interface TriggerCondition {\n  readonly id: string\n  readonly name: string\n  readonly check: (input: TriggerInput) => boolean\n  readonly cooldownMs: number\n}",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-test",
+      "title": "Intimacy tracker missing negative score and zero-floor tests",
+      "file": "packages/persona-engine/src/__tests__/intimacy-tracker.test.ts",
+      "line": 61,
+      "line_end": 96,
+      "code_snippet": "describe('applyScoreChange', () => {\n  it('clamps score at 100', () => {\n    const state = createIntimacyState(99)\n    const next = applyScoreChange(state, 'deepConversation')\n    expect(next.score).toBe(100)\n  })\n})",
+      "description": "The applyScoreChange tests verify clamping at the upper bound (100) but do not test behavior at the lower bound. While current interaction types only add positive deltas, the function signature accepts any IntimacyInteraction and the INTIMACY_SCORE_CHANGES record could be extended with negative values (e.g., 'neglect' or 'conflict'). The createIntimacyState function does clamp to 0 but applyScoreChange uses Math.min(100, state.score + delta) without a Math.max(0, ...) -- this is actually a potential bug: if a negative delta were introduced, scores could go below 0. At minimum, a boundary test documenting the current lack of lower-bound clamping in applyScoreChange would be valuable.",
+      "suggestion": "Add boundary tests: (1) createIntimacyState(-10) returns score 0 and stage 'stranger' (already implicitly tested by getStageForScore(-5) but not for the factory), (2) document via test that applyScoreChange does not currently protect against going below 0 if negative deltas were added -- or fix applyScoreChange to use Math.max(0, Math.min(100, ...)) and add the corresponding test.",
+      "reported_by": [
+        "review-tests"
+      ]
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "Response generator comment references 'initial integration' scope -- will rot",
+      "file": "packages/persona-engine/src/response-generator.ts",
+      "line": 21,
+      "line_end": 21,
+      "code_snippet": " * Uses template-based generation to avoid LLM dependency during initial integration.",
+      "description": "This comment ties itself to a temporal scope ('during initial integration'). Once LLM-based generation is added (or if it never is), this comment will either be stale or misleading. This matches the walking skeleton scope annotation pattern common in this codebase.",
+      "suggestion": "Rewrite to describe the current approach without referencing the timeline: 'Uses template-based generation. No LLM dependency required.' If LLM generation is a planned evolution, that belongs in a design doc, not inline.",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "invariant-expression",
+      "title": "IntimacyState score/stage consistency not enforced by type alone",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 20,
+      "line_end": 23,
+      "code_snippet": "export interface IntimacyState {\n  readonly score: number\n  readonly stage: IntimacyStage\n}",
+      "description": "Encapsulation: 7/10, Expression: 6/10, Usefulness: 8/10, Enforcement: 7/10 (Aggregate: 7.0). IntimacyState has a meaningful invariant: `stage` must match the score range defined in INTIMACY_STAGES. The factory function `createIntimacyState` and `applyScoreChange` both enforce this by computing stage from score, and the `readonly` modifiers prevent mutation. However, the type itself allows construction of inconsistent state (e.g., `{ score: 0, stage: 'soulmate' }`). The runtime enforcement via factory functions is good practice for a Functional Core -- this is informational since a branded type or opaque type would add complexity without proportional benefit at this stage.",
+      "suggestion": "Current approach with factory functions is pragmatic. For stronger enforcement, consider an opaque/branded type:\n\ntype ValidatedIntimacyState = IntimacyState & { readonly __brand: 'ValidatedIntimacyState' }\n\nThis would ensure only factory-produced values are accepted. Low priority -- current pattern is adequate for the domain.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-simplify-001",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "simplification",
+      "subcategory": "duplication",
+      "title": "Duplicated score clamping logic could use a named helper",
+      "file": "packages/persona-engine/src/intimacy-tracker.ts",
+      "line": 31,
+      "line_end": 48,
+      "code_snippet": "// Line 31 in getStageForScore:\nconst clamped = Math.max(0, Math.min(100, score))\n// Line 48 in createIntimacyState:\nconst clamped = Math.max(0, Math.min(100, initialScore))",
+      "description": "The expression `Math.max(0, Math.min(100, value))` is repeated in both `getStageForScore` (line 31) and `createIntimacyState` (line 48). While this is only 2 occurrences (below the 3-use threshold where extraction is strongly recommended), a named `clampScore` helper would improve readability by encoding the intent -- that scores are constrained to [0, 100] -- rather than requiring the reader to parse the nested Math calls each time.",
+      "suggestion": "BEFORE:\nconst clamped = Math.max(0, Math.min(100, score))\n\nAFTER:\nfunction clampScore(score: number): number {\n  return Math.max(0, Math.min(100, score))\n}\n// Then use: const clamped = clampScore(score)\n\nWHY: A named helper makes the domain intent (score is clamped to 0-100) immediately clear without parsing nested Math calls. Also centralizes the range constants if they ever change. Note: only 2 occurrences, so this is a minor suggestion per the project's 'three similar lines > premature abstraction' guideline.",
+      "reported_by": [
+        "review-simplify"
+      ]
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "rot-risk",
+      "title": "Hardcoded count 'Three preset persona templates' will rot if templates change",
+      "file": "packages/persona-engine/src/persona-template.ts",
+      "line": 4,
+      "line_end": 5,
+      "code_snippet": "/**\n * Three preset persona templates representing different character archetypes.\n */",
+      "description": "The comment says 'Three preset persona templates' but the count is a detail that will become stale as soon as a template is added or removed. The array itself is self-documenting for its length.",
+      "suggestion": "Remove the count: 'Preset persona templates representing different character archetypes.'",
+      "reported_by": [
+        "review-comments"
+      ]
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "PersonaTemplate.id is plain string, not constrained to known IDs",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 42,
+      "line_end": 48,
+      "code_snippet": "export interface PersonaTemplate {\n  readonly id: string\n  readonly name: string\n  readonly personality: string\n  readonly speakingStyle: string\n  readonly defaultEmotion: PersonaEmotion\n}",
+      "description": "Encapsulation: 7/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 5/10 (Aggregate: 5.75). The `id` field is a plain string, but persona-template.ts shows a fixed set of 3 templates ('xiaorou', 'aria', 'mochi'). While the current `getPersonaTemplate` function accepts `string` and returns `| undefined`, a literal union for the built-in IDs would let callers know the valid options at compile time. That said, keeping `id` as `string` is reasonable if custom templates will be user-defined in the future -- severity kept at P3 (informational) given walking skeleton context.",
+      "suggestion": "Consider a union type for built-in template IDs if the set is closed:\n\nexport type PersonaTemplateId = 'xiaorou' | 'aria' | 'mochi'\n\nOr keep string if user-defined templates are planned, but document that intent.",
+      "reported_by": [
+        "review-types"
+      ]
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P3",
+      "confidence": 75,
+      "category": "error-handling",
+      "subcategory": "result-pattern-opportunity",
+      "title": "getPersonaTemplate returns undefined instead of Result type",
+      "file": "packages/persona-engine/src/persona-template.ts",
+      "line": 36,
+      "line_end": 38,
+      "code_snippet": "export function getPersonaTemplate(id: string): PersonaTemplate | undefined {\n  return PERSONA_TEMPLATES.find(t => t.id === id)\n}",
+      "description": "getPersonaTemplate returns undefined when a template is not found. While the TypeScript return type correctly signals this possibility, the CLAUDE.md architecture rules recommend Result/Either pattern for expected failures in Functional Core. Returning undefined forces callers to use non-null assertions (template!.name) or add null checks, and provides no information about why the lookup failed (e.g., was the id empty, misspelled, or genuinely not in the preset list?).",
+      "suggestion": "Consider returning a Result type: { ok: true, value: PersonaTemplate } | { ok: false, reason: string } with a reason like `Template '${id}' not found. Available: ${PERSONA_TEMPLATES.map(t => t.id).join(', ')}`. This is informational -- the current approach is functional and the type system prevents misuse at compile time.",
+      "reported_by": [
+        "review-errors"
+      ]
+    }
+  ],
+  "positive_observations": [
+    "Excellent use of xstate v5 for emotion state management. The state machine is well-defined with clear states, events, and transitions. Using a mature library instead of hand-rolling state transitions is the right choice.",
+    "Pure functional core design is exemplary: all domain functions (mapToAnimaEmotion, createIntimacyState, applyScoreChange, getStageForScore, getPersonaTemplate) are pure, take inputs, return outputs, and require no mocks for testing.",
+    "Immutable state pattern in intimacy-tracker (readonly properties, new object returned from applyScoreChange) prevents accidental mutation bugs.",
+    "Test coverage is thorough: every state transition in the emotion machine is tested, boundary conditions in intimacy-tracker are verified, and the persona-engine.test.ts integration test exercises multiple modules collaborating together.",
+    "All modules are Functional Core (pure functions, xstate machine) and are tested with direct instantiation -- zero mocks, zero jest.fn(), zero InMemoryRepository. Exemplary adherence to the testing discipline.",
+    "The emotion-bridge module cleanly maps between bounded contexts (persona emotions to Anima display emotions) using a total Record<PersonaEmotion, AnimaEmotionPayload>, guaranteeing all states are handled at compile time.",
+    "TriggerResult uses a proper discriminated union ({ triggered: true, ... } | { triggered: false }), eliminating boolean flag + empty string sentinel values. Illegal states are now unrepresentable.",
+    "All exported functions and interfaces have JSDoc with accurate @param and @returns documentation.",
+    "All functions are consistently short (under 20 lines) with clear single responsibilities. Maximum nesting depth is 2 levels across all files.",
+    "Discriminated union TriggerResult makes illegal states unrepresentable -- no ambiguous null/undefined returns.",
+    "The emotion-bridge.ts comment listing Anima Emotion enum values is factually accurate and helps readers understand the mapping without needing to look up stage-ui.",
+    "xstate machine definition is declarative and readable with clear state transition documentation.",
+    "Guard clause pattern used effectively in evaluateTriggers (early continue for cooldown).",
+    "Error wrapping with { cause } pattern used in related modules shows good project convention.",
+    "EmotionState alias and PersonaEmotion string literal union provide compile-time safety for emotion transitions.",
+    "response-generator uses proper fallback chain (emotion-specific -> idle default -> global default) instead of silently returning empty/null.",
+    "intimacy-tracker clamps input scores to [0, 100] range, preventing invalid state at the boundary.",
+    "generateResponse uses Extract<TriggerResult, { triggered: true }> to narrow the discriminated union, ensuring only triggered results can produce responses."
+  ]
+}

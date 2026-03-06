@@ -54,9 +54,9 @@ export function enqueueProactiveEvent(event: AnimaProactiveEvent): void {
 }
 
 function createBridgeModel(): LanguageModelV3 | null {
-  const apiKey = env.AIRI_LLM_API_KEY ?? env.AIRI_VLM_API_KEY
-  const modelId = env.AIRI_LLM_MODEL ?? 'gpt-4o-mini'
-  const baseURL = env.AIRI_LLM_BASE_URL
+  const apiKey = env.ANASE_LLM_API_KEY ?? env.ANASE_VLM_API_KEY
+  const modelId = env.ANASE_LLM_MODEL ?? 'gpt-4o-mini'
+  const baseURL = env.ANASE_LLM_BASE_URL
 
   if (!apiKey) {
     return null
@@ -71,7 +71,7 @@ export function setupBridge(deps: BridgeDeps, config?: BridgeConfig): AnimaBridg
   let stopped = false
 
   if (!model) {
-    log.warn('No LLM API key configured — bridge will use template responses only. Set AIRI_LLM_API_KEY for AI-enriched proactive responses.')
+    log.warn('No LLM API key configured — bridge will use template responses only. Set ANASE_LLM_API_KEY for AI-enriched proactive responses.')
   }
 
   // Poll for pending proactive events and enrich them

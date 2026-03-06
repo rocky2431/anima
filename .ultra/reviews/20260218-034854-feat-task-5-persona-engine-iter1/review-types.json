@@ -1,0 +1,113 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260218-034854-feat-task-5-persona-engine-iter1",
+  "timestamp": "2026-02-18T03:50:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/emotion-state-machine.ts",
+      "packages/persona-engine/src/intimacy-tracker.ts",
+      "packages/persona-engine/src/persona-template.ts",
+      "packages/persona-engine/src/emotion-bridge.ts",
+      "packages/persona-engine/src/index.ts"
+    ],
+    "total_lines_analyzed": 350,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 2 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "AnimaEmotionPayload.name is plain string, not literal union",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 53,
+      "line_end": 56,
+      "code_snippet": "export interface AnimaEmotionPayload {\n  readonly name: string\n  readonly intensity: number\n}",
+      "description": "Encapsulation: 7/10, Expression: 4/10, Usefulness: 5/10, Enforcement: 3/10 (Aggregate: 4.75). The `name` field accepts any string, but the emotion-bridge.ts mapping shows only 5 valid Anima emotion names are used: 'neutral', 'curious', 'happy', 'sad', 'surprised'. Without a literal union type, consumers can pass arbitrary strings that will silently propagate invalid emotion names to stage-ui. The `intensity` field is typed as bare `number` but semantically constrained to [0, 1] -- any out-of-range value would be accepted. This is primitive obsession on a domain concept that has a well-defined value space.",
+      "suggestion": "Define a literal union type for valid Anima emotion names and constrain intensity:\n\nexport type AnimaEmotionName = 'happy' | 'sad' | 'angry' | 'think' | 'surprised' | 'awkward' | 'question' | 'curious' | 'neutral'\n\nexport interface AnimaEmotionPayload {\n  readonly name: AnimaEmotionName\n  readonly intensity: number  // semantically [0, 1], enforce at construction if needed\n}",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "type-design",
+      "subcategory": "missing-readonly",
+      "title": "TriggerInput fields are mutable, breaking Functional Core",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 63,
+      "line_end": 70,
+      "code_snippet": "export interface TriggerInput {\n  continuousWorkDurationMs: number\n  isFullscreen: boolean\n  currentApp: string\n}",
+      "description": "Encapsulation: 4/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 4/10 (Aggregate: 4.75). TriggerInput is consumed by pure `check` functions in the Functional Core, but its fields lack `readonly` modifiers. All other interfaces in this file (IntimacyState, IntimacyStageBoundary, PersonaTemplate, AnimaEmotionPayload) correctly use `readonly`. TriggerInput and TriggerCondition are the only two interfaces that break this consistency. In a Functional Core, input data should be immutable to prevent accidental mutation within pure functions.",
+      "suggestion": "Add readonly modifiers to all fields:\n\nexport interface TriggerInput {\n  readonly continuousWorkDurationMs: number\n  readonly isFullscreen: boolean\n  readonly currentApp: string\n}",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "type-design",
+      "subcategory": "missing-readonly",
+      "title": "TriggerCondition fields lack readonly, inconsistent with other types",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 75,
+      "line_end": 84,
+      "code_snippet": "export interface TriggerCondition {\n  id: string\n  name: string\n  check: (input: TriggerInput) => boolean\n  cooldownMs: number\n}",
+      "description": "Encapsulation: 4/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 4/10 (Aggregate: 4.75). TriggerCondition defines a domain concept (a rule with an ID, check function, and cooldown) but allows mutation of all fields. A TriggerCondition should be immutable once created -- changing its `check` function or `cooldownMs` at runtime would break invariants. The existing T03_REST_REMINDER constant uses `as const` semantics via the object literal, but the type itself permits mutation by any consumer.",
+      "suggestion": "Add readonly modifiers:\n\nexport interface TriggerCondition {\n  readonly id: string\n  readonly name: string\n  readonly check: (input: TriggerInput) => boolean\n  readonly cooldownMs: number\n}",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "type-design",
+      "subcategory": "primitive-obsession",
+      "title": "PersonaTemplate.id is plain string, not constrained to known IDs",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 42,
+      "line_end": 48,
+      "code_snippet": "export interface PersonaTemplate {\n  readonly id: string\n  readonly name: string\n  readonly personality: string\n  readonly speakingStyle: string\n  readonly defaultEmotion: PersonaEmotion\n}",
+      "description": "Encapsulation: 7/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 5/10 (Aggregate: 5.75). The `id` field is a plain string, but persona-template.ts shows a fixed set of 3 templates ('xiaorou', 'aria', 'mochi'). While the current `getPersonaTemplate` function accepts `string` and returns `| undefined`, a literal union for the built-in IDs would let callers know the valid options at compile time. That said, keeping `id` as `string` is reasonable if custom templates will be user-defined in the future -- severity kept at P3 (informational) given walking skeleton context.",
+      "suggestion": "Consider a union type for built-in template IDs if the set is closed:\n\nexport type PersonaTemplateId = 'xiaorou' | 'aria' | 'mochi'\n\nOr keep string if user-defined templates are planned, but document that intent.",
+      "claude_md_rule": "architecture.functional_core"
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "invariant-expression",
+      "title": "IntimacyState score/stage consistency not enforced by type alone",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 20,
+      "line_end": 23,
+      "code_snippet": "export interface IntimacyState {\n  readonly score: number\n  readonly stage: IntimacyStage\n}",
+      "description": "Encapsulation: 7/10, Expression: 6/10, Usefulness: 8/10, Enforcement: 7/10 (Aggregate: 7.0). IntimacyState has a meaningful invariant: `stage` must match the score range defined in INTIMACY_STAGES. The factory function `createIntimacyState` and `applyScoreChange` both enforce this by computing stage from score, and the `readonly` modifiers prevent mutation. However, the type itself allows construction of inconsistent state (e.g., `{ score: 0, stage: 'soulmate' }`). The runtime enforcement via factory functions is good practice for a Functional Core -- this is informational since a branded type or opaque type would add complexity without proportional benefit at this stage.",
+      "suggestion": "Current approach with factory functions is pragmatic. For stronger enforcement, consider an opaque/branded type:\n\ntype ValidatedIntimacyState = IntimacyState & { readonly __brand: 'ValidatedIntimacyState' }\n\nThis would ensure only factory-produced values are accepted. Low priority -- current pattern is adequate for the domain."
+    }
+  ],
+  "positive_observations": [
+    "TriggerResult now uses a proper discriminated union ({ triggered: true, ... } | { triggered: false }), eliminating the previous P1 issue of boolean flag + empty string sentinel values. This is a significant improvement -- illegal states are now unrepresentable.",
+    "PersonaEmotion uses string literal union with 6 well-chosen emotion states that align with the xstate state machine, providing compile-time safety for emotion transitions.",
+    "IntimacyStage uses a 5-value literal union that directly models the domain concept of relationship progression. The INTIMACY_STAGES boundary table with min/max ranges is a clean domain model.",
+    "The intimacy-tracker module exemplifies good Functional Core design: pure factory function (createIntimacyState), immutable state transitions (applyScoreChange), and readonly interfaces. Score clamping at [0, 100] enforces domain invariants at the boundary.",
+    "The emotion state machine (xstate) provides formal, verifiable state transitions with typed events (EmotionEvent discriminated union). Using 'satisfies PersonaEmotion' for the initial state ensures type alignment between the machine states and the PersonaEmotion type.",
+    "The emotion-bridge module cleanly maps between bounded contexts (persona emotions to Anima display emotions) using a total Record<PersonaEmotion, AnimaEmotionPayload>, guaranteeing all states are handled at compile time.",
+    "generateResponse uses Extract<TriggerResult, { triggered: true }> to narrow the discriminated union, ensuring only triggered results can produce responses -- good use of TypeScript's type system to enforce preconditions."
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

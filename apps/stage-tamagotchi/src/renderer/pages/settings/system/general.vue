@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import SettingsGeneralFields from '@proj-airi/stage-pages/components/settings-general-fields.vue'
+import SettingsGeneralFields from '@anase/stage-pages/components/settings-general-fields.vue'
 
-import { useSettings } from '@proj-airi/stage-ui/stores/settings'
-import { FieldCheckbox } from '@proj-airi/ui'
+import { useSettings } from '@anase/stage-ui/stores/settings'
+import { FieldCheckbox } from '@anase/ui'
 import { watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 

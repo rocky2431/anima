@@ -24,7 +24,7 @@ async function dispatchAction(ctx: BotContext, action: Action, abortController: 
   if (!action || !action.action) {
     ctx.logger.withField('action', action).log('No valid action returned.')
     if (chatCtx) {
-      chatCtx.messages.push({ role: 'user' as const, content: 'AIRI System: No valid action returned.' })
+      chatCtx.messages.push({ role: 'user' as const, content: 'Anase System: No valid action returned.' })
       return () => handleLoopStep(ctx, chatCtx)
     }
     else {
@@ -47,10 +47,10 @@ async function dispatchAction(ctx: BotContext, action: Action, abortController: 
 
       if (chatCtx) {
         if (stickerDescriptionsOneliner.length === 0) {
-          chatCtx.actions.push({ action, result: 'AIRI System: No stickers found in the current memory partition, preload of stickers is required, please ask for help.' })
+          chatCtx.actions.push({ action, result: 'Anase System: No stickers found in the current memory partition, preload of stickers is required, please ask for help.' })
         }
         else {
-          chatCtx.actions.push({ action, result: `AIRI System: List of stickers:\n${stickerDescriptionsOneliner}` })
+          chatCtx.actions.push({ action, result: `Anase System: List of stickers:\n${stickerDescriptionsOneliner}` })
         }
       }
 
@@ -63,17 +63,17 @@ async function dispatchAction(ctx: BotContext, action: Action, abortController: 
       try {
         const file = await ctx.bot.api.getFile(action.fileId)
         if (!file) {
-          chatCtx.actions.push({ action, result: `AIRI System: Error executing 'send_sticker': Sticker file ID ${action.fileId} not found, did you list the needed stickers before sending?` })
+          chatCtx.actions.push({ action, result: `Anase System: Error executing 'send_sticker': Sticker file ID ${action.fileId} not found, did you list the needed stickers before sending?` })
           return () => handleLoopStep(ctx, chatCtx)
         }
       }
       catch (err) {
-        chatCtx.actions.push({ action, result: `AIRI System: Error executing 'send_sticker': Sticker file ID ${action.fileId} not found or failed due to ${String(err)}, did you list the needed stickers before sending?` })
+        chatCtx.actions.push({ action, result: `Anase System: Error executing 'send_sticker': Sticker file ID ${action.fileId} not found or failed due to ${String(err)}, did you list the needed stickers before sending?` })
         return () => handleLoopStep(ctx, chatCtx)
       }
 
       const sticker = await findStickerByFileId(action.fileId)
-      chatCtx.actions.push({ action, result: `AIRI System: Sending sticker ${action.fileId} with (${sticker.emoji} in set ${sticker.name}) to ${action.chatId}` })
+      chatCtx.actions.push({ action, result: `Anase System: Sending sticker ${action.fileId} with (${sticker.emoji} in set ${sticker.name}) to ${action.chatId}` })
       await ctx.bot.api.sendSticker(action.chatId, action.fileId)
 
       return () => handleLoopStep(ctx, chatCtx)
@@ -96,7 +96,7 @@ async function dispatchAction(ctx: BotContext, action: Action, abortController: 
 
       const mentionedBy = unreadMessagesForThisChat.find(msg => msg.text?.includes(ctx.bot.botInfo.username) || msg.text?.includes(ctx.bot.botInfo.first_name))
       if (mentionedBy) {
-        chatCtx.messages.push({ role: 'user' as const, content: `AIRI System: You were mentioned in a message: ${mentionedBy.text} by ${mentionedBy.from?.first_name} (${mentionedBy.from?.username}), please respond as much as possible.` })
+        chatCtx.messages.push({ role: 'user' as const, content: `Anase System: You were mentioned in a message: ${mentionedBy.text} by ${mentionedBy.from?.first_name} (${mentionedBy.from?.username}), please respond as much as possible.` })
       }
 
       if (!Array.isArray(unreadMessagesForThisChat)) {
@@ -131,20 +131,20 @@ async function dispatchAction(ctx: BotContext, action: Action, abortController: 
     }
     case 'list_chats':
       if (chatCtx) {
-        chatCtx.actions.push({ action, result: `AIRI System: List of chats:${(await listJoinedChats()).map(chat => `ID:${chat.chat_id}, Name:${chat.chat_name}`).join('\n')}` })
+        chatCtx.actions.push({ action, result: `Anase System: List of chats:${(await listJoinedChats()).map(chat => `ID:${chat.chat_id}, Name:${chat.chat_name}`).join('\n')}` })
       }
 
       return () => handleLoopStep(ctx, chatCtx)
     case 'send_message':
     {
       const chatCtx = ensureChatContext(ctx, action.chatId)
-      chatCtx.actions.push({ action, result: `AIRI System: Sending message to group ${action.chatId}: ${action.content}` })
+      chatCtx.actions.push({ action, result: `Anase System: Sending message to group ${action.chatId}: ${action.content}` })
       await sendMessage(ctx, chatCtx, action.content, action.chatId, abortController)
       return () => handleLoopStep(ctx, chatCtx)
     }
     case 'continue':
       if (chatCtx) {
-        chatCtx.actions.push({ action, result: 'AIRI System: Acknowledged, will now continue until next tick.' })
+        chatCtx.actions.push({ action, result: 'Anase System: Acknowledged, will now continue until next tick.' })
       }
 
       return
@@ -152,20 +152,20 @@ async function dispatchAction(ctx: BotContext, action: Action, abortController: 
       if (chatCtx) {
         chatCtx.messages = []
         chatCtx.actions = []
-        chatCtx.actions.push({ action, result: 'AIRI System: Acknowledged, will now break, and clear out all existing memories, messages, actions. Left only this one.' })
+        chatCtx.actions.push({ action, result: 'Anase System: Acknowledged, will now break, and clear out all existing memories, messages, actions. Left only this one.' })
       }
 
       return
     case 'sleep':
       await sleep(30 * 1000)
       if (chatCtx) {
-        chatCtx.actions.push({ action, result: `AIRI System: Sleeping for ${30} seconds as requested...` })
+        chatCtx.actions.push({ action, result: `Anase System: Sleeping for ${30} seconds as requested...` })
       }
 
       return () => handleLoopStep(ctx, chatCtx)
     default:
       if (chatCtx) {
-        chatCtx.messages.push({ role: 'user' as const, content: `AIRI System: The action you sent ${action.action} haven't implemented yet by developer.` })
+        chatCtx.messages.push({ role: 'user' as const, content: `Anase System: The action you sent ${action.action} haven't implemented yet by developer.` })
       }
 
       return () => handleLoopStep(ctx, chatCtx)
@@ -229,7 +229,7 @@ async function handleLoopStep(ctx: BotContext, chatCtx: ChatContext, incomingMes
       const length = chatCtx.messages.length
       // pick the latest 5
       chatCtx.messages = chatCtx.messages.slice(-5)
-      chatCtx.messages.push({ role: 'user' as const, content: `AIRI System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.messages.length}, history may lost.` })
+      chatCtx.messages.push({ role: 'user' as const, content: `Anase System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.messages.length}, history may lost.` })
     }
 
     if (chatCtx.actions == null) {
@@ -239,7 +239,7 @@ async function handleLoopStep(ctx: BotContext, chatCtx: ChatContext, incomingMes
       const length = chatCtx.actions.length
       // pick the latest 20
       chatCtx.actions = chatCtx.actions.slice(-20)
-      chatCtx.messages.push({ role: 'user' as const, content: `AIRI System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.actions.length}, history of actions may lost.` })
+      chatCtx.messages.push({ role: 'user' as const, content: `Anase System: Approaching to system context limit, reducing... memory..., reduced from ${length} to ${chatCtx.actions.length}, history of actions may lost.` })
     }
   }
 
@@ -259,7 +259,7 @@ async function handleLoopStep(ctx: BotContext, chatCtx: ChatContext, incomingMes
         return item
       }
 
-      item.actionState.result = 'AIRI System: Please refer to the last read_unread_messages action for context.'
+      item.actionState.result = 'Anase System: Please refer to the last read_unread_messages action for context.'
       return item
     })
 

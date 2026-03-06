@@ -1,0 +1,111 @@
+{
+  "session": "20260221-055400-feat-task-24-performance-cost-control-iter1-iter2",
+  "timestamp": "2026-02-21T06:15:00Z",
+  "verdict": "COMMENT",
+  "recheck": {
+    "previous_session": "20260221-054200-feat-task-24-performance-cost-control-iter1",
+    "previous_verdict": "REQUEST_CHANGES",
+    "previous_total": 27,
+    "resolved": 4,
+    "downgraded": 1,
+    "unchanged": 1,
+    "new": 0,
+    "not_re_evaluated": 21,
+    "resolution_details": [
+      {
+        "iter1_id": "#2",
+        "title": "DeduplicationTracker exported but has zero consumers outside tests",
+        "severity": "P1",
+        "status": "RESOLVED",
+        "evidence": "DeduplicationTracker is now wired into ScreenshotPipeline via constructor injection with an optional external tracker"
+      },
+      {
+        "iter1_id": "#4",
+        "title": "ModelRouter.generateText/generateStructured lack try/catch on LLM I/O",
+        "severity": "P1",
+        "status": "RESOLVED",
+        "evidence": "Error handling in ModelRouter is well-structured: try/catch wraps both generateText and generateStructured, preserves the original error as cause, and includes routing context (tier + task type)"
+      },
+      {
+        "iter1_id": "#5",
+        "title": "Routing stats incremented before I/O -- corrupted on provider failure",
+        "severity": "P1",
+        "status": "RESOLVED",
+        "evidence": "Stats are now correctly incremented AFTER successful I/O, not before -- prevents stat corruption on provider failure"
+      },
+      {
+        "iter1_id": "#6",
+        "title": "Comment claims extraction routes to lightweight, but it routes to local",
+        "severity": "P1",
+        "status": "RESOLVED",
+        "evidence": "Previous review-comments-001 (incorrect comment about routing to lightweight vs local) has been fixed"
+      },
+      {
+        "iter1_id": "#3",
+        "title": "ModelRouter routing stats stored only in memory, lost on restart",
+        "severity": "P1->P2",
+        "status": "DOWNGRADED",
+        "evidence": "toJSON() method added providing serialization capability, but no code calls it or persists the stats yet. Downgraded because ModelRouter itself is not yet wired into production."
+      },
+      {
+        "iter1_id": "#1",
+        "title": "ModelRouter exported but has zero consumers outside tests",
+        "severity": "P1",
+        "status": "UNCHANGED",
+        "evidence": "No production code path instantiates or uses ModelRouter. grep for 'ModelRouter' across apps/ returns zero matches."
+      }
+    ]
+  },
+  "summary": {
+    "total_findings": 2,
+    "deduplicated_from": 2,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 1, "P3": 0 },
+    "agents_run": ["review-code"],
+    "agents_failed": []
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "ModelRouter exported but has zero production consumers",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 121,
+      "line_end": 202,
+      "code_snippet": "export class ModelRouter implements LlmProvider {\n  // ... 80 lines ...\n}",
+      "description": "ModelRouter is exported from packages/context-engine/src/index.ts (line 24) and has comprehensive tests including a ContextMerger integration test proving interface compatibility. However, no production code path instantiates or uses ModelRouter. The orchestrator in apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts creates ScreenshotPipeline with a raw VlmProvider and does not route LLM calls through ModelRouter. A grep for 'ModelRouter' and 'model-router' across apps/ returns zero matches. The ContextMerger integration test at model-router.test.ts:417-442 proves the wiring CAN work, but this is test-only proof -- no live entry point traces through ModelRouter. This is the same finding as iteration 1. The toJSON() serialization method (line 183) was added but is also unused outside tests since ModelRouter itself is unwired.",
+      "suggestion": "Wire ModelRouter into the AnimaOrchestrator or createAnimaOrchestrator factory. The orchestrator should accept an optional LlmProvider (defaulting to a ModelRouter wrapping the existing providers) so that ContextMerger, EntityExtractor, and other LLM consumers benefit from tiered routing in production. Alternatively, if this is intentionally deferred to a future task, document the wiring plan in a tracked issue and note the dependency.",
+      "reported_by": ["review-code"],
+      "delta": "UNCHANGED from iter1 #1"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "architecture",
+      "subcategory": "in-memory-state",
+      "title": "ModelRouter routing stats lost on restart, toJSON() unused",
+      "file": "packages/context-engine/src/processing/model-router.ts",
+      "line": 126,
+      "line_end": 127,
+      "code_snippet": "private tierCalls: Record<ModelTier, number> = { lightweight: 0, standard: 0, local: 0 }\nprivate taskCalls: Record<TaskType, number> = { classification: 0, extraction: 0, generation: 0, summarization: 0 }",
+      "description": "The previous review flagged routing stats as in-memory only (P1). A toJSON() method was added (line 183-185) providing serialization capability, which partially addresses the concern. However, no code calls toJSON() or persists the serialized stats. The stats accumulate in private fields and are lost on process restart. Since ModelRouter itself is not yet wired into production (see review-code-001), this is downgraded to P2 -- it becomes a real concern only once ModelRouter has live consumers. When the orchestrator wiring happens, stats should be periodically logged via structured logger or persisted to observe cost savings over time.",
+      "suggestion": "When wiring ModelRouter into the orchestrator, add periodic structured logging of router.toJSON() (e.g., every N calls or on a timer) so cost savings are observable. For persistence, consider writing stats to the existing SQLite store on graceful shutdown.",
+      "reported_by": ["review-code"],
+      "delta": "DOWNGRADED from iter1 #3 (P1->P2)"
+    }
+  ],
+  "positive_observations": [
+    "Error handling in ModelRouter is well-structured: try/catch wraps both generateText and generateStructured, preserves the original error as cause, and includes routing context (tier + task type) in the error message",
+    "Stats are now correctly incremented AFTER successful I/O, not before -- prevents stat corruption on provider failure",
+    "DeduplicationTracker is properly wired into ScreenshotPipeline via constructor injection with an optional external tracker, following the Functional Core / Imperative Shell pattern",
+    "classifyTask remains a pure function with clear keyword-based classification, testable without any mocking",
+    "toJSON() provides clean serialization of routing stats, ready for structured logging when the wiring is completed",
+    "Test doubles (createTrackingProvider, SequentialScreenshotProvider, StubVlmProvider) all have proper rationale comments explaining they wrap external API boundaries",
+    "ContextMerger integration test (model-router.test.ts:417-442) proves ModelRouter satisfies the LlmProvider contract end-to-end through a real ContextMerger instance",
+    "Screenshot pipeline deduplication stats test (screenshot-pipeline.test.ts:290-308) verifies the full track/stats flow through the pipeline",
+    "Previous review-comments-001 (incorrect comment about routing to lightweight vs local) has been fixed"
+  ]
+}

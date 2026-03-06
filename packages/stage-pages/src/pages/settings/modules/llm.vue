@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { RadioCardSimple } from '@proj-airi/stage-ui/components'
-import { useAnalytics } from '@proj-airi/stage-ui/composables'
-import { useLlmStore } from '@proj-airi/stage-ui/stores/modules/llm'
-import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
+import { RadioCardSimple } from '@anase/stage-ui/components'
+import { useAnalytics } from '@anase/stage-ui/composables'
+import { useLlmStore } from '@anase/stage-ui/stores/modules/llm'
+import { useProvidersStore } from '@anase/stage-ui/stores/providers'
 import { storeToRefs } from 'pinia'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

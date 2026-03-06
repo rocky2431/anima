@@ -1,8 +1,8 @@
-import type { Tool } from '@proj-airi/stage-ui/types/ai-messages'
+import type { Tool } from '@anase/stage-ui/types/ai-messages'
 
 import { defineInvoke } from '@moeru/eventa'
 import { createContext } from '@moeru/eventa/adapters/electron/renderer'
-import { tool } from '@proj-airi/stage-ui/libs/ai/tool'
+import { tool } from '@anase/stage-ui/libs/ai/tool'
 import { z } from 'zod'
 
 import { widgetsAdd, widgetsClear, widgetsOpenWindow, widgetsPrepareWindow, widgetsRemove, widgetsUpdate } from '../../../../shared/eventa'

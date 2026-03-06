@@ -8,10 +8,10 @@ import {
   ProviderBasicSettings,
   ProviderSettingsContainer,
   ProviderSettingsLayout,
-} from '@proj-airi/stage-ui/components'
-import { useProviderValidation } from '@proj-airi/stage-ui/composables/use-provider-validation'
-import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
-import { FieldKeyValues } from '@proj-airi/ui'
+} from '@anase/stage-ui/components'
+import { useProviderValidation } from '@anase/stage-ui/composables/use-provider-validation'
+import { useProvidersStore } from '@anase/stage-ui/stores/providers'
+import { FieldKeyValues } from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 

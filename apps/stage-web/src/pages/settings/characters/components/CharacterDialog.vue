@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Character, CreateCharacterPayload } from '@proj-airi/stage-ui/types/character'
+import type { Character, CreateCharacterPayload } from '@anase/stage-ui/types/character'
 
-import { useCharacterStore } from '@proj-airi/stage-ui/stores/characters'
-import { CreateCharacterSchema } from '@proj-airi/stage-ui/types/character'
-import { Button, FieldInput } from '@proj-airi/ui'
+import { useCharacterStore } from '@anase/stage-ui/stores/characters'
+import { CreateCharacterSchema } from '@anase/stage-ui/types/character'
+import { Button, FieldInput } from '@anase/ui'
 import {
   DialogContent,
   DialogOverlay,
@@ -226,7 +226,7 @@ const isOpen = computed({
               <!-- Identity Tab -->
               <div v-show="activeTab === 'identity'" class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
-                  <FieldInput v-model="form.characterId" label="Handle ID" placeholder="e.g. airi-core" required />
+                  <FieldInput v-model="form.characterId" label="Handle ID" placeholder="e.g. anase-core" required />
                   <FieldInput v-model="form.version" label="Version" placeholder="1.0.0" />
                 </div>
 

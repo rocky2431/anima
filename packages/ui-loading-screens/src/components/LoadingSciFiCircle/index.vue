@@ -5,7 +5,7 @@ import { Rive } from '@rive-app/canvas-lite'
 import { breakpointsTailwind, useBreakpoints, useDark } from '@vueuse/core'
 import { computed, onMounted, ref, watch } from 'vue'
 
-import CircleFadeInAnimation from './assets/circle_blink_in_-_loading_(@proj-airi).riv'
+import CircleFadeInAnimation from './assets/circle_blink_in_-_loading_(@anase).riv'
 import CRT from './CRT.vue'
 import CRTLine from './CRTLine.vue'
 
@@ -79,29 +79,29 @@ const narrowAsciiArt = computed(() => (`
         /
 `))
 
-const projectAIRIAsciiArt = computed(() => {
+const projectAnaseAsciiArt = computed(() => {
   if (isDeviceSm.value)
     return narrowAsciiArt.value
   return wideAsciiArt.value
 })
 
-const projectAIRIMetadata = `
-Project AIRI team from Moeru AI (https://moeru.ai) and other contributors
-Open sourced on https://github.com/moeru-ai/airi
+const projectAnaseMetadata = `
+Project Anase team from Moeru AI (https://moeru.ai) and other contributors
+Open sourced on https://github.com/rocky2431/anima
 `
 
 const bootMessages = computed<BootMessage[]>(() => [
-  ...projectAIRIAsciiArt.value.split('\n').map(line => ({
+  ...projectAnaseAsciiArt.value.split('\n').map(line => ({
     template: line,
     typingSpeed: 1,
     withoutTimestamp: true,
   })),
   {
-    template: `Project AIRI version ${import.meta.env.VITE_AIRI_VERSION || '1.0.0'} @ ${import.meta.env.VITE_AIRI_COMMIT || '0240602'} build`,
+    template: `Project Anase version ${import.meta.env.VITE_ANASE_VERSION || '1.0.0'} @ ${import.meta.env.VITE_ANASE_COMMIT || '0240602'} build`,
     typingSpeed: 5,
     withoutTimestamp: true,
   },
-  ...projectAIRIMetadata.trim().split('\n').map(line => ({
+  ...projectAnaseMetadata.trim().split('\n').map(line => ({
     template: line,
     typingSpeed: 1,
     withoutTimestamp: true,
@@ -117,7 +117,7 @@ const bootMessages = computed<BootMessage[]>(() => [
     withoutTimestamp: true,
   },
   {
-    template: 'Command line: BOOT_IMAGE=/boot/airi.moeru.ai root=UUID=io.github.moeru-ai.airi',
+    template: 'Command line: BOOT_IMAGE=/boot/anase.app root=UUID=io.github.moeru-ai.airi',
     typingSpeed: 1,
   },
   {
@@ -125,7 +125,7 @@ const bootMessages = computed<BootMessage[]>(() => [
     typingSpeed: 1,
   },
   {
-    template: 'Initializing AIRI subsystems...',
+    template: 'Initializing Anase subsystems...',
     typingSpeed: 1,
     pending: true,
     onPendingCheck: () => {
@@ -160,7 +160,7 @@ const bootMessages = computed<BootMessage[]>(() => [
     },
   },
   {
-    template: 'AIRI core services initialized',
+    template: 'Anase core services initialized',
     typingSpeed: 1,
   },
   {
@@ -236,7 +236,7 @@ const bootMessages = computed<BootMessage[]>(() => [
     typingSpeed: 1,
   },
   {
-    template: 'AIRI ready',
+    template: 'Anase ready',
     typingSpeed: 1,
   },
 ])

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { SpeechProvider } from '@proj-airi/stage-ui/stores/providers/types'
+import type { SpeechProvider } from '@anase/stage-ui/stores/providers/types'
 
 import {
   SpeechPlayground,
   SpeechProviderSettings,
-} from '@proj-airi/stage-ui/components'
-import { useSpeechStore } from '@proj-airi/stage-ui/stores/modules/speech'
-import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
-import { getDefaultKokoroModel } from '@proj-airi/stage-ui/workers/kokoro/constants'
-import { Callout, Select } from '@proj-airi/ui'
+} from '@anase/stage-ui/components'
+import { useSpeechStore } from '@anase/stage-ui/stores/modules/speech'
+import { useProvidersStore } from '@anase/stage-ui/stores/providers'
+import { getDefaultKokoroModel } from '@anase/stage-ui/workers/kokoro/constants'
+import { Callout, Select } from '@anase/ui'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 

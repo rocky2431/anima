@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { defaultModelParameters, useLive2d } from '@proj-airi/stage-ui-live2d'
-import { Button, Checkbox, FieldRange, SelectTab } from '@proj-airi/ui'
+import { defaultModelParameters, useLive2d } from '@anase/stage-ui-live2d'
+import { Button, Checkbox, FieldRange, SelectTab } from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

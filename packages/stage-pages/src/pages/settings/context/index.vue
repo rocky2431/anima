@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useContextDisplayStore } from '@proj-airi/stage-ui/stores/modules/context-display'
+import { useContextDisplayStore } from '@anase/stage-ui/stores/modules/context-display'
 import { storeToRefs } from 'pinia'
 
 const contextDisplayStore = useContextDisplayStore()

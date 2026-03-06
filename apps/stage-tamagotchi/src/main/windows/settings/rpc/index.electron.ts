@@ -9,7 +9,7 @@ import { createContext } from '@moeru/eventa/adapters/electron/main'
 import { ipcMain } from 'electron'
 
 import { electronOpenDevtoolsWindow, electronOpenSettingsDevtools } from '../../../../shared/eventa'
-import { createWidgetsService } from '../../../services/airi/widgets'
+import { createWidgetsService } from '../../../services/anase/widgets'
 import { createAutoUpdaterService, createScreenService, createWindowService } from '../../../services/electron'
 
 export async function setupSettingsWindowInvokes(params: {

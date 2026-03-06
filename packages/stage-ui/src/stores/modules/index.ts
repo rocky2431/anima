@@ -1,5 +1,5 @@
 export * from './activity'
-export * from './airi-card'
+export * from './anase-card'
 export * from './channels'
 export * from './consciousness'
 export * from './context-display'

@@ -1,3 +1,3 @@
 export * from './client'
-export type * from '@proj-airi/server-shared/types'
-export { ContextUpdateStrategy, WebSocketEventSource } from '@proj-airi/server-shared/types'
+export type * from '@anase/server-shared/types'
+export { ContextUpdateStrategy, WebSocketEventSource } from '@anase/server-shared/types'

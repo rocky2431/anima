@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { ContextMessage } from '@proj-airi/stage-ui/types/chat'
+import type { ContextMessage } from '@anase/stage-ui/types/chat'
 
-import { MemoryManager } from '@proj-airi/stage-ui/components'
-import { useChatContextStore } from '@proj-airi/stage-ui/stores/chat/context-store'
+import { MemoryManager } from '@anase/stage-ui/components'
+import { useChatContextStore } from '@anase/stage-ui/stores/chat/context-store'
 import { useIntervalFn } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'

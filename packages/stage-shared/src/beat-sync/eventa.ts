@@ -5,7 +5,7 @@ import type { BeatSyncDetectorState } from './types'
 
 import { createContext as createWebContext, defineInvokeEventa } from '@moeru/eventa'
 import { createContext as createBroadcastChannelContext } from '@moeru/eventa/adapters/broadcast-channel'
-import { isElectronWindow } from '@proj-airi/stage-shared'
+import { isElectronWindow } from '@anase/stage-shared'
 
 // Functions
 export const beatSyncToggleInvokeEventa = defineInvokeEventa<void, boolean>('eventa:invoke:electron:beat-sync:toggle')
@@ -20,7 +20,7 @@ export const beatSyncBeatSignaledInvokeEventa = defineInvokeEventa<void, Analyse
 let _broadcastChannel: BroadcastChannel | undefined
 function getBroadcastChannel() {
   if (!_broadcastChannel) {
-    _broadcastChannel = new BroadcastChannel('airi::beat-sync')
+    _broadcastChannel = new BroadcastChannel('anase::beat-sync')
     _broadcastChannel.onmessage = () => {
       // TODO: do we need to handle this?
       // REVIEW(nekomeowww): do we need to handle this?

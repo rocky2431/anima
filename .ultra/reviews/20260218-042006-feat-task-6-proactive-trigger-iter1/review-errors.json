@@ -1,0 +1,73 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260218-042006-feat-task-6-proactive-trigger-iter1",
+  "timestamp": "2026-02-18T04:25:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/persona-engine/src/proactive-trigger.ts",
+      "packages/persona-engine/src/do-not-disturb.ts",
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/index.ts",
+      "packages/persona-engine/src/response-generator.ts",
+      "packages/persona-engine/src/emotion-state-machine.ts",
+      "packages/persona-engine/src/emotion-bridge.ts",
+      "packages/persona-engine/src/__tests__/proactive-trigger.test.ts",
+      "packages/persona-engine/src/__tests__/do-not-disturb.test.ts",
+      "packages/persona-engine/src/__tests__/persona-engine.test.ts",
+      "packages/persona-engine/src/__tests__/response-generator.test.ts"
+    ],
+    "total_lines_analyzed": 1775,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 2,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 2, "P3": 0 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "silent-failure",
+      "title": "indexOf returns -1 for unknown IntimacyStage, silently wrong result",
+      "file": "packages/persona-engine/src/proactive-trigger.ts",
+      "line": 34,
+      "line_end": 34,
+      "code_snippet": "return INTIMACY_ORDER.indexOf(current) >= INTIMACY_ORDER.indexOf(required)",
+      "description": "If either `current` or `required` is not present in INTIMACY_ORDER (e.g., a runtime value cast through `as IntimacyStage` or received from an external boundary), `indexOf` returns -1. Comparing -1 >= -1 yields true, meaning an unknown stage would silently pass all intimacy checks. TypeScript narrows this at compile time, but at runtime boundaries (deserialized JSON, IPC messages, plugin SDK input) the value may not match the union. This is a fail-open condition -- unknown inputs are treated as meeting any requirement rather than being rejected.",
+      "suggestion": "Add a runtime guard: throw or return false when indexOf returns -1. For example:\n\nconst currentIdx = INTIMACY_ORDER.indexOf(current)\nconst requiredIdx = INTIMACY_ORDER.indexOf(required)\nif (currentIdx === -1 || requiredIdx === -1) {\n  return false // fail-closed: unknown stage does not meet requirement\n}\nreturn currentIdx >= requiredIdx",
+      "claude_md_rule": "error_handling.rules.fail_fast"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "silent-failure",
+      "title": "isFrequencyExceeded silently accepts zero/negative config limits",
+      "file": "packages/persona-engine/src/do-not-disturb.ts",
+      "line": 48,
+      "line_end": 63,
+      "code_snippet": "const hourlyCount = state.triggerTimestamps.filter(t => t > oneHourAgo).length\nconst dailyCount = state.triggerTimestamps.filter(t => t > oneDayAgo).length\nreturn {\n  hourlyExceeded: hourlyCount >= config.maxPerHour,\n  dailyExceeded: dailyCount >= config.maxPerDay,\n}",
+      "description": "If config.maxPerHour or config.maxPerDay is 0 or negative (misconfigured or default-constructed with bad data), the frequency check will always report 'exceeded', silently blocking all triggers without any indication of misconfiguration. There is no input validation on the DoNotDisturbConfig values. Since this is Functional Core, a Result type or assertion would be more appropriate than silently accepting invalid configuration that produces surprising behavior.",
+      "suggestion": "Add an assertion or guard at the start of canTrigger or isFrequencyExceeded to validate that config values are positive integers. For example:\n\nif (config.maxPerHour <= 0 || config.maxPerDay <= 0) {\n  throw new Error(`Invalid DoNotDisturbConfig: maxPerHour=${config.maxPerHour}, maxPerDay=${config.maxPerDay} must be positive`)\n}",
+      "claude_md_rule": "error_handling.classification.programmer_errors"
+    }
+  ],
+  "positive_observations": [
+    "All changed code is pure Functional Core: no I/O, no async, no try/catch needed. This is excellent architecture.",
+    "TriggerResult uses a discriminated union making illegal states unrepresentable -- no need for error-as-null patterns.",
+    "All state transitions in do-not-disturb.ts are immutable (return new state), eliminating use-after-mutation errors.",
+    "Response generator uses a deliberate fallback chain (emotion -> idle -> DEFAULT_MESSAGE) with clear semantics, not silent error swallowing.",
+    "DoNotDisturbState uses readonly properties and readonly arrays, preventing accidental mutation.",
+    "No empty catch blocks, no fire-and-forget async, no swallowed errors anywhere in the changed code."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 3
+  }
+}

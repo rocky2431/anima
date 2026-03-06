@@ -1,0 +1,116 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260220-154609-feat-task-19-file-monitor-doc-processor-iter1-iter1",
+  "timestamp": "2026-02-20T15:50:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/__tests__/text-chunker.test.ts",
+      "packages/context-engine/src/__tests__/document-processor.test.ts",
+      "packages/context-engine/src/__tests__/folder-monitor.test.ts",
+      "packages/context-engine/src/__tests__/document-pipeline.integration.test.ts",
+      "packages/context-engine/src/capture/folder-monitor.ts",
+      "packages/context-engine/src/processing/document-processor.ts",
+      "packages/context-engine/src/processing/text-chunker.ts"
+    ],
+    "total_lines_analyzed": 963,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 3, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "DocumentProcessor: no tests for corrupt/malformed files",
+      "file": "packages/context-engine/src/__tests__/document-processor.test.ts",
+      "line": 192,
+      "line_end": 203,
+      "code_snippet": "describe('error handling', () => {\n    it('throws for unsupported file type', async () => { ... })\n    it('throws for non-existent file', async () => { ... })\n  })",
+      "description": "The error handling suite only tests unsupported file types and non-existent files. It does not test how DocumentProcessor behaves when given corrupt or malformed files for each supported format: a truncated/invalid PDF, a corrupted DOCX (invalid ZIP), a malformed XLSX, or an empty file with a supported extension. These are realistic operational error scenarios that production code will encounter. The extractPdf, extractDocx, and extractXlsx methods all call external parsers (pdfjs-dist, mammoth, exceljs) that can throw on malformed input, and the current code has no try/catch around those calls, meaning raw library errors will propagate unhandled.",
+      "suggestion": "Add error-path tests for each format: (1) corrupted DOCX (write random bytes to a .docx file), (2) truncated PDF (write partial PDF header), (3) malformed XLSX (write invalid zip to .xlsx), (4) empty file with .txt extension (verify empty string returned, not error). Verify that the errors thrown have meaningful context (file path, format) rather than raw library errors. Consider wrapping parser calls in try/catch to produce consistent DocumentProcessorError types.",
+      "claude_md_rule": "testing.coverage.error_paths"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-integration-test",
+      "title": "Integration test excludes FolderMonitor from the pipeline",
+      "file": "packages/context-engine/src/__tests__/document-pipeline.integration.test.ts",
+      "line": 31,
+      "line_end": 121,
+      "code_snippet": "describe('document pipeline integration', () => {\n  // Only tests: DocumentProcessor -> chunkText -> VectorStore\n  // FolderMonitor is not wired into the pipeline\n})",
+      "description": "The integration test (document-pipeline.integration.test.ts) exercises DocumentProcessor -> chunkText -> VectorStore, but does not include FolderMonitor in the pipeline. FolderMonitor is a key entry point in this feature: it detects file changes and should trigger the document processing pipeline. Without an integration test that wires FolderMonitor.onChange -> DocumentProcessor.extractText -> chunkText -> VectorStore.insert, there is no proof that the full end-to-end pipeline works when a file is created or modified on disk. Per the integration rules, every boundary-crossing component must have at least one test proving the real round-trip.",
+      "suggestion": "Add an integration test that: (1) creates a FolderMonitor watching a temp dir, (2) writes a file to that dir, (3) in the onChange callback, runs extractText -> chunkText -> store.insert, (4) verifies chunks appear in the VectorStore after the file event. This proves the full vertical slice from file system event to vector storage.",
+      "claude_md_rule": "integration.integration_proof"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "FolderMonitor: delete event type not tested",
+      "file": "packages/context-engine/src/__tests__/folder-monitor.test.ts",
+      "line": 47,
+      "line_end": 172,
+      "code_snippet": "// FileChangeEvent type supports: 'create' | 'update' | 'delete'\n// Tests only cover create and update events\n// No test for delete scenario",
+      "description": "The FileChangeEvent type defines three event types: 'create', 'update', and 'delete'. The folder-monitor test suite covers create (line 47) and update (line 73), but no test verifies that file deletion events are captured and reported correctly. Since the FolderMonitor delegates to @parcel/watcher which does report delete events, this is a missing boundary condition that could mask bugs in the event filtering or callback logic for deletions.",
+      "suggestion": "Add a test case that: (1) starts the monitor, (2) creates a file, (3) waits for the create event, (4) deletes the file using fs.unlinkSync or fs.rmSync, (5) waits for a delete event, (6) verifies event.type === 'delete' and event.filePath matches. Also verify that extension filtering works correctly for delete events.",
+      "claude_md_rule": "testing.coverage.boundary_conditions"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "FolderMonitor: onError callback never verified for watcher errors",
+      "file": "packages/context-engine/src/__tests__/folder-monitor.test.ts",
+      "line": 40,
+      "line_end": 45,
+      "code_snippet": "afterEach(async () => {\n    if (monitor?.isRunning) {\n      await monitor.stop()\n    }\n    rmSync(tmpDir, { recursive: true, force: true })\n  })",
+      "description": "The FolderMonitor accepts an onError callback for watcher errors (lines 47, 66-67 in folder-monitor.ts), but no test verifies this callback is invoked when an error occurs. Several tests pass `onError: () => {}` (silent swallow), and while the constructor validation test (line 190) tests a synchronous throw, no test covers the asynchronous error path when @parcel/watcher reports an error or when the onChange callback itself throws. The source code at folder-monitor.ts lines 59-67 has explicit error handling for onChange callback failures that is completely untested.",
+      "suggestion": "Add tests for error scenarios: (1) FolderMonitor with an onChange that throws -- verify onError receives a wrapped error with message 'FolderMonitor onChange callback failed'. (2) Start monitoring a directory, then delete the directory while monitoring -- verify onError is called with a watcher error. These tests verify the error propagation contract documented in the source code.",
+      "claude_md_rule": "testing.coverage.error_paths"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "DocumentProcessor: multi-sheet XLSX and pageCount not verified",
+      "file": "packages/context-engine/src/__tests__/document-processor.test.ts",
+      "line": 152,
+      "line_end": 173,
+      "code_snippet": "describe('extractText - XLSX', () => {\n    it('extracts text from an Excel file', async () => {\n      // Only tests single-sheet workbook\n      // pageCount always 1 in this test\n    })\n  })",
+      "description": "The XLSX test only covers a single-sheet workbook. The DocumentProcessor.extractXlsx method iterates over all worksheets (workbook.eachSheet) and sets pageCount to workbook.worksheets.length, but no test verifies behavior with multiple sheets. This means the sheet iteration logic, the double-newline separator between sheets, and the pageCount for multi-sheet workbooks are all untested. Additionally, edge cases like empty sheets, sheets with only empty rows, or cells with special types (dates, formulas) are not covered.",
+      "suggestion": "Add tests for: (1) a workbook with 2+ sheets -- verify all sheet text appears in output separated by double newlines and pageCount matches sheet count. (2) A workbook with an empty sheet -- verify it is handled gracefully without extra separators. (3) A cell with a date or formula value -- verify toString conversion works.",
+      "claude_md_rule": "testing.coverage.boundary_conditions"
+    }
+  ],
+  "positive_observations": [
+    "No mock violations detected: zero usage of vi.fn(), vi.mock(), vi.spyOn(), InMemoryRepository, MockXxx, or FakeXxx patterns across all test files",
+    "text-chunker.test.ts is an exemplary Functional Core unit test: pure input/output testing with comprehensive coverage of empty input, single chunk, overlapping chunks, sequential indices, defaults, exact-size boundary, content reconstruction, and all three validation error paths",
+    "Integration test (document-pipeline.integration.test.ts) uses real LanceDB via VectorStore.create with temp directories, proving the actual storage round-trip without mocks",
+    "The deterministicEmbed test double in the integration test has a proper '// Test Double rationale:' comment explaining why it replaces the real embedding API (external network + API key dependency)",
+    "folder-monitor.test.ts uses real filesystem watchers on real temp directories with proper cleanup in afterEach, testing actual OS-level file watching behavior",
+    "document-processor.test.ts creates real files in all formats (hand-built PDF, DOCX via JSZip, XLSX via ExcelJS) rather than using fixture files or mocks, ensuring tests exercise the actual parsing code paths",
+    "All test files properly use Vitest imports (not Jest), consistent with the project convention",
+    "Temp directories are created in os.tmpdir() with mkdtempSync and cleaned up in afterEach with rmSync, following the established project pattern for test isolation"
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

@@ -9,7 +9,7 @@ preview-cover:
   dark: "@assets('/en/blog/DevLog-2025.07.18/assets/factorio-belt.gif')"
 ---
 
-こんにちは、AIRI メンテナーの一人、[@LemonNeko](https://github.com/LemonNekoGH) です。
+こんにちは、Anase メンテナーの一人、[@LemonNeko](https://github.com/LemonNekoGH) です。
 
 ## 振り返り
 

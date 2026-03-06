@@ -1,0 +1,93 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260220-201512-feat-task-23-integration-checkpoint-phase3-iter1-iter1",
+  "timestamp": "2026-02-21T00:30:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/stage-ui/src/stores/modules/phase3-checkpoint.integration.test.ts"
+    ],
+    "total_lines_analyzed": 1533,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "repeated-boilerplate",
+      "title": "Repeated try/finally cleanup pattern across 8 test cases",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 82,
+      "line_end": 261,
+      "code_snippet": "try {\n  const result = await client.callTool({ ... })\n  expect(result.content).toBeDefined()\n  // ... assertions ...\n}\nfinally {\n  await cleanup()\n}",
+      "description": "Every test in this file wraps its body in an identical try/finally block calling await cleanup(). This pattern is repeated 8 times across 180 lines. The cleanup logic (closing client and server) is a natural fit for afterEach, which Vitest already supports and which would eliminate the boilerplate entirely while also ensuring cleanup runs even if the test setup fails after createConnectedPair.",
+      "suggestion": "BEFORE:\nasync function createConnectedPair(deps) {\n  // ...setup...\n  return { client, server, cleanup: async () => { ... } }\n}\n\nit('test', async () => {\n  const { client, cleanup } = await createConnectedPair(deps)\n  try {\n    // assertions\n  } finally {\n    await cleanup()\n  }\n})\n\nAFTER:\nlet client: Client\nlet server: Server\n\nasync function connectPair(deps: AnimaMcpServerDeps) {\n  const s = createAnimaMcpServer(deps)\n  const c = new Client({ name: 'test-client', version: '1.0.0' })\n  const [ct, st] = InMemoryTransport.createLinkedPair()\n  await Promise.all([c.connect(ct), s.connect(st)])\n  client = c\n  server = s\n}\n\nafterEach(async () => {\n  await client?.close()\n  await server?.close()\n})\n\nit('test', async () => {\n  await connectPair(createStubDeps())\n  // assertions directly, no try/finally\n})\n\nWHY: Eliminates 8 identical try/finally blocks (~40 lines of boilerplate). afterEach is the idiomatic Vitest pattern for resource cleanup and guarantees cleanup even on setup failures."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "simplification",
+      "subcategory": "repeated-setup",
+      "title": "Near-duplicate registry+channels setup across 5 test cases",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 76,
+      "line_end": 152,
+      "code_snippet": "const registry = new ChannelRegistry()\nconst platforms: ChannelPlatform[] = ['whatsapp', 'slack', 'email', 'feishu', 'dingtalk']\nconst channels: Channel[] = []\nfor (const platform of platforms) {\n  const channel = createStubChannel(platform)\n  channels.push(channel)\n  registry.register(channel, { platform } as ChannelConfig)\n}",
+      "description": "The pattern of creating a ChannelRegistry, defining the 5 platforms array, creating stub channels, and registering them is repeated nearly identically in 5 tests (lines 77-84, 93-102, 117-126, 143-152, 196-203). The variation is small: some tests need the channels array, some need a Map. A shared helper would reduce duplication without sacrificing readability.",
+      "suggestion": "BEFORE:\n// Repeated in 5 tests:\nconst registry = new ChannelRegistry()\nconst platforms: ChannelPlatform[] = ['whatsapp', 'slack', 'email', 'feishu', 'dingtalk']\nconst channels: Channel[] = []\nfor (const platform of platforms) {\n  const channel = createStubChannel(platform)\n  channels.push(channel)\n  registry.register(channel, { platform } as ChannelConfig)\n}\n\nAFTER:\nfunction createRegistryWithAllChannels() {\n  const registry = new ChannelRegistry()\n  const ALL_PLATFORMS: ChannelPlatform[] = ['whatsapp', 'slack', 'email', 'feishu', 'dingtalk']\n  const channels = new Map<ChannelPlatform, ReturnType<typeof createStubChannel>>()\n\n  for (const platform of ALL_PLATFORMS) {\n    const channel = createStubChannel(platform)\n    channels.set(platform, channel)\n    registry.register(channel, { platform } as ChannelConfig)\n  }\n\n  return { registry, channels, platforms: ALL_PLATFORMS }\n}\n\n// In tests:\nconst { registry, channels, platforms } = createRegistryWithAllChannels()\n\nWHY: Extracts ~7 lines of identical setup repeated 5 times into a single helper. The helper returns both Map and array-like access. Tests become more focused on assertions rather than setup."
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "long-test-case",
+      "title": "Single test case spans 78 lines with 15+ assertions",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 61,
+      "line_end": 139,
+      "code_snippet": "it('merges all 3 source types into a valid MergedContext', async () => {\n  // ... 78 lines of setup + 15 assertions\n  expect(result).toMatchObject({ ... })\n  expect(result.sourceCount).toBe(3)\n  // ... entity dedup checks ...\n  // ... keyword dedup checks ...\n  // ... importance calculation ...\n  // ... activity classification ...\n})",
+      "description": "This test verifies structure, source count, entity deduplication, keyword deduplication, importance averaging, and activity classification -- all in one 78-line test. While it is an integration checkpoint (so breadth is intentional), the test is harder to diagnose on failure because a single failure message does not indicate which aspect broke. Consider splitting into 3-4 focused tests: (1) structure validation, (2) entity deduplication, (3) keyword deduplication, (4) importance/activity classification.",
+      "suggestion": "BEFORE:\nit('merges all 3 source types into a valid MergedContext', async () => {\n  // 78 lines: structure + entities + keywords + importance + activity\n})\n\nAFTER:\nconst sources = [ /* shared setup */ ]\n\nit('produces valid MergedContext structure from 3 sources', async () => {\n  const result = await merger.merge(sources)\n  expect(result).toMatchObject({ ... })\n  expect(result.sourceCount).toBe(3)\n})\n\nit('deduplicates entities across all sources', async () => {\n  const result = await merger.merge(sources)\n  const lower = result.entities.map(e => e.toLowerCase())\n  expect(lower).toEqual([...new Set(lower)])\n  expect(lower).toContain('vs code')\n})\n\nit('deduplicates keywords across all sources', async () => { ... })\n\nit('averages importance and classifies activity', async () => { ... })\n\nWHY: Smaller tests produce more specific failure messages. Each test name documents what aspect it validates. Shared setup via const or beforeEach keeps it DRY."
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "code-quality",
+      "subcategory": "fragile-dispatch",
+      "title": "StubLlmProvider dispatches on schemaDescription string content",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 41,
+      "line_end": 45,
+      "code_snippet": "async generateStructured<T>({ schemaDescription }: { ... }): Promise<T> {\n  if (schemaDescription.includes('persons')) {\n    return this.entityResponse as T\n  }\n  return this.activityResponse as T\n}",
+      "description": "The stub dispatches its return value by checking if the schemaDescription string includes 'persons'. This couples the test double to an implementation detail of the prompt text. If the schema description wording changes (e.g., 'people' instead of 'persons'), the stub silently returns the wrong data. Consider using a call counter or explicit method name/schema key for dispatch.",
+      "suggestion": "BEFORE:\nif (schemaDescription.includes('persons')) {\n  return this.entityResponse as T\n}\nreturn this.activityResponse as T\n\nAFTER:\nprivate callIndex = 0\n\nasync generateStructured<T>(): Promise<T> {\n  // First call extracts entities, second classifies activity\n  return (this.callIndex++ === 0\n    ? this.entityResponse\n    : this.activityResponse) as T\n}\n\nWHY: Call-order dispatch is coupled to the merger's call sequence (documented in the merger), not to fragile string content. If the schema description wording changes, the test still works correctly."
+    }
+  ],
+  "positive_observations": [
+    "All test files use well-named factory functions (createStubChannel, makeSource, makeTriggerInput, createMemory, etc.) with sensible defaults and override patterns -- clean and readable",
+    "persona-engine tests use data-driven test generation for 11 trigger scenarios and 7 activity types, keeping the test DRY without sacrificing clarity",
+    "Test Double rationale comments are present in every file that uses stubs, documenting why real dependencies are not used",
+    "Function lengths are generally well-controlled: most factory functions are under 30 lines, most tests under 30 lines",
+    "channels-extra test covers defensive behaviors (duplicate registration, platform mismatch, undefined lookup) thoroughly",
+    "stage-ui tests cleanly verify store isolation -- mutations in one store do not affect others"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

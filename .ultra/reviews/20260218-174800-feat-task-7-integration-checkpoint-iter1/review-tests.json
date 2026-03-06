@@ -1,0 +1,142 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260218-174800-feat-task-7-integration-checkpoint-iter1",
+  "timestamp": "2026-02-18T17:52:00Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/index.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 1184,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 0, "P1": 1, "P2": 4, "P3": 2 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "test-quality",
+      "subcategory": "missing-error-path",
+      "title": "VLM provider failure path not tested in orchestrator",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "line": 494,
+      "line_end": 516,
+      "code_snippet": "describe('error handling', () => {\n    it('reports screenshot errors via onError', async () => {\n      const failingProvider: ScreenshotProvider = {\n        async capture(): Promise<Buffer> {\n          throw new Error('Permission denied')\n        },",
+      "description": "The error handling section (lines 494-516) only tests screenshot capture failure. There is no test for when VlmProvider.describeImage() throws. The ScreenshotPipeline calls VLM after capture succeeds, making VLM failure a distinct error path. The orchestrator wires onError for both failure modes, but only one is verified. VLM errors are a realistic production scenario (API rate limits, network timeouts, malformed responses).",
+      "suggestion": "Add a test with a FailingVlmProvider that throws (e.g., 'API rate limit exceeded') and verify onError is called with the appropriate wrapped error. Example:\n\nclass FailingVlmProvider implements VlmProvider {\n  // Test Double rationale: VlmProvider is an external LLM API.\n  async describeImage(): Promise<VlmResult> {\n    throw new Error('API rate limit exceeded')\n  }\n}\n\nit('reports VLM errors via onError', async () => {\n  const errors: Error[] = []\n  const orch = createAnimaOrchestrator(\n    { screenshotProvider: new SequentialScreenshotProvider([pngA]), vlmProvider: new FailingVlmProvider() },\n    { onError: (err) => errors.push(err) },\n  )\n  await orch.tickScreenshot()\n  expect(errors).toHaveLength(1)\n  expect(errors[0].message).toContain('Screenshot pipeline tick failed')\n  orch.stop()\n})",
+      "claude_md_rule": "testing.coverage.critical_paths_for_shell"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "Trigger cooldown behavior not tested at orchestrator level",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "line": 156,
+      "line_end": 217,
+      "code_snippet": "const lastTriggerTimes: Record<string, number> = {}\nconst triggers = [...(config.triggers ?? ALL_TRIGGERS)]\n// ... in handleProcessedContext:\nlastTriggerTimes[result.triggerId] = now",
+      "description": "The orchestrator maintains mutable lastTriggerTimes state (orchestrator.ts line 119) and passes it to evaluateTriggers on each tick. No test verifies that the same trigger does not re-fire within its cooldown period when tickActivity() is called multiple times. While cooldown logic is tested at the persona-engine unit level, the integration wiring through the orchestrator (which owns the mutable state) is not verified.",
+      "suggestion": "Add a test that calls tickActivity() twice in quick succession after 2+ hours of work. The first call should fire T03, the second should not. Then advance time past cooldown and verify T03 fires again:\n\nit('does not re-fire trigger within cooldown period', () => {\n  // ... setup with 2h+ work events\n  orchestrator.tickActivity()\n  expect(proactiveEvents).toHaveLength(1)\n  // Record more events, tick again immediately\n  orchestrator.recordActivity(makeEvent(now + 1000))\n  orchestrator.tickActivity()\n  expect(proactiveEvents).toHaveLength(1) // still 1, cooldown active\n})",
+      "claude_md_rule": "testing.coverage.critical_paths_for_shell"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-boundary-condition",
+      "title": "No test for empty activity events (startup edge case)",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "line": 120,
+      "code_snippet": "describe('animaOrchestrator: end-to-end integration', () => {\n  // All tests record events before calling tickActivity()\n  // No test calls tickActivity() with zero events",
+      "description": "No test verifies behavior when tickActivity() is called without any prior recordActivity() calls. This is the application startup scenario: the orchestrator starts before any activity events arrive. The ProcessedContext should have safe defaults (zero duration, empty recentApps) and no triggers should fire. Without this test, a regression could cause a crash or unexpected trigger at startup.",
+      "suggestion": "Add a startup edge case test:\n\nit('handles tickActivity with no recorded events (startup)', () => {\n  const orch = createAnimaOrchestrator(\n    { screenshotProvider, vlmProvider },\n    { onProactiveResponse: (evt) => proactiveEvents.push(evt) },\n  )\n  const context = orch.tickActivity()\n  expect(context.activity.continuousWorkDurationMs).toBe(0)\n  expect(context.activity.recentApps).toHaveLength(0)\n  expect(proactiveEvents).toHaveLength(0)\n  orch.stop()\n})",
+      "claude_md_rule": "testing.coverage.boundary_conditions"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "test-quality",
+      "subcategory": "missing-edge-case",
+      "title": "No test for unmapped trigger name in TRIGGER_EMOTION_MAP",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 133,
+      "line_end": 136,
+      "code_snippet": "const emotionEvent = TRIGGER_EMOTION_MAP[result.triggerName]\nif (emotionEvent) {\n  emotionActor.send(emotionEvent)\n}",
+      "description": "When a trigger fires with a name not in TRIGGER_EMOTION_MAP (lines 63-75), the emotion state machine is not updated but a response is still generated with the current (unchanged) emotion state. This is a graceful degradation path that is not tested. If a new trigger is added to persona-engine but not mapped here, the behavior would be silently different from mapped triggers.",
+      "suggestion": "Add a test using a custom TriggerCondition with a name not in TRIGGER_EMOTION_MAP:\n\nit('fires response with unchanged emotion for unmapped trigger', () => {\n  const customTrigger = {\n    id: 'T99', name: 'custom-unmapped',\n    check: () => true, cooldownMs: 0,\n    minIntimacy: 'stranger', responseTemplates: [...]\n  }\n  const orch = createAnimaOrchestrator(\n    { screenshotProvider, vlmProvider },\n    { triggers: [customTrigger], ... },\n  )\n  // ... feed activity, tickActivity()\n  expect(orch.getEmotionState()).toBe('idle') // unchanged\n  expect(proactiveEvents).toHaveLength(1)\n})",
+      "claude_md_rule": "testing.coverage.edge_cases"
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-dedup-test",
+      "title": "Screenshot deduplication not tested at orchestrator level",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "line": 129,
+      "line_end": 154,
+      "code_snippet": "const screenshotProvider = new SequentialScreenshotProvider([pngA, pngB])\n// Tests always use distinct images\n// No test uses identical images to verify dedup behavior",
+      "description": "The ScreenshotPipeline internally uses pHash deduplication to skip re-processing identical screenshots. All tests use distinct images (pngA, pngB). No test calls tickScreenshot() twice with the same image to verify the orchestrator properly handles the 'no change' case where the pipeline returns false and VLM is not called again.",
+      "suggestion": "Add a dedup test:\n\nit('skips VLM when screenshot is unchanged (pHash dedup)', async () => {\n  const screenshotProvider = new SequentialScreenshotProvider([pngA, pngA])\n  const vlmProvider = new StubVlmProvider()\n  const orch = createAnimaOrchestrator({ screenshotProvider, vlmProvider })\n  await orch.tickScreenshot()\n  expect(vlmProvider.callCount).toBe(1)\n  const result = await orch.tickScreenshot()\n  expect(result).toBe(false)\n  expect(vlmProvider.callCount).toBe(1) // not called again\n  orch.stop()\n})",
+      "claude_md_rule": "testing.coverage.boundary_conditions"
+    },
+    {
+      "id": "review-tests-006",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "placeholder-in-production",
+      "title": "PlaceholderVlmProvider is untestable TODO pattern",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "line": 36,
+      "line_end": 45,
+      "code_snippet": "class PlaceholderVlmProvider implements VlmProvider {\n  async describeImage(_imageBuffer: Buffer): Promise<VlmResult> {\n    log.warn('PlaceholderVlmProvider: Using placeholder VLM...')\n    return {\n      description: 'User is working at their computer',",
+      "description": "PlaceholderVlmProvider returns hardcoded results and logs a warning on every call. The comment 'Will be replaced with a real AI SDK 6 integration in Task 8' is a disguised TODO. From a test quality perspective, this means the production VLM path has zero test coverage -- the orchestrator tests use StubVlmProvider (correctly, as external API), but the actual production wiring uses a placeholder that cannot validate real VLM behavior.",
+      "suggestion": "Make VLM provider configurable via environment variable (e.g., VLM_PROVIDER_URL). When not set, either skip the screenshot pipeline entirely or log the warning once at startup rather than per-call. This eliminates the per-tick log spam and makes the placeholder explicit at configuration level.",
+      "claude_md_rule": "forbidden_patterns.code.todo"
+    },
+    {
+      "id": "review-tests-007",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "test-quality",
+      "subcategory": "missing-test-file",
+      "title": "setup-orchestrator.ts has no corresponding test file",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "line": 1,
+      "line_end": 80,
+      "code_snippet": "export function setupAnimaOrchestrator() {\n  const screenshotProvider = new ElectronScreenshotProvider()\n  const vlmProvider = new PlaceholderVlmProvider()\n  const orchestrator = createAnimaOrchestrator(\n    { screenshotProvider, vlmProvider },",
+      "description": "setup-orchestrator.ts is a new imperative shell wiring module with no test file. It contains ElectronScreenshotProvider (requires Electron desktopCapturer) and PlaceholderVlmProvider. The core wiring logic (createAnimaOrchestrator call with config) is covered indirectly by orchestrator.test.ts. The Electron-specific provider cannot be tested without an Electron test environment. Severity is P3 because the orchestrator.test.ts provides good coverage of the orchestrator itself.",
+      "suggestion": "This is acceptable as imperative shell wiring that requires Electron runtime. The core logic is tested via orchestrator.test.ts. If config-building logic grows more complex, consider extracting it into a testable pure function. Document in the test file that setup-orchestrator.ts wiring is covered by the orchestrator integration tests.",
+      "claude_md_rule": "testing.integration.every_use_case_with_external_boundary"
+    }
+  ],
+  "positive_observations": [
+    "Test doubles for ScreenshotProvider and VlmProvider are correctly annotated with '// Test Double rationale:' comments, properly justifying their use for platform API and external LLM boundaries",
+    "No mock violations detected: zero usage of vi.fn(), vi.mock(), InMemoryRepository, MockXxx, or FakeXxx patterns in the test file",
+    "Comprehensive end-to-end test (lines 371-427) verifies the full pipeline: screenshot -> VLM -> activity monitor -> trigger -> emotion -> response -> UI event",
+    "Real sharp library used for PNG generation in beforeAll -- tests create actual image buffers rather than empty/fake data",
+    "Good negative test coverage: fullscreen suppression, under-threshold work duration, and stranger intimacy restriction are all tested",
+    "Behavioral assertions check correct trigger ID, emotion state transitions, response content, and Anima emotion mapping rather than implementation details",
+    "Lifecycle management tests verify both start() initiates periodic processing and stop() halts it cleanly"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

@@ -1,6 +1,6 @@
 ---
 title: コントリビューション
-description: Project AIRI への貢献
+description: Project Anase への貢献
 ---
 
 こんにちは！このプロジェクトへの貢献に興味を持っていただきありがとうございます。このガイドは、あなたが始めるのに役立ちます。
@@ -178,7 +178,7 @@ nr dev:tamagotchi
 
 :::
 
-### Stage Web (Web 版 [airi.moeru.ai](https://airi.moeru.ai) 用)
+### Stage Web (Web 版 [anase.app](https://anase.app) 用)
 
 ```shell
 pnpm dev
@@ -230,14 +230,14 @@ cp .env .env.local
 データベースのマイグレーション
 
 ```shell
-pnpm -F @proj-airi/telegram-bot db:generate
-pnpm -F @proj-airi/telegram-bot db:push
+pnpm -F @anase/telegram-bot db:generate
+pnpm -F @anase/telegram-bot db:push
 ```
 
 ボットの実行
 
 ```shell
-pnpm -F @proj-airi/telegram-bot start
+pnpm -F @anase/telegram-bot start
 ```
 
 ::: tip
@@ -245,7 +245,7 @@ pnpm -F @proj-airi/telegram-bot start
 [@antfu/ni](https://github.com/antfu-collective/ni) ユーザーの場合：
 
 ```shell
-nr -F @proj-airi/telegram-bot dev
+nr -F @anase/telegram-bot dev
 ```
 
 :::
@@ -267,7 +267,7 @@ cp .env .env.local
 ボットの実行
 
 ```shell
-pnpm -F @proj-airi/discord-bot start
+pnpm -F @anase/discord-bot start
 ```
 
 ::: tip
@@ -275,7 +275,7 @@ pnpm -F @proj-airi/discord-bot start
 [@antfu/ni](https://github.com/antfu-collective/ni) ユーザーの場合：
 
 ```shell
-nr -F @proj-airi/discord-bot dev
+nr -F @anase/discord-bot dev
 ```
 
 :::
@@ -299,7 +299,7 @@ cp .env .env.local
 ボットの実行
 
 ```shell
-pnpm -F @proj-airi/minecraft-bot start
+pnpm -F @anase/minecraft-bot start
 ```
 
 ::: tip
@@ -307,7 +307,7 @@ pnpm -F @proj-airi/minecraft-bot start
 [@antfu/ni](https://github.com/antfu-collective/ni) ユーザーの場合：
 
 ```shell
-nr -F @proj-airi/minecraft-bot dev
+nr -F @anase/minecraft-bot dev
 ```
 
 :::

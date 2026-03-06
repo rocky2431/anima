@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SpeechProviderWithExtraOptions } from '@proj-airi/stage-ui/stores/providers/types'
+import type { SpeechProviderWithExtraOptions } from '@anase/stage-ui/stores/providers/types'
 
 import {
   Alert,
@@ -8,18 +8,18 @@ import {
   RadioCardSimple,
   TestDummyMarker,
   VoiceCardManySelect,
-} from '@proj-airi/stage-ui/components'
-import { useAnalytics } from '@proj-airi/stage-ui/composables'
-import { generateSpeech } from '@proj-airi/stage-ui/libs/ai/generate-speech'
-import { useSpeechStore } from '@proj-airi/stage-ui/stores/modules/speech'
-import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
+} from '@anase/stage-ui/components'
+import { useAnalytics } from '@anase/stage-ui/composables'
+import { generateSpeech } from '@anase/stage-ui/libs/ai/generate-speech'
+import { useSpeechStore } from '@anase/stage-ui/stores/modules/speech'
+import { useProvidersStore } from '@anase/stage-ui/stores/providers'
 import {
   FieldCheckbox,
   FieldInput,
   FieldRange,
   Skeleton,
   Textarea,
-} from '@proj-airi/ui'
+} from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

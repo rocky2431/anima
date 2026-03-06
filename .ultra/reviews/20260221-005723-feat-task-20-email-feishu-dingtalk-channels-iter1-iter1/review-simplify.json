@@ -1,0 +1,93 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-simplify",
+  "session": "20260221-005723-feat-task-20-email-feishu-dingtalk-channels-iter1-iter1",
+  "timestamp": "2026-02-21T00:58:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/email/index.ts",
+      "packages/channels-extra/src/feishu/index.ts",
+      "packages/channels-extra/src/dingtalk/index.ts"
+    ],
+    "total_lines_analyzed": 665,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 3, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-simplify-001",
+      "severity": "P2",
+      "confidence": 92,
+      "category": "simplification",
+      "subcategory": "duplication",
+      "title": "Handler dispatch loop duplicated identically across all 3 channels",
+      "file": "packages/channels-extra/src/email/index.ts",
+      "line": 198,
+      "line_end": 208,
+      "code_snippet": "for (const handler of this.messageHandlers) {\n  try {\n    const result = handler(incomingMessage)\n    if (result instanceof Promise) {\n      result.catch(err => logger.withError(err as Error).error('async message handler error'))\n    }\n  }\n  catch (err) {\n    logger.withError(err as Error).error('sync message handler error')\n  }\n}",
+      "description": "The handler dispatch loop (iterating over messageHandlers, invoking each, catching sync errors, and attaching .catch to async results) is copied verbatim across email/index.ts (lines 198-208), feishu/index.ts (lines 197-207), and dingtalk/index.ts (lines 204-214). This is 11 lines x 3 = 33 lines of near-identical code. Since this pattern appears 3 times with identical logic, it crosses the threshold for extraction.",
+      "suggestion": "BEFORE:\n// Repeated in each channel class:\nfor (const handler of this.messageHandlers) {\n  try {\n    const result = handler(incomingMessage)\n    if (result instanceof Promise) {\n      result.catch(err => logger.withError(err as Error).error('async message handler error'))\n    }\n  } catch (err) {\n    logger.withError(err as Error).error('sync message handler error')\n  }\n}\n\nAFTER:\n// In a shared utility, e.g. packages/channels-extra/src/channel-utils.ts:\nimport type { Logger } from '@guiiai/logg'\nimport type { IncomingMessage, MessageHandler } from './types.js'\n\nexport function dispatchToHandlers(\n  handlers: MessageHandler[],\n  message: IncomingMessage,\n  logger: { withError: (err: Error) => { error: (msg: string) => void } },\n): void {\n  for (const handler of handlers) {\n    try {\n      const result = handler(message)\n      if (result instanceof Promise) {\n        result.catch(err => logger.withError(err as Error).error('async message handler error'))\n      }\n    } catch (err) {\n      logger.withError(err as Error).error('sync message handler error')\n    }\n  }\n}\n\n// Each channel then calls:\ndispatchToHandlers(this.messageHandlers, incomingMessage, logger)\n\nWHY: Eliminates 33 lines of duplicated dispatch logic. A bug fix to handler invocation (e.g., adding proper void handling) would otherwise require 3 coordinated edits."
+    },
+    {
+      "id": "review-simplify-002",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "simplification",
+      "subcategory": "duplication",
+      "title": "setStatus method duplicated identically across all 3 channels",
+      "file": "packages/channels-extra/src/feishu/index.ts",
+      "line": 69,
+      "line_end": 79,
+      "code_snippet": "private setStatus(status: ChannelStatus): void {\n  this._status = status\n  for (const handler of this.statusHandlers) {\n    try {\n      handler(status)\n    }\n    catch (err) {\n      logger.withFields({ status }).withError(err as Error).error('status handler error')\n    }\n  }\n}",
+      "description": "The setStatus method is identical in all three channel classes (email lines 65-75, feishu lines 69-79, dingtalk lines 67-77). Along with setStatus, the fields _status, statusHandlers, onStatusChange, messageHandlers, and onMessage are also identical across all three. Together these account for ~35 lines of duplicated boilerplate per class (~105 lines total across 3 classes).",
+      "suggestion": "BEFORE:\n// Each channel class independently declares:\nprivate _status: ChannelStatus = 'disconnected'\nprivate messageHandlers: MessageHandler[] = []\nprivate statusHandlers: StatusChangeHandler[] = []\n// ...plus identical setStatus(), onStatusChange(), onMessage() methods\n\nAFTER:\n// Option A: Abstract base class\nabstract class BaseChannel implements Channel {\n  abstract readonly platform: ChannelPlatform\n  protected _status: ChannelStatus = 'disconnected'\n  protected messageHandlers: MessageHandler[] = []\n  private statusHandlers: StatusChangeHandler[] = []\n\n  get status(): ChannelStatus { return this._status }\n\n  protected setStatus(status: ChannelStatus): void {\n    this._status = status\n    for (const handler of this.statusHandlers) {\n      try { handler(status) }\n      catch (err) { /* logged */ }\n    }\n  }\n\n  onStatusChange(handler: StatusChangeHandler): () => void { /* shared */ }\n  onMessage(handler: MessageHandler): () => void { /* shared */ }\n}\n\n// Option B: Composition - createHandlerRegistry() utility\n// Returns { addHandler, removeHandler, dispatch } to avoid inheritance.\n\nWHY: ~105 lines of identical boilerplate consolidated. Changes to handler management (e.g., adding priority ordering) would require editing only one location.",
+      "claude_md_rule": "architecture.functional_core_imperative_shell"
+    },
+    {
+      "id": "review-simplify-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "simplification",
+      "subcategory": "duplication",
+      "title": "connect() error-handling pattern duplicated across all 3 channels",
+      "file": "packages/channels-extra/src/dingtalk/index.ts",
+      "line": 88,
+      "line_end": 115,
+      "code_snippet": "async connect(): Promise<void> {\n  this.setStatus('connecting')\n  if (!this.deps) {\n    this.setStatus('error')\n    throw new Error(`... channel requires ... dependency. Config platform: ${this.config.platform}`)\n  }\n  try {\n    // channel-specific setup\n    this.setStatus('connected')\n  } catch (error) {\n    this.setStatus('error')\n    throw new Error('... connect failed', { cause: error })\n  }\n}",
+      "description": "All three connect() methods follow the identical pattern: setStatus('connecting') -> guard on !this.deps -> try { channel-specific setup; setStatus('connected') } catch { setStatus('error'); throw }. The disconnect() methods follow a similar pattern. The structural skeleton is duplicated even though the inner logic differs. This is less critical than the handler dispatch duplication since only the boilerplate (not the full method) is duplicated.",
+      "suggestion": "BEFORE:\nasync connect(): Promise<void> {\n  this.setStatus('connecting')\n  if (!this.deps) {\n    this.setStatus('error')\n    throw new Error(`${this.platform} channel requires deps...`)\n  }\n  try {\n    /* channel-specific */\n    this.setStatus('connected')\n  } catch (error) {\n    this.setStatus('error')\n    throw new Error(`${this.platform} connect failed`, { cause: error })\n  }\n}\n\nAFTER:\n// In BaseChannel (if using Option A from finding 002):\nprotected async connectWithGuard(setup: () => Promise<void>, depsDescription: string): Promise<void> {\n  this.setStatus('connecting')\n  if (!this.deps) {\n    this.setStatus('error')\n    throw new Error(`${this.platform} channel requires ${depsDescription}`)\n  }\n  try {\n    await setup()\n    this.setStatus('connected')\n  } catch (error) {\n    this.setStatus('error')\n    throw new Error(`${this.platform} connect failed`, { cause: error })\n  }\n}\n\n// Each subclass:\nasync connect(): Promise<void> {\n  await this.connectWithGuard(async () => {\n    this.client = this.deps!.createClient()\n    // ...channel-specific setup\n  }, 'createClient and createWsClient')\n}\n\nWHY: Removes the repeated status-management boilerplate from connect/disconnect, letting each channel focus only on its specific setup/teardown logic."
+    },
+    {
+      "id": "review-simplify-004",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "simplification",
+      "subcategory": "naming",
+      "title": "StatusChangeHandler type duplicated across all 3 files",
+      "file": "packages/channels-extra/src/email/index.ts",
+      "line": 42,
+      "line_end": 42,
+      "code_snippet": "type StatusChangeHandler = (status: ChannelStatus) => void",
+      "description": "The type alias `StatusChangeHandler = (status: ChannelStatus) => void` is independently declared in each of the three channel files (email line 42, feishu line 47, dingtalk line 40). This is a shared contract that belongs in the shared types module.",
+      "suggestion": "BEFORE:\n// In each channel file:\ntype StatusChangeHandler = (status: ChannelStatus) => void\n\nAFTER:\n// In packages/channels-extra/src/types.ts:\nexport type StatusChangeHandler = (status: ChannelStatus) => void\n\n// In each channel file:\nimport type { ..., StatusChangeHandler } from '../types.js'\n\nWHY: Single source of truth for the type. If the signature changes (e.g., adding a previous-status parameter), only one edit is needed."
+    }
+  ],
+  "positive_observations": [
+    "All three channel classes are well-structured with consistent API surface matching the Channel interface",
+    "Guard clauses used effectively (early return in setupExistsListener, handleIncomingMessage bot-filter)",
+    "Error handling is thorough - connect/disconnect wrap in try/catch with proper status transitions and cause chaining",
+    "Function lengths are reasonable: no function exceeds 35 lines",
+    "Maximum nesting depth is 3, which is within acceptable thresholds",
+    "Dependency injection via constructor deps parameter enables testability without mocks",
+    "Structured logging used consistently with contextual fields (no console.log)"
+  ],
+  "metadata": {
+    "duration_ms": 12000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

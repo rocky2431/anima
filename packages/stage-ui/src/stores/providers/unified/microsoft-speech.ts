@@ -2,7 +2,7 @@ import type { UnMicrosoftOptions, VoiceProviderWithExtraOptions } from 'unspeech
 
 import type { ModelInfo, UnifiedProviderMetadata, ValidationResult, VoiceInfo } from '../types'
 
-import { isUrl } from '@proj-airi/stage-shared'
+import { isUrl } from '@anase/stage-shared'
 import { createUnMicrosoft, listVoices } from 'unspeech'
 
 export const microsoftSpeechProvider: UnifiedProviderMetadata = {

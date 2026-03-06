@@ -1,0 +1,150 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260218-034854-feat-task-5-persona-engine-iter1",
+  "timestamp": "2026-02-18T03:52:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/persona-engine/package.json",
+      "packages/persona-engine/src/__tests__/emotion-state-machine.test.ts",
+      "packages/persona-engine/src/__tests__/persona-engine.test.ts",
+      "packages/persona-engine/src/__tests__/emotion-bridge.test.ts",
+      "packages/persona-engine/src/__tests__/intimacy-tracker.test.ts",
+      "packages/persona-engine/src/__tests__/persona-template.test.ts",
+      "packages/persona-engine/src/emotion-state-machine.ts",
+      "packages/persona-engine/src/index.ts",
+      "packages/persona-engine/src/response-generator.ts",
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/emotion-bridge.ts",
+      "packages/persona-engine/src/intimacy-tracker.ts",
+      "packages/persona-engine/src/persona-template.ts"
+    ],
+    "total_lines_analyzed": 945,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 7,
+    "by_severity": { "P0": 1, "P1": 4, "P2": 2, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P0",
+      "confidence": 99,
+      "category": "architecture",
+      "subcategory": "breaking-export",
+      "title": "Removed exports break existing app-level consumer",
+      "file": "packages/persona-engine/src/index.ts",
+      "line": 31,
+      "line_end": 32,
+      "code_snippet": "export { evaluateTriggers, T03_REST_REMINDER } from './proactive-trigger'\nexport { generateResponse } from './response-generator'",
+      "description": "The previous index.ts exported `INITIAL_EMOTION` and `transitionEmotion` from `./emotion-state-machine`. This commit removes those exports entirely. However, the app-level consumer at `apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts` (lines 4-6) still imports both `INITIAL_EMOTION` and `transitionEmotion` from `@proj-airi/persona-engine`. The build will fail with 'Module has no exported member' errors. This is a breaking change that was not propagated to the only live consumer.",
+      "suggestion": "Either (a) update `apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts` to use the new `emotionMachine` (xstate actor) and `mapToAnimaEmotion` instead of the removed pure-function API, or (b) add backwards-compatible re-exports. The app service needs to be rewritten to create an xstate actor, send events to it, and use `mapToAnimaEmotion` for the bridge. This is the critical missing piece.",
+      "claude_md_rule": "integration.walking_skeleton"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 95,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "emotionMachine, emotion-bridge, intimacy-tracker, persona-template have no app-level consumer",
+      "file": "packages/persona-engine/src/index.ts",
+      "line": 16,
+      "line_end": 29,
+      "code_snippet": "export { emotionMachine } from './emotion-state-machine'\nexport { applyScoreChange, createIntimacyState, getStageForScore, INTIMACY_SCORE_CHANGES, INTIMACY_STAGES } from './intimacy-tracker'\nexport { getPersonaTemplate, PERSONA_TEMPLATES } from './persona-template'\nexport { mapToAnimaEmotion } from './emotion-bridge'",
+      "description": "Four new modules (emotion-state-machine as xstate machine, emotion-bridge, intimacy-tracker, persona-template) are exported from the package index but have zero consumers outside the persona-engine package itself. The only live consumer (`apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts`) has not been updated to use any of these. Per integration rules, code exported but not reachable from any entry point is an orphan. These modules are only exercised by their own unit tests.",
+      "suggestion": "Update `apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts` to: (1) create an xstate actor from `emotionMachine`, (2) use `mapToAnimaEmotion` to bridge to the Anima emotion system, (3) integrate `createIntimacyState` and `applyScoreChange` for tracking relationship progression, (4) use `getPersonaTemplate` to select character personality. Wire the intimacy state to persistence (even if just an initial JSON file) to satisfy the critical-state-persistable rule.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "integration",
+      "subcategory": "missing-contract",
+      "title": "AnimaEmotionPayload uses string name but stage-ui EmotionPayload uses Emotion enum",
+      "file": "packages/persona-engine/src/types.ts",
+      "line": 50,
+      "line_end": 56,
+      "code_snippet": "export interface AnimaEmotionPayload {\n  readonly name: string\n  readonly intensity: number\n}",
+      "description": "The `AnimaEmotionPayload` interface declares `name: string`, but its documented purpose is to match `stage-ui`'s `EmotionPayload` interface, which uses `name: Emotion` (a string enum from `packages/stage-ui/src/constants/emotions.ts`). While the runtime string values ('happy', 'sad', 'surprised', etc.) do match the enum values, the types are not structurally connected. There is no shared type import, no contract test, and a typo in the mapping values would not be caught at compile time. The `emotion-bridge.ts` maps `excited` to `'surprised'` but the stage-ui enum value is `Emotion.Surprise = 'surprised'` -- correct at runtime but fragile without type checking.",
+      "suggestion": "Either (1) import the `Emotion` enum from `@proj-airi/stage-ui` and use it as the `name` type in `AnimaEmotionPayload`, establishing a real type-level contract, or (2) extract a shared interface into a shared package (e.g., `packages/stage-shared`) that both persona-engine and stage-ui import. Add a contract test that validates all mapped values are valid Emotion enum members.",
+      "claude_md_rule": "integration.contract_first"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "architecture",
+      "subcategory": "in-memory-state",
+      "title": "IntimacyState has no persistence path -- score resets on restart",
+      "file": "packages/persona-engine/src/intimacy-tracker.ts",
+      "line": 46,
+      "line_end": 53,
+      "code_snippet": "export function createIntimacyState(initialScore: number = 0): IntimacyState {\n  const clamped = Math.max(0, Math.min(100, initialScore))\n  return {\n    score: clamped,\n    stage: getStageForScore(clamped),\n  }\n}",
+      "description": "The intimacy tracker creates pure immutable state objects (good functional core design), but there is no persistence adapter, no save/load mechanism, and no consumer that would persist the score. The intimacy score (stranger -> soulmate progression) is business-critical relationship state. Per CLAUDE.md rules, critical state must be persistable/recoverable/observable. On app restart, all intimacy progress would be lost. The functional core is correct to not handle IO directly, but the imperative shell layer must provide persistence, and currently no shell consumer exists.",
+      "suggestion": "In the imperative shell layer (the app service), add a persistence adapter that saves IntimacyState to disk or DB. A minimal approach: (1) add a `serializeIntimacyState` / `deserializeIntimacyState` pair in the functional core, (2) in the app service, load state from a JSON file or electron-store on startup and save after each `applyScoreChange`. At minimum, acknowledge this gap in a task tracker -- but per CLAUDE.md, 'Store in memory first' -> 'You'll forget; persist now'.",
+      "claude_md_rule": "architecture.critical_state_persistable"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "subcategory": "horizontal-only",
+      "title": "Change is horizontal-only: no end-to-end path exercises new modules",
+      "file": "packages/persona-engine/src/index.ts",
+      "line": 1,
+      "line_end": 32,
+      "code_snippet": "export { emotionMachine } from './emotion-state-machine'\nexport { mapToAnimaEmotion } from './emotion-bridge'\nexport { getPersonaTemplate, PERSONA_TEMPLATES } from './persona-template'\nexport { applyScoreChange, createIntimacyState } from './intimacy-tracker'",
+      "description": "This change adds 4 new functional core modules to persona-engine (xstate emotion machine, emotion-bridge, intimacy-tracker, persona-template) but does not update any imperative shell layer to consume them. The app-level service still uses the old API (which is now broken, see review-code-001). No IPC handler, event listener, or timer invokes any of the new code. Per the vertical slice principle, every task must deliver a thin working end-to-end path. This change builds a full horizontal layer (domain logic) without connecting it to any entry point.",
+      "suggestion": "Update `apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts` to: (1) create and manage an xstate emotion actor, (2) send events based on trigger results and context, (3) use `mapToAnimaEmotion` to bridge persona emotion to the Anima display system, (4) integrate intimacy tracking. Wire this to the existing IPC/event system so the new emotion states flow to the renderer process.",
+      "claude_md_rule": "integration.vertical_slice"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "code-quality",
+      "subcategory": "hardcoded-config",
+      "title": "Hardcoded intimacy stage boundaries and score deltas",
+      "file": "packages/persona-engine/src/intimacy-tracker.ts",
+      "line": 6,
+      "line_end": 21,
+      "code_snippet": "export const INTIMACY_SCORE_CHANGES: Record<IntimacyInteraction, number> = {\n  conversation: 1,\n  deepConversation: 3,\n} as const\n\nexport const INTIMACY_STAGES: readonly IntimacyStageBoundary[] = [\n  { stage: 'stranger', min: 0, max: 15 },\n  ...\n] as const",
+      "description": "The intimacy score deltas (1 for conversation, 3 for deepConversation) and stage boundary ranges (0-15 stranger, 16-35 acquaintance, etc.) are hardcoded as module-level constants. While exporting them as named constants is better than inline magic numbers, these are persona-tuning parameters that different PersonaTemplates might want to configure differently. A 'caring' persona like Xiaorou might build intimacy faster than a reserved one. Currently there is no mechanism to vary these per template.",
+      "suggestion": "Consider making intimacy configuration part of the PersonaTemplate interface, with these constants as defaults. For example: `interface PersonaTemplate { ...; intimacyConfig?: { scoreChanges: Record<IntimacyInteraction, number>; stages: IntimacyStageBoundary[] } }`. The current constants become the fallback. This is not blocking but would prevent a future refactor when persona differentiation becomes needed.",
+      "claude_md_rule": "forbidden_patterns.hardcoded_config"
+    },
+    {
+      "id": "review-code-007",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "code-quality",
+      "subcategory": "missing-negative-score-handling",
+      "title": "applyScoreChange only clamps upward; no mechanism for score decrease",
+      "file": "packages/persona-engine/src/intimacy-tracker.ts",
+      "line": 63,
+      "line_end": 73,
+      "code_snippet": "export function applyScoreChange(\n  state: IntimacyState,\n  interaction: IntimacyInteraction,\n): IntimacyState {\n  const delta = INTIMACY_SCORE_CHANGES[interaction]\n  const newScore = Math.min(100, state.score + delta)\n  return { score: newScore, stage: getStageForScore(newScore) }\n}",
+      "description": "The `applyScoreChange` function only uses `Math.min(100, ...)` to cap the upper bound, but does not use `Math.max(0, ...)` for the lower bound. Currently all deltas are positive (conversation: +1, deepConversation: +3), so this is not exploitable. However, the `IntimacyInteraction` type and `INTIMACY_SCORE_CHANGES` record could be extended with negative interactions (e.g., 'neglect': -2, 'conflict': -5). If a negative delta is added, scores could go below zero, which would cause `getStageForScore` to clamp at the input level but the `IntimacyState.score` field would store a negative value, creating an inconsistency between `state.score` and `state.stage`.",
+      "suggestion": "Add lower-bound clamping: `const newScore = Math.max(0, Math.min(100, state.score + delta))`. This makes the function robust against future negative deltas and maintains consistency between the stored score and the computed stage.",
+      "claude_md_rule": "code_quality.boundary_conditions"
+    }
+  ],
+  "positive_observations": [
+    "Excellent use of xstate v5 for emotion state management. The state machine is well-defined with clear states, events, and transitions. Using a mature library instead of hand-rolling state transitions is the right choice.",
+    "Pure functional core design is exemplary: all domain functions (mapToAnimaEmotion, createIntimacyState, applyScoreChange, getStageForScore, getPersonaTemplate) are pure, take inputs, return outputs, and require no mocks for testing.",
+    "Immutable state pattern in intimacy-tracker (readonly properties, new object returned from applyScoreChange) prevents accidental mutation bugs.",
+    "EmotionState is defined as a type alias for PersonaEmotion, providing backwards compatibility while signaling the transition to the new naming convention.",
+    "Test coverage is thorough: every state transition in the emotion machine is tested, boundary conditions in intimacy-tracker are verified (0, 100, negative, over-100), and the persona-engine.test.ts integration test exercises multiple modules collaborating together.",
+    "The emotion-bridge EMOTION_MAP values correctly correspond to the stage-ui Emotion enum values at runtime, even though the type connection is not formalized."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

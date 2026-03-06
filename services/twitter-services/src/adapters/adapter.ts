@@ -1,25 +1,25 @@
 import type { Config } from '../config/types'
 import type { Context } from '../core/browser/context'
-import type { AiriAdapter } from './airi-adapter'
+import type { AnaseAdapter } from './anase-adapter'
 import type { MCPAdapter } from './mcp-adapter'
 
 import { logger } from '../utils/logger'
 
 export function useAdapter() {
-  const adapters: { airi?: AiriAdapter, mcp?: MCPAdapter } = {}
+  const adapters: { airi?: AnaseAdapter, mcp?: MCPAdapter } = {}
 
-  async function initAdapters(config: Config, ctx: Context): Promise<{ airi?: AiriAdapter, mcp?: MCPAdapter }> {
-    if (config.adapters.airi?.enabled) {
+  async function initAdapters(config: Config, ctx: Context): Promise<{ airi?: AnaseAdapter, mcp?: MCPAdapter }> {
+    if (config.adapters.anase?.enabled) {
       logger.main.log('Starting Airi adapter...')
-      const { AiriAdapter } = await import('./airi-adapter')
+      const { AnaseAdapter } = await import('./anase-adapter')
 
-      adapters.airi = new AiriAdapter(ctx, {
-        url: config.adapters.airi.url,
-        token: config.adapters.airi.token,
+      adapters.anase = new AnaseAdapter(ctx, {
+        url: config.adapters.anase.url,
+        token: config.adapters.anase.token,
         credentials: config.credentials || {},
       })
 
-      await adapters.airi.start()
+      await adapters.anase.start()
       logger.main.log('Airi adapter started')
     }
 

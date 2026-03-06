@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { SpeechProviderWithExtraOptions } from '@proj-airi/stage-ui/stores/providers/types'
+import type { SpeechProviderWithExtraOptions } from '@anase/stage-ui/stores/providers/types'
 import type { UnElevenLabsOptions } from 'unspeech'
 
 import {
   SpeechPlayground,
   SpeechProviderSettings,
-} from '@proj-airi/stage-ui/components'
-import { useSpeechStore } from '@proj-airi/stage-ui/stores/modules/speech'
-import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
-import { FieldCheckbox, FieldRange } from '@proj-airi/ui'
+} from '@anase/stage-ui/components'
+import { useSpeechStore } from '@anase/stage-ui/stores/modules/speech'
+import { useProvidersStore } from '@anase/stage-ui/stores/providers'
+import { FieldCheckbox, FieldRange } from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

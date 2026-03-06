@@ -1,0 +1,116 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-tests",
+  "session": "20260218-042006-feat-task-6-proactive-trigger-iter1",
+  "timestamp": "2026-02-18T04:25:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/persona-engine/src/proactive-trigger.ts",
+      "packages/persona-engine/src/do-not-disturb.ts",
+      "packages/persona-engine/src/response-generator.ts",
+      "packages/persona-engine/src/types.ts",
+      "packages/persona-engine/src/index.ts",
+      "packages/persona-engine/src/__tests__/proactive-trigger.test.ts",
+      "packages/persona-engine/src/__tests__/do-not-disturb.test.ts",
+      "packages/persona-engine/src/__tests__/persona-engine.test.ts",
+      "packages/persona-engine/src/__tests__/response-generator.test.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts"
+    ],
+    "total_lines_analyzed": 1614,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 3, "P2": 2, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-tests-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "test-quality",
+      "subcategory": "orphan-detection",
+      "title": "DoNotDisturb module not wired into setupPersonaEngine",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts",
+      "line": 33,
+      "line_end": 105,
+      "code_snippet": "export function setupPersonaEngine() {\n  const emotionActor = createEmotionActor()\n  let intimacy = createIntimacyState()\n  const lastTriggerTimes: Record<string, number> = {}\n  const triggers = [T03_REST_REMINDER]",
+      "description": "The new do-not-disturb module (canTrigger, recordTrigger, recordIgnore, recordUserInteraction) is exported from persona-engine/index.ts but is NOT imported or used in setupPersonaEngine -- the only live entry point. Per integration rules, code that is not reachable from any entry point is dead-on-arrival. The DND frequency limits, quiet hours, and progressive backoff are fully tested in isolation but never actually guard trigger evaluation in production. This means the DND system is unreachable dead code despite having tests.",
+      "suggestion": "Wire do-not-disturb into setupPersonaEngine.evaluate(): call canTrigger() before evaluateTriggers(), call recordTrigger() after a trigger fires, and expose recordIgnore/recordUserInteraction in the returned API. Add an integration test proving the full flow: trigger -> DND check -> response.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-tests-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "test-quality",
+      "subcategory": "missing-integration-test",
+      "title": "setupPersonaEngine has zero test coverage",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/persona-engine.ts",
+      "line": 33,
+      "line_end": 105,
+      "code_snippet": "export function setupPersonaEngine() {\n  ...\n  function evaluate(input: TriggerInput) {\n    const now = Date.now()\n    const result = evaluateTriggers(input, triggers, lastTriggerTimes, now)\n    ...\n  }",
+      "description": "setupPersonaEngine is the Imperative Shell entry point that composes evaluateTriggers, createEmotionActor, generateResponse, and mapToAnimaEmotion. It manages mutable state (lastTriggerTimes, intimacy). There is no dedicated test file for this service. The persona-engine.test.ts integration test exercises the pure functions directly but does NOT test setupPersonaEngine itself. The stateful orchestration (lastTriggerTimes mutation on line 51, emotion actor lifecycle, repeated evaluate calls) is untested.",
+      "suggestion": "Create apps/stage-tamagotchi/src/main/services/anima/__tests__/persona-engine.test.ts that tests setupPersonaEngine directly: (1) evaluate returns null when no trigger fires, (2) evaluate returns a ProactiveResponse when trigger fires, (3) calling evaluate twice within cooldown returns null on second call (tests lastTriggerTimes statefulness), (4) dispose stops the emotion actor cleanly.",
+      "claude_md_rule": "testing.integration"
+    },
+    {
+      "id": "review-tests-003",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "test-quality",
+      "subcategory": "missing-behavioral-coverage",
+      "title": "Only 1 of 11 triggers has response templates; 10 triggers silently fallback",
+      "file": "packages/persona-engine/src/response-generator.ts",
+      "line": 6,
+      "line_end": 15,
+      "code_snippet": "const RESPONSE_TEMPLATES: Record<string, Partial<Record<EmotionState, string>>> = {\n  'rest-reminder': {\n    caring: '...',\n    idle: '...',\n    ...\n  },\n}",
+      "description": "RESPONSE_TEMPLATES only contains entries for 'rest-reminder' (T03). The other 10 triggers (morning-greeting, noon-care, entertainment-switch, late-night-work, evening-summary, important-date, task-due, high-frequency-switch, big-task-complete, return-to-desktop) all fall through to DEFAULT_MESSAGE. The response-generator.test.ts only tests T03 and an 'unknown-trigger' -- it does not verify that all 11 defined triggers produce meaningful user-facing messages. When T01/T02/T04-T11 fire in production, every user will see the generic fallback message regardless of emotion state.",
+      "suggestion": "Add response templates for all 11 triggers in RESPONSE_TEMPLATES, or at minimum add a test that iterates ALL_TRIGGERS and verifies each produces a non-fallback message. This ensures new triggers are not accidentally deployed with only generic responses. Example test: ALL_TRIGGERS.forEach(t => { const resp = generateResponse({triggered: true, triggerId: t.id, triggerName: t.name, suggestedEmotion: t.suggestedEmotion}, t.suggestedEmotion); expect(resp.message).not.toBe(DEFAULT_MESSAGE); })",
+      "claude_md_rule": "testing.coverage"
+    },
+    {
+      "id": "review-tests-004",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "test-quality",
+      "subcategory": "missing-composition-test",
+      "title": "No test proving canTrigger and evaluateTriggers compose correctly",
+      "file": "packages/persona-engine/src/__tests__/do-not-disturb.test.ts",
+      "line": 1,
+      "line_end": 222,
+      "code_snippet": "// do-not-disturb.test.ts tests canTrigger in isolation\n// proactive-trigger.test.ts tests evaluateTriggers in isolation\n// No test exercises both together",
+      "description": "canTrigger (DND guard) and evaluateTriggers (trigger evaluation) are designed to work together: canTrigger should gate whether evaluateTriggers is called, and evaluateTriggers accepts a cooldownMultiplier from DND state. However, no test exercises this composition. The evaluateTriggers cooldownMultiplier parameter is tested in proactive-trigger.test.ts, but it's not tested in the context where the multiplier comes from recordIgnore's progressive backoff. This gap means the contract between the two modules could break silently.",
+      "suggestion": "Add a composition test in persona-engine.test.ts: (1) Create DND state, (2) recordIgnore 3 times to trigger backoff, (3) Verify state.cooldownMultiplier is 1.5, (4) Pass that multiplier to evaluateTriggers and verify cooldown is extended. This proves the two modules integrate correctly."
+    },
+    {
+      "id": "review-tests-005",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "test-quality",
+      "subcategory": "boundary-conditions",
+      "title": "T02_NOON_CARE boundary at exactly 13:30 not tested",
+      "file": "packages/persona-engine/src/__tests__/proactive-trigger.test.ts",
+      "line": 125,
+      "line_end": 132,
+      "code_snippet": "it('does not fire after 13:30', () => {\n    const input = makeTriggerInput({\n      continuousWorkDurationMs: TWO_HOURS_MS + 1,\n      currentHour: 13,\n      currentMinute: 31,\n    })\n    expect(T02_NOON_CARE.check(input)).toBe(false)\n  })",
+      "description": "The test verifies 13:31 does not fire, but does not verify the exact boundary at 13:30 (minute 810). The check uses `<= 13 * 60 + 30`, so 13:30 should fire (inclusive upper bound). This boundary case is not explicitly tested. Similarly, T05_LATE_NIGHT does not test hour=4 (last firing hour) vs hour=5 (first non-firing hour). Boundary conditions are where off-by-one errors hide.",
+      "suggestion": "Add explicit boundary tests: (1) T02 at exactly 13:30 should fire, (2) T05 at hour=4 should fire, at hour=5 should not fire. Example: it('fires at boundary: 13:30', () => { expect(T02_NOON_CARE.check(makeTriggerInput({continuousWorkDurationMs: TWO_HOURS_MS + 1, currentHour: 13, currentMinute: 30}))).toBe(true) })"
+    }
+  ],
+  "positive_observations": [
+    "All Functional Core modules (proactive-trigger, do-not-disturb, response-generator) are tested with direct instantiation and zero mocks -- exactly the correct approach per architecture rules",
+    "Discriminated union TriggerResult type makes illegal states unrepresentable; tests verify both branches of the union",
+    "Immutable state pattern in do-not-disturb (functions return new state objects) enables straightforward testing without setup/teardown concerns",
+    "makeTriggerInput helper with Partial overrides is a clean pattern for test data construction that keeps tests readable and DRY",
+    "persona-engine.test.ts end-to-end integration test proves real collaboration across trigger -> emotion machine -> emotion bridge -> response generator using real instances",
+    "Cooldown multiplier parameter is tested with the evaluateTriggers function, verifying the progressive backoff integration point",
+    "INTIMACY_ORDER and meetsIntimacyRequirement are thoroughly tested with stranger-through-soulmate boundary coverage"
+  ],
+  "metadata": {
+    "duration_ms": 22000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

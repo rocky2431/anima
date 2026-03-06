@@ -9,7 +9,7 @@ animations:
     title: Utiliser les transitions spécifiques à chaque page
 dialogs:
   onboarding:
-    title: Bienvenue dans AIRI!
+    title: Bienvenue dans Anase!
     description: Configurez votre premier fournisseur d’IA pour commencer.
     selectProvider: Choisissez un fournisseur d'IA.
     configureProvider: Configurer {provider}
@@ -33,7 +33,7 @@ dialogs:
 language:
   title: Langage
   description: >
-    Modifier le langage de l'inteface d'AIRI. Cela n'affectera pas le langage des réponses du personnage.
+    Modifier le langage de l'inteface d'Anase. Cela n'affectera pas le langage des réponses du personnage.
 controls-island:
   icon-size:
     title: Controls Island Icon Size
@@ -97,7 +97,7 @@ pages:
     delete: Supprimer
     delete_card: Supprimer la carte
     delete_confirmation: Êtes-vous sûr de vouloir supprimer cette carte ?
-    description: Utiliser les préréglages des cartes d'AIRI
+    description: Utiliser les préréglages des cartes d'Anase
     description_label: Description
     drop_here: Déposer pour téléverser
     create_card: Créer une nouvelle carte
@@ -163,7 +163,7 @@ pages:
       model: Parole / Modèle
       voice: Parole / Voix
     systemprompt: Prompt système
-    title: Carte AIRI
+    title: Carte Anase
     try_different_search: Essayez un autre terme de recherche
     upload: Téléverser
     upload_desc: Cliquez ou glissez un fichier pour téléverser
@@ -172,7 +172,7 @@ pages:
     title: Mémoire
   data:
     title: Data
-    description: Manage stored AIRI data, exports, and resets
+    description: Manage stored Anase data, exports, and resets
     sections:
       chats:
         title: Chat sessions
@@ -201,7 +201,7 @@ pages:
         delete: Delete all data
       desktop:
         title: Reset desktop settings & states
-        description: Clear AIRI desktop settings and runtime state.
+        description: Clear Anase desktop settings and runtime state.
         reset: Reset desktop data
     confirmations:
       tooltip: Are you sure?
@@ -310,7 +310,7 @@ pages:
       description: Jouer à Factorio !
       title: Factorio
       enable: Activer l'intégration Factorio
-      enable-description: Autoriser AIRI à interagir avec le jeu Factorio
+      enable-description: Autoriser Anase à interagir avec le jeu Factorio
       server-address: Adresse du serveur
       server-address-description: L'adresse IP ou le nom d'hôte du serveur Factorio
       server-address-placeholder: Entrez l'adresse du serveur (ex. localhost ou 192.168.1.100)
@@ -324,7 +324,7 @@ pages:
       description: Jouer à Minecraft !
       title: Minecraft
       enable: Activer l'intégration Minecraft
-      enable-description: Autoriser AIRI à interagir avec le jeu Minecraft
+      enable-description: Autoriser Anase à interagir avec le jeu Minecraft
       server-address: Adresse du serveur
       server-address-description: L'adresse IP ou le nom d'hôte du serveur Minecraft
       server-address-placeholder: Entrez l'adresse du serveur (ex. localhost ou play.exemple.com)
@@ -351,7 +351,7 @@ pages:
       description: Chat et chat vocal via Discord
       title: Discord
       enable: Activer l'intégration Discord
-      enable-description: Autoriser AIRI à interagir via Discord
+      enable-description: Autoriser Anase à interagir via Discord
       token: Jeton du bot
       token-description: Votre jeton de bot Discord
       token-placeholder: Entrez votre jeton de bot Discord
@@ -384,7 +384,7 @@ pages:
             search_voices_results: '{count} voix trouvées sur {total}'
             unsupported_voice_warning_title: No supported voices
             unsupported_voice_warning_content: >-
-              Try a different model or provider. We are working on supporting all the voice for this model as quickly as possible. If you need it urgently, please let us know on GitHub at https://github.com/moeru-ai/airi/issues.
+              Try a different model or provider. We are working on supporting all the voice for this model as quickly as possible. If you need it urgently, please let us know on GitHub at https://github.com/rocky2431/anima/issues.
             show_less: Afficher moins
             show_more: Afficher plus
             title: Fournisseur
@@ -403,7 +403,7 @@ pages:
       description: Navigation et utilisation X / Twitter
       title: X / Twitter
       enable: Activer l'intégration X / Twitter
-      enable-description: Autoriser AIRI à interagir avec X / Twitter
+      enable-description: Autoriser Anase à interagir avec X / Twitter
       api-key: Clé API
       api-key-description: Votre clé API X / Twitter
       api-key-placeholder: Entrez votre clé API X / Twitter
@@ -429,7 +429,7 @@ pages:
     helpinfo:
       title: Première fois ici ?
       description: >
-        AIRI nécessite qu’au moins un fournisseur {chat} soit configuré pour penser et se comporter correctement. On peut le considérer comme le cerveau des personnages vivant dans le système AIRI.
+        Anase nécessite qu’au moins un fournisseur {chat} soit configuré pour penser et se comporter correctement. On peut le considérer comme le cerveau des personnages vivant dans le système Anase.
     catalog:
       edit:
         config-id-not-found: Provider configuration not found.
@@ -488,7 +488,7 @@ pages:
                   openai-compatible-check-connectivity:
                     label: Extra configuration needed for Ollama
                     content: >-
-                      Sorry to hear that Connectivity check failed for Ollama. Don't worry, for Ollama instances, extra configuration is needed for making it pass for Ollama. You need to set <code>OLLAMA_HOST</code> explicitly when start the Ollama application or Ollama CLI server, for detailed information, check <a href="https://airi.moeru.ai/docs/en/docs/manual/integrations/providers/chat/ollama">Ollama integration guide</a>.
+                      Sorry to hear that Connectivity check failed for Ollama. Don't worry, for Ollama instances, extra configuration is needed for making it pass for Ollama. You need to set <code>OLLAMA_HOST</code> explicitly when start the Ollama application or Ollama CLI server, for detailed information, check <a href="https://anase.app/docs/en/docs/manual/integrations/providers/chat/ollama">Ollama integration guide</a>.
     common:
       continueAnyway: Continuer quand même
       fields:
@@ -828,8 +828,8 @@ pages:
           presets:
             default:
               colors:
-                color-1: AIRI Green
-              description: The default greenish theme color, brought by AIRI to you!
+                color-1: Anase Green
+              description: The default greenish theme color, brought by Anase to you!
               title: Default Color
             morandi:
               colors:
@@ -906,7 +906,7 @@ sections:
 theme:
   title: Thème
   description: |
-    Changez le thème de base d’AIRI, mode clair ou mode sombre.
+    Changez le thème de base d’Anase, mode clair ou mode sombre.
 title: Paramètres
 voices: Voix
 vrm:

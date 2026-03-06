@@ -7,7 +7,7 @@ import { createContext } from '@moeru/eventa/adapters/electron/main'
 import { ipcMain } from 'electron'
 
 import { electronOpenMainDevtools } from '../../../../shared/eventa'
-import { createWidgetsService } from '../../../services/airi/widgets'
+import { createWidgetsService } from '../../../services/anase/widgets'
 import { createScreenService, createWindowService } from '../../../services/electron'
 
 export function setupChatWindowElectronInvokes(params: {

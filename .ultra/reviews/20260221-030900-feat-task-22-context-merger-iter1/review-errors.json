@@ -1,0 +1,99 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260221-030900-feat-task-22-context-merger-iter1",
+  "timestamp": "2026-02-21T03:09:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/processing/context-merger.ts",
+      "packages/context-engine/src/processing/entity-extractor.ts",
+      "packages/context-engine/src/processing/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/__tests__/context-merger.test.ts",
+      "packages/context-engine/src/__tests__/entity-extractor.test.ts",
+      "packages/context-engine/src/__tests__/context-merger-utils.test.ts"
+    ],
+    "total_lines_analyzed": 1017,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 4,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 2, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "subcategory": "missing-context",
+      "title": "Error messages lack operational context (source count, text length)",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 155,
+      "line_end": 155,
+      "code_snippet": "throw new Error('Context merge failed', { cause })",
+      "description": "Both ContextMerger.merge() (line 155) and EntityExtractor.extract() (line 33 of entity-extractor.ts) wrap errors with new Error(msg, { cause }), which is the correct pattern. However, neither message includes the operational context needed for debugging: number of sources, source types, combined text length, or a text snippet. When these errors surface in production logs, the developer cannot tell what input triggered the failure without digging through the cause chain -- and the cause is typically a raw LLM SDK error with no input context either. This is the same issue flagged across capture modules, skill-loader, and channels in prior reviews.",
+      "suggestion": "Include input context in both error messages. For ContextMerger: `throw new Error(`Context merge failed (${selected.length} sources, types=[${selected.map(s=>s.source).join(',')}])`, { cause })`. For EntityExtractor: `throw new Error(`Entity extraction failed (text length=${text.length})`, { cause })`.",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "missing-validation",
+      "title": "No validation of LLM structured output shape",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 164,
+      "line_end": 169,
+      "code_snippet": "const result = await this.llm.generateStructured<{ activityType: string }>({\n  system: ACTIVITY_SYSTEM_PROMPT,\n  prompt: text,\n  schemaDescription: ACTIVITY_CLASSIFICATION_SCHEMA,\n})\nreturn result.activityType",
+      "description": "classifyActivity() (line 164-169) trusts that generateStructured returns an object with a string `activityType` field. If the LLM returns a malformed response (e.g., `{}`, `{ activityType: 123 }`, or `null`), `result.activityType` becomes `undefined` or a non-string value. This silently propagates through validateActivityType which only checks Set membership, causing it to return 'other' -- masking LLM misbehavior. Same issue in EntityExtractor: if the LLM omits a field (e.g., returns `{ persons: ['Alice'] }` without the other 4 arrays), callers get `undefined` arrays that will throw on `.map()` or `.length` access downstream. This is the same inconsistency noted in prior review where SmartTip validates LLM output but SmartTodo does not.",
+      "suggestion": "Add runtime validation after generateStructured calls. For classifyActivity: verify `typeof result?.activityType === 'string'` and throw a typed error if not. For EntityExtractor: verify all 5 arrays exist and are arrays, e.g. using a validation function: `function validateEntities(raw: unknown): ExtractedEntities { ... }`. Consider using Valibot (project standard) for schema validation of LLM responses.",
+      "claude_md_rule": "error_handling.rules.include_context"
+    },
+    {
+      "id": "review-errors-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "subcategory": "silent-fallback",
+      "title": "validateActivityType silently falls back to 'other' without logging",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 183,
+      "line_end": 188,
+      "code_snippet": "private validateActivityType(type: string): ActivityType {\n  if (VALID_ACTIVITY_TYPES.has(type)) {\n    return type as ActivityType\n  }\n  return 'other'\n}",
+      "description": "When the LLM returns an invalid activity type string (e.g., 'working', 'reading', a hallucinated value), validateActivityType silently maps it to 'other' with no log or warning. This masks LLM prompt drift or model degradation -- the system continues functioning but classification quality degrades invisibly. This is the same TRIGGER_EMOTION_MAP gap pattern identified in the orchestrator review: silent fallback on unmapped values prevents observability of the issue.",
+      "suggestion": "Add a console.warn (or structured logger call) when falling back: `console.warn('Unknown activity type from LLM, defaulting to other', { received: type })`. This preserves the graceful fallback behavior while making the anomaly observable in logs for prompt tuning.",
+      "claude_md_rule": "error_handling.classification.operational"
+    },
+    {
+      "id": "review-errors-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "partial-failure",
+      "title": "Promise.all for independent LLM calls -- partial failure wastes work",
+      "file": "packages/context-engine/src/processing/context-merger.ts",
+      "line": 134,
+      "line_end": 138,
+      "code_snippet": "const [extractedEntities, activityClassification, summary] = await Promise.all([\n  this.extractEntities(combinedText),\n  this.classifyActivity(combinedText),\n  this.generateSummary(selected),\n])",
+      "description": "Three independent LLM calls run via Promise.all. If any one fails, the entire merge fails and the results from the other two (which may have succeeded) are discarded. Unlike infrastructure resources (DB connections), LLM API calls don't leak resources on discard, so this is lower severity than the McpHub/AiOrchestrator instances. However, the pattern still means a transient failure in one LLM call (e.g., entity extraction timeout) forces retry of all three calls. Consider whether partial results (e.g., returning summary + activity without entities) are acceptable.",
+      "suggestion": "If partial results are acceptable, use Promise.allSettled and populate fallback values for failed calls (empty entities, 'other' activity type). If all-or-nothing is the correct semantic, document this choice with a comment explaining why partial merge is not useful. Either way, add a comment explaining the failure semantics.",
+      "claude_md_rule": "error_handling.classification.operational"
+    }
+  ],
+  "positive_observations": [
+    "Error wrapping with `new Error(msg, { cause })` is consistently applied in both ContextMerger.merge() and EntityExtractor.extract() -- correct pattern from CLAUDE.md error_handling rules.",
+    "Clean Functional Core / Imperative Shell separation: pure functions (deduplicateStrings, mergeKeywords, computeImportance, selectTopSources) are exported separately and tested independently with no mocking needed.",
+    "Input validation at entry point: merge() immediately throws for empty sources array before any I/O, following fail-fast principle.",
+    "The catch block in merge() correctly re-throws the empty-sources validation error without double-wrapping (line 152-153), preserving the original error message for callers.",
+    "Tests include error-path coverage: both context-merger.test.ts and entity-extractor.test.ts verify that LLM failures are wrapped with the correct cause chain.",
+    "Test doubles are properly documented with `// Test Double rationale:` comments, following the project testing convention."
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

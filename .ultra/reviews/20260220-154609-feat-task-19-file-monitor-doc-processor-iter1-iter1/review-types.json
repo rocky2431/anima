@@ -1,0 +1,108 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-types",
+  "session": "20260220-154609-feat-task-19-file-monitor-doc-processor-iter1-iter1",
+  "timestamp": "2026-02-20T15:47:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/src/capture/folder-monitor.ts",
+      "packages/context-engine/src/processing/document-processor.ts",
+      "packages/context-engine/src/processing/text-chunker.ts"
+    ],
+    "total_lines_analyzed": 683,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 4, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-types-001",
+      "severity": "P2",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "encapsulation",
+      "title": "FolderMonitor copies watchPaths by reference, not by value",
+      "file": "packages/context-engine/src/capture/folder-monitor.ts",
+      "line": 24,
+      "line_end": 24,
+      "code_snippet": "this.watchPaths = options.watchPaths",
+      "description": "Encapsulation: 5/10, Expression: 7/10, Usefulness: 7/10, Enforcement: 7/10 (Aggregate: 6.5). The constructor stores a direct reference to the caller's watchPaths array. If the caller mutates the array after construction (e.g., push/pop), the FolderMonitor's internal state changes silently. Combined with FolderMonitorOptions.watchPaths lacking a readonly modifier, this is a classic shared-mutable-state encapsulation leak.",
+      "suggestion": "Copy the array in the constructor: `this.watchPaths = [...options.watchPaths]`. Also add `readonly` to the FolderMonitorOptions.watchPaths type: `readonly watchPaths: readonly string[]`."
+    },
+    {
+      "id": "review-types-002",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "Unsafe `as Record<string, unknown>` cast on pdfjs-dist text items",
+      "file": "packages/context-engine/src/processing/document-processor.ts",
+      "line": 63,
+      "line_end": 65,
+      "code_snippet": "if ('str' in item && typeof (item as Record<string, unknown>).str === 'string') {\n  return (item as Record<string, unknown>).str as string\n}",
+      "description": "Encapsulation: 6/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 5/10 (Aggregate: 5.5). The pdfjs-dist TextContent.items array contains a union type (TextItem | TextMarkedContent). The code uses `'str' in item` as a discriminator but then double-casts through Record<string, unknown> instead of narrowing to TextItem. The `in` check already narrows the type in TypeScript; the `as` casts are redundant and bypass type safety.",
+      "suggestion": "Use proper type narrowing: `import type { TextItem } from 'pdfjs-dist'`, then check `if ('str' in item) { return (item as TextItem).str }` -- or better, define a type guard `function isTextItem(item: unknown): item is TextItem`."
+    },
+    {
+      "id": "review-types-003",
+      "severity": "P2",
+      "confidence": 82,
+      "category": "type-design",
+      "subcategory": "unsafe-cast",
+      "title": "Unsafe `as` cast on exceljs row.values without type guard",
+      "file": "packages/context-engine/src/processing/document-processor.ts",
+      "line": 106,
+      "line_end": 106,
+      "code_snippet": "const cellValues = row.values as (string | number | boolean | null | undefined)[]",
+      "description": "Encapsulation: 6/10, Expression: 5/10, Usefulness: 6/10, Enforcement: 4/10 (Aggregate: 5.25). exceljs `row.values` returns `CellValue[]` which includes Date, CellErrorValue, CellRichTextValue, CellHyperlinkValue, CellFormulaValue, and CellSharedFormulaValue -- not just primitives. Casting to `(string | number | boolean | null | undefined)[]` silently discards these complex types. A Date cell would pass String(v) but produce an undesirable format; a formula cell could leak internal structure.",
+      "suggestion": "Define a helper that handles the full CellValue union: extract the .result for formulas, format Dates explicitly, and convert rich text to plain string. At minimum, use `String(v)` on the original CellValue type without the narrowing cast."
+    },
+    {
+      "id": "review-types-004",
+      "severity": "P2",
+      "confidence": 88,
+      "category": "type-design",
+      "subcategory": "readonly-consistency",
+      "title": "FolderMonitorOptions fields lack readonly, inconsistent with output types",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 311,
+      "line_end": 320,
+      "code_snippet": "export interface FolderMonitorOptions {\n  watchPaths: string[]\n  extensions?: string[]\n  onChange: (event: FileChangeEvent) => void\n  onError: (error: Error) => void\n}",
+      "description": "Encapsulation: 4/10, Expression: 6/10, Usefulness: 6/10, Enforcement: 7/10 (Aggregate: 5.75). The new output types (DocumentExtractionResult, TextChunk, FileChangeEvent) correctly use readonly on all fields -- a significant improvement over earlier codebase types. However, FolderMonitorOptions has mutable watchPaths (string[]) and extensions (string[]) arrays. Since these are configuration inputs consumed by the constructor, they should be `readonly string[]` to prevent accidental mutation and to signal intent. This inconsistency within the same diff is notable.",
+      "suggestion": "Change to: `readonly watchPaths: readonly string[]` and `readonly extensions?: readonly string[]`. The callback fields (onChange, onError) are fine as-is since functions are not mutated."
+    },
+    {
+      "id": "review-types-005",
+      "severity": "P3",
+      "confidence": 90,
+      "category": "type-design",
+      "subcategory": "positive-pattern",
+      "title": "New output types use readonly consistently -- improved over prior types",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 265,
+      "line_end": 308,
+      "code_snippet": "export interface DocumentExtractionResult {\n  readonly text: string\n  readonly filePath: string\n  readonly documentType: DocumentType\n  readonly pageCount: number\n}",
+      "description": "Encapsulation: 8/10, Expression: 8/10, Usefulness: 7/10, Enforcement: 7/10 (Aggregate: 7.5). DocumentExtractionResult, TextChunk, and FileChangeEvent all use readonly on every field. DocumentType is a proper 4-value literal union. FileChangeEvent.type is a 3-value literal union. TextChunkerOptions constraints are validated in the chunkText pure function. This is the best readonly discipline seen in this codebase and should be the template for future types.",
+      "suggestion": "Consider applying this same readonly pattern retroactively to older types in types.ts (ActivityEvent, ActivityContext, etc.) which currently lack readonly modifiers."
+    }
+  ],
+  "positive_observations": [
+    "DocumentExtractionResult, TextChunk, and FileChangeEvent consistently use readonly on all fields -- best practice in this codebase so far",
+    "DocumentType is a proper 4-value literal union preventing invalid document types at compile time",
+    "FileChangeEvent.type uses a 3-value literal union ('create' | 'update' | 'delete') -- makes illegal states unrepresentable",
+    "chunkText is a pure function with thorough input validation (chunkSize > 0, overlapSize >= 0, overlapSize < chunkSize) -- good Functional Core pattern",
+    "FolderMonitor constructor validates watchPaths is non-empty and normalizes extensions with dot prefix and lowercase -- good invariant establishment",
+    "FolderMonitor is correctly labeled as Imperative Shell and FolderMonitor.start() is idempotent",
+    "DocumentProcessor is correctly labeled as Imperative Shell with I/O operations"
+  ],
+  "metadata": {
+    "duration_ms": 18000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260304-170355-main-iter1",
+  "findings": [
+    {
+      "id": "ERR-001",
+      "severity": "P0",
+      "confidence": 90,
+      "category": "error-handling",
+      "title": "Empty catch block swallows JSON parse error in embedding validation",
+      "file": "services/airi-brain/src/handlers/embedding.ts",
+      "line": 158,
+      "code_snippet": "catch { /* use HTTP status */ }",
+      "description": "In the embedding model validation handler, when parsing the error response body, a bare catch block with only a comment silently swallows any JSON.parse failure. While the intent is to fall through to the HTTP status code, this is still an empty catch block -- the project's CLAUDE.md and error_handling rules explicitly forbid catch(e){}. If the response body is unexpectedly malformed in a way that reveals a deeper issue (e.g., HTML error page from a proxy), this swallows the signal.",
+      "suggestion": "At minimum, bind the error and log at debug level: catch (parseErr) { log.withFields({ provider, model, rawBody: body.slice(0, 200) }).debug('Could not parse error response as JSON, using HTTP status') }. This preserves debuggability while keeping the fallback behavior."
+    },
+    {
+      "id": "ERR-002",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "error-handling",
+      "title": "JSON.parse on DB data without try/catch in BrainStore.getActivitySummary",
+      "file": "services/airi-brain/src/store.ts",
+      "line": 227,
+      "code_snippet": "highlights: JSON.parse(row.highlights) as string[],\nbreakdown: JSON.parse(row.breakdown) as ActivitySummary['breakdown'],",
+      "description": "getActivitySummary() calls JSON.parse on two columns (highlights, breakdown) read from SQLite without any try/catch. If corrupted data is stored (e.g., partial write, manual DB edit, schema migration issue), this will throw an unhandled error that crashes the caller. This is the same pattern previously identified and fixed in McpServerStore (safeJsonParse).",
+      "suggestion": "Wrap both JSON.parse calls in try/catch, returning a sensible default (empty array) with a warning log that includes the date and raw column value. Or extract a reusable safeJsonParse helper as was done in McpServerStore."
+    },
+    {
+      "id": "ERR-003",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "error-handling",
+      "title": "JSON.parse on DB data without try/catch in BrainStore.getProviderConfigs",
+      "file": "services/airi-brain/src/store.ts",
+      "line": 347,
+      "code_snippet": "configs[row.provider_id] = JSON.parse(row.config_json) as Record<string, unknown>",
+      "description": "getProviderConfigs() calls JSON.parse on the config_json column from SQLite without try/catch. A single corrupted row will crash the entire config restore flow, losing all provider configs. This is I/O data that should never be trusted to parse cleanly. Same pattern as ERR-002.",
+      "suggestion": "Wrap in try/catch per row. On parse failure, log a warning with the provider_id and skip the corrupted row rather than crashing the entire restore."
+    },
+    {
+      "id": "ERR-004",
+      "severity": "P1",
+      "confidence": 88,
+      "category": "error-handling",
+      "title": "BrainStore constructor initTables() has no error handling",
+      "file": "services/airi-brain/src/store.ts",
+      "line": 54,
+      "code_snippet": "constructor(db: Database.Database) {\n    this.db = db\n    this.initTables()\n  }",
+      "description": "The constructor calls initTables() which runs a large SQL exec() block creating 7+ tables and INSERT statements. If any SQL statement fails (disk full, permissions, schema conflict), the error propagates raw from better-sqlite3 with no context about which table/statement failed. The object is left in a partially initialized state with this.db set but tables possibly missing. This is the constructor resource leak pattern previously seen in VectorStore.",
+      "suggestion": "Wrap initTables() in try/catch that adds context: throw new Error('BrainStore initialization failed', { cause: err }). Consider validating the DB is writable before attempting table creation."
+    },
+    {
+      "id": "ERR-005",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "error-handling",
+      "title": "Evening pipeline logs error but never surfaces failure to frontend client",
+      "file": "services/airi-brain/src/handlers/evening-pipeline.ts",
+      "line": 107,
+      "code_snippet": "catch (err) {\n      const msg = err instanceof Error ? err.message : String(err)\n      log.withFields({ error: msg }).warn('Evening pipeline failed')\n    }",
+      "description": "The evening pipeline handler catches all errors and only logs them at warn level. There is no mechanism to surface the failure to the frontend (the client that triggered the summary). The frontend's triggerSummary() sets a 60-second timeout that will eventually flip to 'error', but the user gets no actionable error message -- just a generic timeout. The pipeline processes multiple phases (report generation, memory extraction, vector DB persistence) and a failure in phase 1 silently skips phases 2-4 without any indication of what failed.",
+      "suggestion": "Send an error event back to the client in the catch block: client.send({ type: 'activity:summary', data: { error: msg, date: new Date().toISOString().slice(0,10) } }). This lets the frontend show specific error context instead of a generic timeout."
+    },
+    {
+      "id": "ERR-006",
+      "severity": "P1",
+      "confidence": 87,
+      "category": "error-handling",
+      "title": "Graceful shutdown ignores errors from dispose functions and documentStore.close()",
+      "file": "services/airi-brain/src/index.ts",
+      "line": 174,
+      "code_snippet": "async function gracefulShutdown(signal: string): Promise<void> {\n    log.log(`Received ${signal}, shutting down...`)\n    disposePersonaHandler()\n    disposeVisionHandler()\n    disposeDesktopShellHandler()\n    client.close()\n    documentStore.close()\n    process.exit(0)\n  }",
+      "description": "The gracefulShutdown function calls 5 cleanup functions sequentially without any try/catch. If any of the early dispose functions throw (e.g., disposePersonaHandler()), the subsequent ones (client.close, documentStore.close) are skipped, leading to resource leaks. The documentStore.close() call is particularly important for SQLite WAL checkpoint flushing. This is the same pattern previously identified in McpHub.shutdown() which was fixed with try/finally.",
+      "suggestion": "Wrap each cleanup call in its own try/catch, or use a loop that logs and continues. Ensure process.exit(0) runs regardless via a finally block."
+    },
+    {
+      "id": "ERR-007",
+      "severity": "P1",
+      "confidence": 86,
+      "category": "error-handling",
+      "title": "Optional chaining silently returns empty string when LLM returns no choices",
+      "file": "services/airi-brain/src/adapters.ts",
+      "line": 37,
+      "code_snippet": "return json.choices?.[0]?.message?.content ?? ''",
+      "description": "In createLlmProviderAdapter's generateText method, if the LLM response has no choices (empty array, missing field, or null content), the function silently returns an empty string. This is error-as-valid-state: an empty string is indistinguishable from a legitimate empty LLM response. The caller (MemoryOrchestrator, ReportGenerator, etc.) will process an empty string as if it were a real response, producing nonsensical results. The generateStructured method has the same issue at line 63 where it falls back to '{}' when no content is returned.",
+      "suggestion": "Check for missing choices explicitly and throw a descriptive error: const content = json.choices?.[0]?.message?.content; if (content === undefined || content === null) throw new Error('LLM returned no choices or empty content'); return content;"
+    },
+    {
+      "id": "ERR-008",
+      "severity": "P1",
+      "confidence": 84,
+      "category": "error-handling",
+      "title": "Embedding adapter returns empty array on missing data -- error-as-valid-state",
+      "file": "services/airi-brain/src/adapters.ts",
+      "line": 105,
+      "code_snippet": "const embedding = json.data?.[0]?.embedding ?? []\nif (embedding.length > 0)\n  cachedDimension = embedding.length\nreturn embedding",
+      "description": "The embedding adapter silently returns an empty array when the API response has no data or no embedding field. An empty embedding vector is invalid for vector DB operations (dimension mismatch, zero-vector similarity), but it will be silently stored or compared, producing incorrect search/dedup results. This is the error-as-valid-state anti-pattern seen throughout the codebase.",
+      "suggestion": "Throw when the embedding is empty: if (embedding.length === 0) throw new Error('Embedding API returned empty vector'). This surfaces misconfiguration immediately instead of corrupting downstream vector operations."
+    },
+    {
+      "id": "ERR-009",
+      "severity": "P1",
+      "confidence": 82,
+      "category": "error-handling",
+      "title": "Pipeline component failures logged-only with no status surfacing",
+      "file": "services/airi-brain/src/pipeline.ts",
+      "line": 57,
+      "code_snippet": "catch (err) {\n      const msg = err instanceof Error ? err.message : String(err)\n      log.withFields({ error: msg }).warn('Failed to initialize MemoryOrchestrator')\n    }",
+      "description": "createPipeline() catches initialization failures for MemoryOrchestrator, ReportGenerator, and MemoryExtractor (3 separate catch blocks, lines 57, 72, 92) and only logs warnings. The function then returns PipelineComponents with null values for the failed components. There is no way for the frontend or monitoring to know that the pipeline is partially broken -- it just silently produces no results when triggered.",
+      "suggestion": "Consider adding an errors or status field to PipelineComponents so callers can inspect which components failed and why. At minimum, surface component name in the log: log.withFields({ error: msg, component: 'MemoryOrchestrator' }).warn('Pipeline component initialization failed')."
+    },
+    {
+      "id": "ERR-010",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "error-handling",
+      "title": "VectorStore.create() fire-and-forget in authenticated callback",
+      "file": "services/airi-brain/src/index.ts",
+      "line": 138,
+      "code_snippet": "VectorStore.create(dataDir).then(async (vectorStore) => {\n      ...\n    }).catch((err) => {\n      ...\n      log.withFields({ error: msg }).warn('Failed to initialize VectorStore/Pipeline')\n    })",
+      "description": "VectorStore.create() is called as a fire-and-forget promise chain. While there is a .catch() handler (good), errors from inside the .then() callback (createPipeline, registerEveningPipeline) are caught by the same .catch() but the error message implies only VectorStore failure. The 'All handlers registered' log at line 170 fires before pipeline initialization completes, which is misleading for debugging.",
+      "suggestion": "Log separately for pipeline vs VectorStore failures. Consider wrapping the .then() body in its own try/catch to distinguish initialization stages."
+    },
+    {
+      "id": "ERR-011",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "error-handling",
+      "title": "DashScope listModels has no try/catch on dynamic import and fetch",
+      "file": "packages/stage-ui/src/stores/providers/unified/dashscope.ts",
+      "line": 53,
+      "code_snippet": "const { listModels } = await import('../../../libs/ai/list-models')\nconst models = await listModels({ apiKey, baseURL: baseUrl })",
+      "description": "The dashscope provider's listModels operation does a dynamic import followed by a network call, neither wrapped in try/catch. If the dynamic import fails or the network call fails (timeout, CORS, invalid URL), the error propagates unhandled. The openrouter provider has the same pattern (openrouter.ts line 66).",
+      "suggestion": "Wrap in try/catch and return an empty array with a console.warn on failure, matching the pattern used when apiKey/baseUrl are empty (return []). This ensures the model list UI gracefully degrades."
+    },
+    {
+      "id": "ERR-012",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "security",
+      "title": "API keys stored as plaintext JSON in SQLite config_json column",
+      "file": "services/airi-brain/src/store.ts",
+      "line": 329,
+      "code_snippet": "upsert.run(providerId, JSON.stringify(config), added[providerId] ? 1 : 0, now)",
+      "description": "The provider-sync flow transmits full provider configs (including API keys) over WebSocket and persists them as plaintext JSON in SQLite. If the SQLite DB file is accessed by another process or included in a backup/export, API keys are exposed. While the SQL uses parameterized queries (good), there is no encryption at rest for sensitive credential fields.",
+      "suggestion": "Consider encrypting sensitive fields (apiKey) before persisting to SQLite. At minimum, ensure the data directory has restrictive file permissions and document that the DB file contains sensitive credentials."
+    }
+  ],
+  "summary": {
+    "total_findings": 12,
+    "by_severity": {
+      "P0": 1,
+      "P1": 8,
+      "P2": 3,
+      "P3": 0
+    },
+    "verdict": "The changed code introduces a significant new backend service (airi-brain) with a pipeline architecture, provider management, and WebSocket-based communication. Error handling is generally better than older modules in this codebase -- most network I/O has try/catch, errors are logged with context, and the pipeline uses nullable components for graceful degradation. However, several recurring patterns from the broader codebase appear: (1) One empty catch block (P0) in embedding validation; (2) JSON.parse on DB data without try/catch (same bug previously fixed in McpServerStore); (3) Error-as-valid-state where LLM/embedding adapters return empty defaults instead of throwing on invalid API responses; (4) Graceful shutdown with sequential cleanup that can leave resources leaked if early calls fail. The frontend stores (Pinia) are mostly clean -- synchronous-only with sensible defaults, following the good pattern previously seen in mcp.ts."
+  },
+  "positive_observations": [
+    "Network I/O in adapters.ts consistently checks response.ok and throws with HTTP status + body context -- much better than raw error propagation seen in earlier modules.",
+    "Pipeline catch blocks use extracted error messages and log with contextual fields (provider, model, component name).",
+    "WebSocket event handlers in embedding.ts and llm.ts properly restore persisted config from DB on startup, with completeness checks before activating providers.",
+    "BrainStore uses parameterized SQL queries throughout -- zero string concatenation for SQL, consistent with project best practices.",
+    "The provider-sync store implements a clean sync-pause mechanism to avoid echo loops during restore from backend -- well-thought-out distributed state management.",
+    "Desktop shell handler has proper .catch() on the promise chain inside setInterval, avoiding the throw-in-timer bug found in ClipboardMonitor.",
+    "The server-runtime change to use superjson.parse with proper try/catch and error response is a clean fix."
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

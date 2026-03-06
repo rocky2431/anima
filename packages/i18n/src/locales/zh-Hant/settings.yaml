@@ -9,7 +9,7 @@ animations:
     title: 是否使用頁面特定過場動畫
 dialogs:
   onboarding:
-    title: 歡迎來到 AIRI！
+    title: 歡迎來到 Anase！
     description: 讓我們先設定您的第一個服務來源來開始使用。
     selectProvider: 選擇服務來源
     configureProvider: 設定 {provider}
@@ -97,7 +97,7 @@ pages:
     delete: 刪除
     delete_card: 刪除角色卡
     delete_confirmation: 確定要刪除此角色卡嗎？
-    description: 使用 AIRI 角色卡預設
+    description: 使用 Anase 角色卡預設
     description_label: 描述
     drop_here: 放開以上傳檔案
     create_card: 建立新角色卡
@@ -163,7 +163,7 @@ pages:
       model: 聲音 / 模型
       voice: 聲音 / 聲線
     systemprompt: 系統提示詞
-    title: AIRI 角色卡
+    title: Anase 角色卡
     try_different_search: 嘗試使用其他關鍵字搜尋
     upload: 上傳
     upload_desc: 點擊或拖曳檔案到此處上傳
@@ -172,7 +172,7 @@ pages:
     title: 記憶體
     count: '{count}筆記憶'
     search_placeholder: 搜尋記憶...
-    empty: 尚無記憶。隨著 AIRI 了解你，記憶會逐漸累積。
+    empty: 尚無記憶。隨著 Anase 了解你，記憶會逐漸累積。
     detail: 記憶詳情
     delete: 刪除
     importance: '重要程度：{score}'
@@ -191,7 +191,7 @@ pages:
     add_placeholder: 需要做什麼？
     add: 新增
     clear_completed: 清除已完成
-    empty: 尚無待辦事項。在上方新增，或讓 AIRI 建議任務。
+    empty: 尚無待辦事項。在上方新增，或讓 Anase 建議任務。
     filter:
       all: 全部
       active: 進行中
@@ -216,12 +216,12 @@ pages:
     description: AI 感知與上下文資料
     view_title: AI 上下文檢視
     entry_count: '{count}筆記錄'
-    empty: 尚未收到上下文更新。連線 airi-brain 以查看 AI 感知資料。
+    empty: 尚未收到上下文更新。連線 anase-brain 以查看 AI 感知資料。
     lane: 通道
     clear: 清除記錄
   data:
     title: 資料
-    description: 管理儲存的 AIRI 資料、匯出與重置
+    description: 管理儲存的 Anase 資料、匯出與重置
     sections:
       chats:
         title: 聊天會話
@@ -250,7 +250,7 @@ pages:
         delete: 刪除所有資料
       desktop:
         title: 重置桌面設定與狀態
-        description: 清除 AIRI 桌面設定和執行狀態。
+        description: 清除 Anase 桌面設定和執行狀態。
         reset: 重置桌面資料
     confirmations:
       tooltip: 您確定嗎？
@@ -379,7 +379,7 @@ pages:
       description: 一起玩 Factorio！
       title: 異星工廠 Factorio
       enable: 啟用異星工廠集成
-      enable-description: 允許 AIRI 與異星工廠遊戲互動
+      enable-description: 允許 Anase 與異星工廠遊戲互動
       server-address: 伺服器地址
       server-address-description: 異星工廠伺服器的 IP 地址或主機名稱
       server-address-placeholder: 輸入伺服器地址（例如：localhost 或 192.168.1.100）
@@ -393,7 +393,7 @@ pages:
       description: 一起玩 Minecraft！
       title: 我的世界 Minecraft
       enable: 啟用我的世界集成
-      enable-description: 允許 AIRI 與我的世界遊戲互動
+      enable-description: 允許 Anase 與我的世界遊戲互動
       server-address: 伺服器地址
       server-address-description: 我的世界伺服器的 IP 地址或主機名稱
       server-address-placeholder: 輸入伺服器地址（例如：localhost 或 play.example.com）
@@ -420,7 +420,7 @@ pages:
       description: Discord 訊息與語音聊天
       title: Discord
       enable: 啟用 Discord 集成
-      enable-description: 允許 AIRI 透過 Discord 進行互動
+      enable-description: 允許 Anase 透過 Discord 進行互動
       token: 機器人權杖
       token-description: 您的 Discord 機器人权杖
       token-placeholder: 輸入您的 Discord 機器人权杖
@@ -453,7 +453,7 @@ pages:
             search_voices_results: 找到 {count} / {total} 條聲線
             unsupported_voice_warning_title: No supported voices
             unsupported_voice_warning_content: >-
-              Try a different model or provider. We are working on supporting all the voice for this model as quickly as possible. If you need it urgently, please let us know on GitHub at https://github.com/moeru-ai/airi/issues.
+              Try a different model or provider. We are working on supporting all the voice for this model as quickly as possible. If you need it urgently, please let us know on GitHub at https://github.com/rocky2431/anima/issues.
             show_less: 顯示更少
             show_more: 顯示更多
             title: 選擇語音合成服務來源
@@ -472,7 +472,7 @@ pages:
       description: X / Twitter 的瀏覽與使用
       title: X / Twitter
       enable: 啟用 X / Twitter 集成
-      enable-description: 允許 AIRI 與 X / Twitter 互動
+      enable-description: 允許 Anase 與 X / Twitter 互動
       api-key: API 金鑰
       api-key-description: 您的 X / Twitter API 金鑰
       api-key-placeholder: 輸入您的 X / Twitter API 金鑰
@@ -524,11 +524,11 @@ pages:
       enabled_count: '{count}個已啟用'
       connected_count: '{count}個已連線'
       config_title: 頻道設定
-      config_desc: 大多數頻道需要在伺服器（airi-brain 或 stage-tamagotchi）上設定環境變數。在此啟用頻道，然後在伺服器環境中設定所需的權杖。
+      config_desc: 大多數頻道需要在伺服器（anase-brain 或 stage-tamagotchi）上設定環境變數。在此啟用頻道，然後在伺服器環境中設定所需的權杖。
       slack:
         description: 透過 Socket Mode 連線到 Slack 工作區
         enable: 啟用 Slack
-        enable_desc: 將 AIRI 連線到你的 Slack 工作區
+        enable_desc: 將 Anase 連線到你的 Slack 工作區
         bot_token: Bot Token
         app_token: App Token
       whatsapp:
@@ -570,7 +570,7 @@ pages:
     helpinfo:
       title: 第一次使用？
       description: >
-        AIRI 需要設定至少一個 {chat} 服務來源，才能正常思考與運作。你可以把它看作是 AIRI 系統中角色的大腦。
+        Anase 需要設定至少一個 {chat} 服務來源，才能正常思考與運作。你可以把它看作是 Anase 系統中角色的大腦。
     catalog:
       edit:
         config-id-not-found: Provider configuration not found.
@@ -629,7 +629,7 @@ pages:
                   openai-compatible-check-connectivity:
                     label: Extra configuration needed for Ollama
                     content: >-
-                      Sorry to hear that Connectivity check failed for Ollama. Don't worry, for Ollama instances, extra configuration is needed for making it pass for Ollama. You need to set <code>OLLAMA_HOST</code> explicitly when start the Ollama application or Ollama CLI server, for detailed information, check <a href="https://airi.moeru.ai/docs/en/docs/manual/integrations/providers/chat/ollama">Ollama integration guide</a>.
+                      Sorry to hear that Connectivity check failed for Ollama. Don't worry, for Ollama instances, extra configuration is needed for making it pass for Ollama. You need to set <code>OLLAMA_HOST</code> explicitly when start the Ollama application or Ollama CLI server, for detailed information, check <a href="https://anase.app/docs/en/docs/manual/integrations/providers/chat/ollama">Ollama integration guide</a>.
     common:
       continueAnyway: 仍然繼續
       fields:
@@ -969,8 +969,8 @@ pages:
           presets:
             default:
               colors:
-                color-1: AIRI Green
-              description: The default greenish theme color, brought by AIRI to you!
+                color-1: Anase Green
+              description: The default greenish theme color, brought by Anase to you!
               title: Default Color
             morandi:
               colors:
@@ -1047,7 +1047,7 @@ sections:
 theme:
   title: 主題
   description: |
-    切換 AIRI 的基礎主題，亮色模式或暗色模式。
+    切換 Anase 的基礎主題，亮色模式或暗色模式。
 title: 設定
 voices: 聲線
 vrm:

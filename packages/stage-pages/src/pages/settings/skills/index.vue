@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SkillsManager } from '@proj-airi/stage-ui/components'
+import { SkillsManager } from '@anase/stage-ui/components'
 </script>
 
 <template>

@@ -81,13 +81,13 @@ jobs:
             wrangler_config_path: ./apps/stage-web/wrangler.toml
             build_directory: ./apps/stage-web/dist
             build_command: |
-              pnpm -F @proj-airi/stage-web run build
+              pnpm -F @anase/stage-web run build
 
-              pnpm -F @proj-airi/docs run build:base
+              pnpm -F @anase/docs run build:base
               mv ./docs/.vitepress/dist ./apps/stage-web/dist/docs
               cp ./apps/stage-web/dist/docs/sitemap.xml ./apps/stage-web/dist/sitemap.xml
 
-              pnpm -F @proj-airi/stage-ui run story:build
+              pnpm -F @anase/stage-ui run story:build
               mv ./packages/stage-ui/.histoire/dist ./apps/stage-web/dist/ui
 
     steps:
@@ -158,8 +158,8 @@ jobs:
           S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
           S3_REGION: ${{ secrets.S3_REGION }}
           WARP_DRIVE_PUBLIC_BASE: ${{ secrets.WARP_DRIVE_PUBLIC_BASE }}
-          STAGE_WEB_WARP_DRIVE_PREFIX: proj-airi/stage-web/pr-${{ steps.meta.outputs.PR_NUM }}/
-          STAGE_UI_WARP_DRIVE_PREFIX: proj-airi/stage-ui/pr-${{ steps.meta.outputs.PR_NUM }}/
+          STAGE_WEB_WARP_DRIVE_PREFIX: anase/stage-web/pr-${{ steps.meta.outputs.PR_NUM }}/
+          STAGE_UI_WARP_DRIVE_PREFIX: anase/stage-ui/pr-${{ steps.meta.outputs.PR_NUM }}/
 
       - name: Find Comment
         if: ${{ always() }}

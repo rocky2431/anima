@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useActivityModuleStore } from '@proj-airi/stage-ui/stores/modules/activity'
-import { useDesktopShellStore } from '@proj-airi/stage-ui/stores/modules/desktop-shell'
-import { FieldCheckbox, FieldRange } from '@proj-airi/ui'
+import { useActivityModuleStore } from '@anase/stage-ui/stores/modules/activity'
+import { useDesktopShellStore } from '@anase/stage-ui/stores/modules/desktop-shell'
+import { FieldCheckbox, FieldRange } from '@anase/ui'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'

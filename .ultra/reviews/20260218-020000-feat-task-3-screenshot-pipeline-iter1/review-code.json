@@ -1,0 +1,131 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260218-020000-feat-task-3-screenshot-pipeline-iter1",
+  "timestamp": "2026-02-18T02:05:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/context-engine/src/capture/phash.ts",
+      "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "packages/context-engine/src/processing/screenshot-processor.ts",
+      "packages/context-engine/src/types.ts",
+      "packages/context-engine/src/index.ts",
+      "packages/context-engine/package.json",
+      "packages/context-engine/src/__tests__/phash.test.ts",
+      "packages/context-engine/src/__tests__/screenshot-pipeline.test.ts",
+      "packages/context-engine/src/__tests__/screenshot-processor.test.ts"
+    ],
+    "total_lines_analyzed": 878,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 1, "P1": 3, "P2": 2, "P3": 0 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P0",
+      "confidence": 95,
+      "category": "error-handling",
+      "subcategory": "silent-swallow",
+      "title": "Empty catch swallows all pipeline errors silently",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 92,
+      "line_end": 96,
+      "code_snippet": "catch {\n  // Pipeline errors are non-fatal: log and continue on next tick.\n  // In production, this would use a structured logger.\n  return false\n}",
+      "description": "The catch block in tick() swallows all errors -- capture failures, VLM timeouts, sharp crashes -- returning false as if the screenshot was merely deduped. The comment acknowledges logging is needed but defers it. This is a forbidden pattern per CLAUDE.md: 'catch (e) { return null }' converts errors to invalid state, and 'catch (e) { console.log(e) }' is logging without handling. Here there is not even logging. A crash in sharp (e.g., corrupt buffer, OOM) is indistinguishable from a normal dedup skip. In production, the pipeline will silently stop producing any context without any signal to operators.",
+      "suggestion": "Accept a structured logger (e.g., @guiiai/logg) via ScreenshotPipelineOptions. Log the error at WARN level with context (which stage failed, timestamp). Return false is acceptable for non-fatal continuation, but the error MUST be observable. Example: this.logger.warn('Pipeline tick failed', { error, stage: 'capture|phash|vlm' }). Alternatively, emit errors via an onError callback so the consumer can decide.",
+      "claude_md_rule": "error_handling.forbidden.catch_return_null"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 90,
+      "category": "architecture",
+      "subcategory": "in-memory-state",
+      "title": "lastHash dedup state stored only in memory, not persisted",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 30,
+      "line_end": 30,
+      "code_snippet": "private lastHash: string | null = null",
+      "description": "The pipeline's dedup state (lastHash) is a closure-scoped mutable variable that lives only in memory. If the Electron main process restarts (crash, update, OS restart), the hash is lost and the next capture will always be treated as new, sending a potentially identical screenshot through the VLM again (wasting API cost). Per CLAUDE.md architecture rule: 'Business state in memory' is a forbidden pattern -- critical state must be persistable/recoverable/observable. The timer handle is also ephemeral, which is fine since it is reconstructed on start(), but the dedup hash represents accumulated context state that should survive restarts.",
+      "suggestion": "Accept an optional persistence adapter (e.g., { loadLastHash(): Promise<string|null>, saveLastHash(hash: string): Promise<void> }) in ScreenshotPipelineOptions. On tick(), save the hash after processing. On start(), load the previous hash. For a walking skeleton this can be a simple file or SQLite row (the package already depends on better-sqlite3). This also makes the state observable for debugging.",
+      "claude_md_rule": "forbidden_patterns.arch.business_state_in_memory"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P1",
+      "confidence": 92,
+      "category": "integration",
+      "subcategory": "orphan-code",
+      "title": "ScreenshotPipeline exported but not consumed by any entry point",
+      "file": "packages/context-engine/src/index.ts",
+      "line": 7,
+      "line_end": 8,
+      "code_snippet": "export { ScreenshotPipeline } from './capture/screenshot-pipeline'\nexport type { ScreenshotPipelineOptions } from './capture/screenshot-pipeline'",
+      "description": "ScreenshotPipeline, ScreenshotProcessor, VlmProvider, and ProcessedScreenshotContext are exported from the package but have zero consumers outside of test files. The existing app integration at apps/stage-tamagotchi/src/main/services/anima/context-engine.ts still only uses ScreenshotCapture directly -- it was not updated to use the new pipeline. Grep across the entire repo confirms no import of ScreenshotPipeline from @proj-airi/context-engine in any app or service. Per CLAUDE.md integration rules: 'Code written but not reachable from any entry point is dead-on-arrival.' This is a horizontal-only change that adds library code without wiring it to any live path.",
+      "suggestion": "Update apps/stage-tamagotchi/src/main/services/anima/context-engine.ts (or the appropriate entry point) to instantiate ScreenshotPipeline with an ElectronScreenshotProvider and a concrete VlmProvider (e.g., xsAI-based). Wire start()/stop() to the app lifecycle. This proves the vertical slice: Electron capture -> pHash dedup -> VLM understanding -> context emission.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "code-quality",
+      "subcategory": "input-validation",
+      "title": "computePHash accepts any Buffer with no validation",
+      "file": "packages/context-engine/src/capture/phash.ts",
+      "line": 15,
+      "line_end": 21,
+      "code_snippet": "export async function computePHash(imageBuffer: Buffer): Promise<string> {\n  const { data } = await sharp(imageBuffer)\n    .resize(HASH_SIZE, HASH_SIZE, { fit: 'fill' })\n    .greyscale()\n    .raw()\n    .toBuffer({ resolveWithObject: true })",
+      "description": "computePHash is a public API that accepts any Buffer and passes it directly to sharp. An empty buffer (Buffer.alloc(0)) -- which is what Electron desktopCapturer returns on permission failure -- will cause sharp to throw an opaque native error. A zero-length or corrupt buffer provides no useful diagnostic. Since this is a boundary function (accepts external data from the screenshot provider), input validation is required per CLAUDE.md security rules: 'All external input MUST be validated -- Validate early, reject invalid input immediately.'",
+      "suggestion": "Add a guard at the top of computePHash: if (!imageBuffer || imageBuffer.length === 0) throw new Error('computePHash: imageBuffer is empty or undefined'). This provides a clear, debuggable error message at the boundary rather than a cryptic sharp native crash.",
+      "claude_md_rule": "security.input_validation"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "architecture",
+      "subcategory": "race-condition",
+      "title": "Concurrent tick() calls can cause race in dedup state",
+      "file": "packages/context-engine/src/capture/screenshot-pipeline.ts",
+      "line": 72,
+      "line_end": 97,
+      "code_snippet": "async tick(): Promise<boolean> {\n  try {\n    const screenshot = await this.capture.capture()\n    const hash = await computePHash(screenshot.buffer)\n    if (this.lastHash !== null && areSimilar(...)) {\n      return false\n    }\n    this.lastHash = hash",
+      "description": "tick() is async but start() calls it via setInterval with void this.tick(). If a tick takes longer than intervalMs (e.g., VLM call takes 90s with 60s interval), two ticks run concurrently. Both read the same this.lastHash, both may decide the screenshot is new, both update this.lastHash, and both call the VLM -- defeating the dedup purpose and doubling API costs. The void cast on line 50 explicitly discards the promise, so there is no backpressure mechanism.",
+      "suggestion": "Add a simple mutex/guard: 'private ticking = false'. At the top of tick(), if (this.ticking) return false; this.ticking = true; and in a finally block: this.ticking = false. This ensures at most one tick runs at a time, which is the expected behavior for a periodic capture loop.",
+      "claude_md_rule": "security.race_conditions"
+    },
+    {
+      "id": "review-code-006",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "integration",
+      "subcategory": "horizontal-only-change",
+      "title": "No VlmProvider implementation exists anywhere in the codebase",
+      "file": "packages/context-engine/src/types.ts",
+      "line": 53,
+      "line_end": 55,
+      "code_snippet": "export interface VlmProvider {\n  describeImage(imageBuffer: Buffer): Promise<VlmResult>\n}",
+      "description": "VlmProvider is an interface with no concrete implementation in the codebase (only test stubs). Without a real implementation, the ScreenshotPipeline cannot be instantiated in any app. This is the contract-first pattern done partially -- the interface is defined, but there is no even skeleton implementation against xsAI (which CLAUDE.md identifies as the LLM SDK). The walking skeleton principle requires that the first deliverable be a minimal end-to-end flow returning real data, not just an interface.",
+      "suggestion": "Create a concrete VlmProvider implementation (e.g., XsaiVlmProvider) that wraps xsAI's vision model API. Even a minimal implementation that sends a base64 image and returns the parsed response would complete the vertical slice. Place it in packages/context-engine/src/providers/ or in the app integration layer.",
+      "claude_md_rule": "integration.walking_skeleton"
+    }
+  ],
+  "positive_observations": [
+    "Clean separation of concerns: phash (pure function), ScreenshotProcessor (single responsibility VLM wrapper), and ScreenshotPipeline (orchestrator) follow Functional Core / Imperative Shell well",
+    "Well-defined TypeScript interfaces (ScreenshotProvider, VlmProvider) enable dependency inversion at boundaries",
+    "Test doubles in tests correctly use '// Test Double rationale:' comments per CLAUDE.md external API exception, implementing the actual interface rather than jest.fn()",
+    "pHash tests use real sharp image processing with meaningful test images (spatial patterns), not trivial stubs",
+    "Error wrapping in ScreenshotProcessor.process() includes cause chain for debuggability",
+    "Pipeline tests exercise the real dedup logic through actual pHash computation (not mocked), testing the collaboration between capture -> phash -> processor"
+  ],
+  "metadata": {
+    "duration_ms": 28000,
+    "model": "claude-opus-4-6",
+    "turns_used": 4
+  }
+}

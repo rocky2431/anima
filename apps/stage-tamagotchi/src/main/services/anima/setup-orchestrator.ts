@@ -1,4 +1,4 @@
-import type { ScreenshotProvider, VlmProvider, VlmResult } from '@proj-airi/context-engine'
+import type { ScreenshotProvider, VlmProvider, VlmResult } from '@anase/context-engine'
 
 import { env } from 'node:process'
 
@@ -41,7 +41,7 @@ class NoOpVlmProvider implements VlmProvider {
 
   async describeImage(_imageBuffer: Buffer): Promise<VlmResult> {
     if (!this.warned) {
-      log.warn('VLM provider not configured: returning generic activity description. Set AIRI_VLM_API_KEY + AIRI_VLM_MODEL for AI-powered screen analysis.')
+      log.warn('VLM provider not configured: returning generic activity description. Set ANASE_VLM_API_KEY + ANASE_VLM_MODEL for AI-powered screen analysis.')
       this.warned = true
     }
     return {
@@ -104,9 +104,9 @@ class AiSdkVlmProvider implements VlmProvider {
 }
 
 function createVlmProvider(): VlmProvider {
-  const apiKey = env.AIRI_VLM_API_KEY
-  const model = env.AIRI_VLM_MODEL
-  const baseURL = env.AIRI_VLM_BASE_URL
+  const apiKey = env.ANASE_VLM_API_KEY
+  const model = env.ANASE_VLM_MODEL
+  const baseURL = env.ANASE_VLM_BASE_URL
 
   if (apiKey && model) {
     log.log('VLM provider configured', { model, hasBaseURL: !!baseURL })

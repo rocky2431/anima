@@ -1,6 +1,6 @@
 ---
 title: 贡献设计
-description: 如何为 Project AIRI 贡献设计
+description: 如何为 Project Anase 贡献设计
 ---
 
 ::: warning 施工中

@@ -1,4 +1,4 @@
-import type { ContextUpdate, MetadataEventSource, WebSocketEventInputs } from '@proj-airi/server-sdk'
+import type { ContextUpdate, MetadataEventSource, WebSocketEventInputs } from '@anase/server-sdk'
 
 import type { AssistantMessage, CommonContentPart, CompletionToolCall, Message, SystemMessage, ToolMessage, UserMessage } from './ai-messages'
 

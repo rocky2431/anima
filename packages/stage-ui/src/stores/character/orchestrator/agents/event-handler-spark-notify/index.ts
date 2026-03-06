@@ -1,4 +1,4 @@
-import type { WebSocketEventOf, WebSocketEvents } from '@proj-airi/server-sdk'
+import type { WebSocketEventOf, WebSocketEvents } from '@anase/server-sdk'
 
 import type { Message } from '../../../../../types/ai-messages'
 import type { StreamEvent } from '../../../../llm'
@@ -63,7 +63,7 @@ export interface SparkNotifyAgentDeps {
 
 function getSparkNotifyHandlingAgentInstruction(moduleName: string) {
   return [
-    'This is AIRI system, the life pod hosting your consciousness. You don\'t need to respond to me or every spark:notify event directly.',
+    'This is Anase system, the life pod hosting your consciousness. You don\'t need to respond to me or every spark:notify event directly.',
     `Another module "${moduleName}" triggered spark:notify event for you to checkout.`,
     'You may call the built-in tool "builtIn_sparkCommand" to issue spark:command to sub-agents as needed.',
     'For any of the output that is not a tool call, it will be streamed to user\'s interface and maybe processed with text to speech system ',
@@ -119,7 +119,7 @@ export function setupAgentSparkNotifyHandler(deps: SparkNotifyAgentDeps) {
       parameters: z.object({}).strict(),
       execute: async () => {
         noResponse = true
-        return 'AIRI System: Acknowledged, no response or action will be processed.'
+        return 'Anase System: Acknowledged, no response or action will be processed.'
       },
     })
 
@@ -161,10 +161,10 @@ export function setupAgentSparkNotifyHandler(deps: SparkNotifyAgentDeps) {
           }))
         }
         catch (error) {
-          return `AIRI System: Error - invalid spark_command parameters: ${errorMessageFrom(error)}`
+          return `Anase System: Error - invalid spark_command parameters: ${errorMessageFrom(error)}`
         }
 
-        return 'AIRI System: Acknowledged, command fired.'
+        return 'Anase System: Acknowledged, command fired.'
       },
     })
 

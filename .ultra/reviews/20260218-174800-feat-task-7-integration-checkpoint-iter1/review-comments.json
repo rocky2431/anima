@@ -1,0 +1,122 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-comments",
+  "session": "20260218-174800-feat-task-7-integration-checkpoint-iter1",
+  "timestamp": "2026-02-18T17:50:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "apps/stage-tamagotchi/src/main/index.ts",
+      "apps/stage-tamagotchi/package.json"
+    ],
+    "total_lines_analyzed": 1184,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 6,
+    "by_severity": { "P0": 1, "P1": 0, "P2": 2, "P3": 3 },
+    "verdict": "REQUEST_CHANGES"
+  },
+  "findings": [
+    {
+      "id": "review-comments-001",
+      "severity": "P0",
+      "confidence": 95,
+      "category": "forbidden-pattern",
+      "subcategory": "placeholder-comment",
+      "title": "JSDoc labels class as 'Placeholder' with disguised TODO",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "line": 33,
+      "line_end": 35,
+      "code_snippet": "/**\n * Placeholder VLM provider that returns a generic activity description.\n * Will be replaced with a real AI SDK 6 integration in Task 8.\n */",
+      "description": "The JSDoc comment explicitly labels the VlmProvider as a 'Placeholder' and states it 'Will be replaced with a real AI SDK 6 integration in Task 8.' This triggers two forbidden patterns per CLAUDE.md: (1) 'PLACEHOLDER' comments are P0 forbidden -- 'Complete or don't commit', and (2) the 'Will be replaced' phrasing is a disguised TODO referencing a specific future task and technology (AI SDK 6) that will rot regardless of outcome. The class name PlaceholderVlmProvider and the runtime log.warn message also use 'placeholder', reinforcing the pattern throughout.",
+      "suggestion": "Rename the class to NoOpVlmProvider or DefaultVlmProvider. Replace the JSDoc with a factual description: 'Returns a generic activity description without calling an external VLM API. Configure a real VlmProvider implementation for AI-powered screen analysis.' Remove the Task 8 and AI SDK 6 references entirely.",
+      "claude_md_rule": "forbidden_patterns.code.placeholder"
+    },
+    {
+      "id": "review-comments-002",
+      "severity": "P2",
+      "confidence": 92,
+      "category": "comments",
+      "subcategory": "forward-reference-rot",
+      "title": "Forward-looking comment about future systems is a disguised TODO",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.ts",
+      "line": 218,
+      "line_end": 220,
+      "code_snippet": " * Fields that require external sources (memory, todo system) default to safe values.\n * These will be enhanced when the respective systems are implemented.",
+      "description": "The JSDoc for buildTriggerInput contains a forward-looking statement: 'These will be enhanced when the respective systems are implemented.' This is a disguised TODO that promises future work without concrete tracking. Per project memory, 'Future: replaced by X' patterns function as disguised TODOs. If the memory/todo systems are implemented differently or never built, this comment becomes misleading.",
+      "suggestion": "Replace with a factual description of current behavior: 'Fields that depend on external sources (memory system, todo system) use safe default values. Callers needing real values should extend TriggerInput construction at the call site.' This describes the extension point without creating a stale promise.",
+      "claude_md_rule": "forbidden_patterns.code.todo"
+    },
+    {
+      "id": "review-comments-003",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "comments",
+      "subcategory": "misplaced-annotation",
+      "title": "Test Double rationale annotation on production code is confusing",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "line": 14,
+      "line_end": 14,
+      "code_snippet": " * Test Double rationale: N/A \u2014 this is the real implementation for Electron.",
+      "description": "The JSDoc for ElectronScreenshotProvider includes a 'Test Double rationale: N/A' annotation. This pattern is mandated for test doubles in test files to justify why a real dependency is stubbed. Placing 'Test Double rationale: N/A' on production code in a non-test file is confusing -- it makes the reader wonder why a production class needs to justify that it is NOT a test double. The annotation pattern should only appear in test files where stubs/mocks are defined.",
+      "suggestion": "Remove the 'Test Double rationale: N/A' line. The JSDoc already describes the class purpose ('Electron desktopCapturer-based screenshot provider'). Being in a production file already makes it clear this is the real implementation."
+    },
+    {
+      "id": "review-comments-004",
+      "severity": "P3",
+      "confidence": 80,
+      "category": "comments",
+      "subcategory": "historical-reference-rot",
+      "title": "Comment references deleted functions that no longer exist",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "line": 51,
+      "line_end": 51,
+      "code_snippet": " * Replaces separate setupContextEngine() and setupPersonaEngine() with a unified pipeline.",
+      "description": "The JSDoc for setupAnimaOrchestrator states it 'Replaces separate setupContextEngine() and setupPersonaEngine()'. The git diff shows those functions and their imports were deleted from index.ts. In 6 months, a new developer will not know what setupContextEngine() or setupPersonaEngine() were, making this historical note meaningless and potentially confusing. Comments referencing deleted code rot immediately.",
+      "suggestion": "Remove the historical reference. The remaining JSDoc already captures the function's purpose: 'Initialize the Anima orchestrator for the main process. Wires: ScreenshotPipeline -> ActivityMonitor -> PersonaEngine -> ProactiveResponse.'"
+    },
+    {
+      "id": "review-comments-005",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "comments",
+      "subcategory": "runtime-placeholder-label",
+      "title": "Runtime warning message uses 'placeholder' terminology",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/setup-orchestrator.ts",
+      "line": 38,
+      "line_end": 38,
+      "code_snippet": "log.warn('PlaceholderVlmProvider: Using placeholder VLM. Configure a real VLM provider for production.')",
+      "description": "The log.warn message includes 'placeholder' twice, which echoes the forbidden pattern. While this is a runtime message rather than a code comment, it reinforces the placeholder framing and will appear in production logs. If the class is renamed per finding review-comments-001, this message should also be updated.",
+      "suggestion": "Rephrase to: 'VLM provider not configured: returning generic activity description. Set up a VlmProvider implementation for AI-powered screen analysis.'"
+    },
+    {
+      "id": "review-comments-006",
+      "severity": "P3",
+      "confidence": 76,
+      "category": "comments",
+      "subcategory": "redundant-inline",
+      "title": "Inline comment restates what assertions already prove",
+      "file": "apps/stage-tamagotchi/src/main/services/anima/orchestrator.test.ts",
+      "line": 307,
+      "line_end": 307,
+      "code_snippet": "// worried \u2192 { name: 'sad', intensity: 0.5 }",
+      "description": "The inline comment 'worried -> { name: sad, intensity: 0.5 }' restates exactly what the expect() assertions on the following lines verify. If the mapping changes, this comment must be updated alongside the assertions, creating maintenance overhead for zero additional insight. The assertions are self-documenting.",
+      "suggestion": "Remove the inline comment. The assertions serve as the authoritative and always-verified source of truth for the expected mapping."
+    }
+  ],
+  "positive_observations": [
+    "Test Double rationale annotations are correctly used in the test file (orchestrator.test.ts lines 49 and 65), providing clear justification for why ScreenshotProvider and VlmProvider are stubbed",
+    "JSDoc is consistently applied to all exported interfaces, types, and functions, following project convention",
+    "The TRIGGER_EMOTION_MAP JSDoc (orchestrator.ts line 59-62) adds genuine value by explaining the 'why' -- which emotion transition occurs when a trigger fires",
+    "The buildTriggerInput JSDoc accurately describes the cross-package mapping between context-engine's ActivityState and persona-engine's TriggerInput",
+    "Test helper makeContinuousWorkEvents has clear JSDoc explaining event spacing rationale (4 min gap to stay within the gap threshold)"
+  ],
+  "metadata": {
+    "duration_ms": 20000,
+    "model": "claude-opus-4-6",
+    "turns_used": 6
+  }
+}

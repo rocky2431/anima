@@ -1,0 +1,113 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-code",
+  "session": "20260220-201512-feat-task-23-integration-checkpoint-phase3-iter1-iter1",
+  "timestamp": "2026-02-21T04:15:00Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/stage-ui/src/stores/modules/phase3-checkpoint.integration.test.ts"
+    ],
+    "total_lines_analyzed": 1533,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "P0": 0, "P1": 2, "P2": 3, "P3": 0 },
+    "verdict": "COMMENT"
+  },
+  "findings": [
+    {
+      "id": "review-code-001",
+      "severity": "P1",
+      "confidence": 85,
+      "category": "integration",
+      "subcategory": "orphan-package",
+      "title": "channels-extra package has no app-level consumer",
+      "file": "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 1,
+      "line_end": 304,
+      "code_snippet": "import { ChannelRegistry } from '../channel-registry'",
+      "description": "The checkpoint test verifies ChannelRegistry orchestration across all 5 channel types, but the channels-extra package is not declared as a dependency by any app (apps/stage-tamagotchi, apps/stage-web, apps/server, etc.). No package.json in apps/ references @proj-airi/channels-extra. This means the ChannelRegistry and all 5 channel implementations (WhatsApp, Slack, Email, Feishu, DingTalk) are orphan code with no live entry point. The checkpoint test validates internal consistency but cannot prove end-to-end reachability.",
+      "suggestion": "Wire channels-extra into an app entry point (e.g., apps/stage-tamagotchi DI container or apps/server) so the ChannelRegistry is instantiated and channels are registered from a live handler/listener. Until then, this entire package is dead-on-arrival code that passes tests but serves no runtime purpose.",
+      "claude_md_rule": "integration.orphan_detection"
+    },
+    {
+      "id": "review-code-002",
+      "severity": "P1",
+      "confidence": 80,
+      "category": "integration",
+      "subcategory": "horizontal-only-checkpoint",
+      "title": "Checkpoint tests verify 5 packages in isolation, no cross-package test",
+      "file": "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 1,
+      "line_end": 275,
+      "code_snippet": "describe('phase 3 checkpoint: multi-source context merging', () => {",
+      "description": "The Phase 3 checkpoint creates 5 separate test files, each testing one package in isolation: channels-extra (ChannelRegistry), context-engine (ContextMerger), mcp-hub (AnimaMcpServer), persona-engine (evaluateTriggers), and stage-ui (Pinia stores). None of these tests verify the cross-package data flow that Phase 3 is supposed to prove. For example: (1) ContextMerger output is never fed to persona-engine's evaluateTriggers, (2) MCP server's memoryAccess/contextAccess stubs never connect to real context-engine stores, (3) UI stores never receive data from any backend service. This is a horizontal checkpoint (validate each layer) rather than a vertical integration proof.",
+      "suggestion": "Add at least one cross-package integration test that proves the Phase 3 data flow end-to-end: e.g., ContextMerger produces MergedContext -> that context feeds evaluateTriggers -> trigger result is observable. Or: MCP server wired to real context-engine functions (not stubs) to prove the contract. A true checkpoint should verify the connections, not just the components.",
+      "claude_md_rule": "integration.vertical_slice"
+    },
+    {
+      "id": "review-code-003",
+      "severity": "P2",
+      "confidence": 80,
+      "category": "architecture",
+      "subcategory": "in-memory-state-no-persistence",
+      "title": "UI stores checkpoint validates only ephemeral in-memory state",
+      "file": "packages/stage-ui/src/stores/modules/phase3-checkpoint.integration.test.ts",
+      "line": 59,
+      "line_end": 336,
+      "code_snippet": "describe('phase 3 checkpoint: UI stores coherence', () => {\n  beforeEach(() => {\n    const pinia = createTestingPinia({ createSpy: vi.fn, stubActions: false })\n    setActivePinia(pinia)\n  })",
+      "description": "The checkpoint verifies that 4 Pinia stores (memory, todo, activity, skills) coexist and support CRUD operations, but all data lives in Vue refs with no persistence layer. setMemories/addTodo/setActivities/setSkills all write to in-memory arrays that are lost on page refresh or app restart. The checkpoint does not test any data fetch from a backend or persistence round-trip. This was already flagged in task-21 review but the checkpoint perpetuates the gap by validating the ephemeral-only behavior as sufficient.",
+      "suggestion": "At minimum, document in the test description that persistence is deferred. Ideally, add a test that verifies the store can be hydrated from a backend fetch function (even if stubbed), proving the store API supports backend integration rather than purely in-memory CRUD.",
+      "claude_md_rule": "architecture.data_persistence"
+    },
+    {
+      "id": "review-code-004",
+      "severity": "P2",
+      "confidence": 78,
+      "category": "integration",
+      "subcategory": "missing-contract-test",
+      "title": "MCP server checkpoint uses stubs instead of real context-engine",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 23,
+      "line_end": 58,
+      "code_snippet": "function createStubDeps(overrides?: Partial<AnimaMcpServerDeps>): AnimaMcpServerDeps {\n  const memories: MemoryResult[] = [\n    makeMemoryResult({ content: 'User loves TypeScript', category: 'preference' }),\n    ...\n  ]",
+      "description": "The AnimaMcpServerDeps interface (memoryAccess, contextAccess) defines the contract between mcp-hub and context-engine. The checkpoint test creates stub implementations of these interfaces but never validates that context-engine's actual implementations (DocumentStore, VectorStore, ReportGenerator) satisfy the same contract. If context-engine changes its API shape, these tests will still pass while runtime breaks. The Test Double rationale comment acknowledges the boundary, but a Phase 3 checkpoint should prove the boundary works.",
+      "suggestion": "Add a contract test that instantiates the real context-engine implementations (or a thin wrapper) and validates they satisfy AnimaMemoryAccess and AnimaContextAccess interfaces. This could be a compile-time check (type assertion) combined with a minimal runtime call to prove the shape matches.",
+      "claude_md_rule": "integration.contract_first"
+    },
+    {
+      "id": "review-code-005",
+      "severity": "P2",
+      "confidence": 76,
+      "category": "code-quality",
+      "subcategory": "duplicate-test-coverage",
+      "title": "Checkpoint tests substantially duplicate existing unit tests",
+      "file": "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 38,
+      "line_end": 357,
+      "code_snippet": "describe('phase 3 checkpoint: proactive trigger system', () => {\n  // ... tests for all 11 triggers, cooldown, intimacy gating\n  // Same coverage as persona-engine.test.ts and proactive-trigger.test.ts",
+      "description": "The persona-engine checkpoint test (357 lines) re-tests all 11 triggers, cooldown management, intimacy gating, fullscreen suppression, and priority ordering. These scenarios are already covered in packages/persona-engine/src/__tests__/proactive-trigger.test.ts and persona-engine.test.ts. Similarly, the channels-extra checkpoint duplicates channel-registry.test.ts, and the context-engine checkpoint duplicates context-merger.test.ts. For a checkpoint, the value should be in proving cross-boundary integration, not repeating unit-level coverage.",
+      "suggestion": "Refocus checkpoint tests on cross-boundary assertions: Does the ContextMerger output feed correctly into evaluateTriggers? Does the MCP server correctly expose context-engine data? Does the UI store correctly display data from a simulated backend event? Remove duplicated unit-level tests from checkpoint files to keep them focused on integration proof.",
+      "claude_md_rule": "testing.integration"
+    }
+  ],
+  "positive_observations": [
+    "All test double usages include proper '// Test Double rationale:' comments explaining why stubs are necessary (external API boundaries)",
+    "InMemoryTransport from @modelcontextprotocol/sdk is the correct testing pattern for MCP protocol verification",
+    "createTestingPinia with stubActions: false ensures real store action execution -- no mock-based shortcuts",
+    "Persona-engine checkpoint correctly uses vi.useFakeTimers() for deterministic time-dependent trigger evaluation",
+    "ChannelRegistry fault isolation test verifies that one failing channel does not cascade to others -- good resilience coverage",
+    "StubLlmProvider uses schema-based routing (schemaDescription.includes) to return different structured outputs -- clean test double pattern",
+    "No forbidden patterns detected: no console.log, no TODO/FIXME, no hardcoded secrets"
+  ],
+  "metadata": {
+    "duration_ms": 45000,
+    "model": "claude-opus-4-6",
+    "turns_used": 8
+  }
+}

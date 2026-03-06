@@ -1,0 +1,67 @@
+{
+  "$schema": "ultra-review-findings-v1",
+  "agent": "review-errors",
+  "session": "20260220-201512-feat-task-23-integration-checkpoint-phase3-iter1-iter1",
+  "timestamp": "2026-02-21T04:00:00.000Z",
+  "scope": {
+    "files_analyzed": [
+      "packages/channels-extra/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/context-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/persona-engine/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "packages/stage-ui/src/stores/modules/phase3-checkpoint.integration.test.ts"
+    ],
+    "total_lines_analyzed": 1533,
+    "diff_only": true
+  },
+  "summary": {
+    "total_findings": 2,
+    "by_severity": { "P0": 0, "P1": 0, "P2": 1, "P3": 1 },
+    "verdict": "APPROVE"
+  },
+  "findings": [
+    {
+      "id": "review-errors-001",
+      "severity": "P2",
+      "confidence": 85,
+      "category": "error-handling",
+      "subcategory": "resource-leak-in-test",
+      "title": "Sequential cleanup in test helper leaks server on client.close() failure",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 71,
+      "line_end": 74,
+      "code_snippet": "cleanup: async () => {\n  await client.close()\n  await server.close()\n}",
+      "description": "The createConnectedPair helper's cleanup function calls client.close() then server.close() sequentially without try/finally. If client.close() throws, server.close() is never called, leaving the MCP server transport open. Every test in this file uses this helper via try/finally, so a single flaky close would leak the server and potentially hang the test suite. This is the same sequential-cleanup-in-single-block pattern previously found in McpHub.shutdown() (fixed in iter2) and Email.disconnect().",
+      "suggestion": "Wrap cleanup in try/finally to guarantee both close calls execute:\n\ncleanup: async () => {\n  try { await client.close() } finally { await server.close() }\n}",
+      "claude_md_rule": "error_handling.rules"
+    },
+    {
+      "id": "review-errors-002",
+      "severity": "P3",
+      "confidence": 78,
+      "category": "error-handling",
+      "subcategory": "json-parse-without-context",
+      "title": "JSON.parse on MCP response content without descriptive assertion wrapper",
+      "file": "packages/mcp-hub/src/__tests__/phase3-checkpoint.integration.test.ts",
+      "line": 94,
+      "line_end": 94,
+      "code_snippet": "const parsed = JSON.parse(textContent[0].text)",
+      "description": "Multiple JSON.parse calls (lines 94, 116, 203, 231) parse MCP server response text without try/catch or a descriptive wrapper. If the server returns malformed JSON (e.g., during development when the handler is changed), the test fails with a generic SyntaxError('Unexpected token...') rather than a clear message like 'search_memories returned non-JSON: <actual text>'. This is a test-quality concern rather than a production error handling issue, but it hampers debuggability when tests break.",
+      "suggestion": "Consider a small helper:\n\nfunction parseJsonResponse(content: Array<{type: string, text: string}>, label: string) {\n  const text = content[0]?.text ?? ''\n  try { return JSON.parse(text) }\n  catch { throw new Error(`${label} returned invalid JSON: ${text.slice(0, 200)}`) }\n}"
+    }
+  ],
+  "positive_observations": [
+    "All 5 test files include clear Test Double rationale comments explaining why real dependencies are stubbed -- consistent with CLAUDE.md testing rules.",
+    "mcp-hub tests use try/finally for cleanup in every test case -- disciplined resource lifecycle pattern despite the sequential close issue.",
+    "channels-extra tests verify fault isolation (one failing channel does not block others) -- directly tests the allSettled pattern in production code.",
+    "persona-engine tests are pure function tests with zero I/O -- clean Functional Core testing, no error handling needed by design.",
+    "stage-ui store tests are synchronous-only state management -- error-free-by-design UI layer pattern continues from prior mcp.ts review.",
+    "mcp-hub tests include explicit error path testing (line 124-146: 'handles search errors gracefully') -- verifying that production code returns isError:true with descriptive message on dependency failure.",
+    "context-engine tests verify multi-source merging orchestration without hitting real LLM -- correct boundary testing approach."
+  ],
+  "metadata": {
+    "duration_ms": 25000,
+    "model": "claude-opus-4-6",
+    "turns_used": 5
+  }
+}

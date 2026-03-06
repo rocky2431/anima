@@ -1,17 +1,17 @@
 {
-  "name": "@proj-airi/stage-pages",
+  "name": "@anase/stage-pages",
   "type": "module",
   "private": true,
   "description": "Shared Pages",
   "author": {
-    "name": "Moeru AI Project AIRI Team",
-    "email": "airi@moeru.ai",
+    "name": "Project Anase Team",
+    "email": "team@anase.app",
     "url": "https://github.com/moeru-ai"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/moeru-ai/airi.git",
+    "url": "https://github.com/rocky2431/anima.git",
     "directory": "packages/stage-pages"
   },
   "exports": {
@@ -23,13 +23,13 @@
   "dependencies": {
     "@moeru/eventa": "^1.0.0-alpha.11",
     "@moeru/std": "catalog:",
-    "@proj-airi/ccc": "workspace:*",
-    "@proj-airi/i18n": "workspace:*",
-    "@proj-airi/server-sdk": "workspace:*",
-    "@proj-airi/stage-ui": "workspace:*",
-    "@proj-airi/stage-ui-live2d": "workspace:*",
-    "@proj-airi/stage-ui-three": "workspace:*",
-    "@proj-airi/ui": "workspace:*",
+    "@anase/ccc": "workspace:*",
+    "@anase/i18n": "workspace:*",
+    "@anase/server-sdk": "workspace:*",
+    "@anase/stage-ui": "workspace:*",
+    "@anase/stage-ui-live2d": "workspace:*",
+    "@anase/stage-ui-three": "workspace:*",
+    "@anase/ui": "workspace:*",
     "@stdlib/string-base-kebabcase": "^0.2.2",
     "@vueuse/core": "^14.1.0",
     "@vueuse/shared": "^14.1.0",
@@ -51,7 +51,7 @@
   },
   "devDependencies": {
     "@nekopaw/tempora": "catalog:",
-    "@proj-airi/stage-shared": "workspace:^",
+    "@anase/stage-shared": "workspace:^",
     "@types/audioworklet": "catalog:",
     "@types/splitpanes": "catalog:",
     "@types/three": "^0.182.0",

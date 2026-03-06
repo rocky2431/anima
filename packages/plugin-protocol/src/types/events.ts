@@ -99,7 +99,7 @@ export type MetadataEventSource = ModuleIdentity
  *
  * Example:
  *  {
- *    id: "airi.config.stage-ui",
+ *    id: "anase.config.stage-ui",
  *    version: 2,
  *    schema: { type: "object", properties: { model: { type: "string" } }, required: ["model"] },
  *  }
@@ -407,9 +407,9 @@ export enum MessageHeartbeat {
 }
 
 export enum WebSocketEventSource {
-  Server = 'proj-airi:server-runtime',
-  StageWeb = 'proj-airi:stage-web',
-  StageTamagotchi = 'proj-airi:stage-tamagotchi',
+  Server = 'anase:server-runtime',
+  StageWeb = 'anase:stage-web',
+  StageTamagotchi = 'anase:stage-tamagotchi',
 }
 
 interface InputSource {

@@ -2,11 +2,11 @@
 import type {
   PluginHostSessionSummary,
   PluginManifestSummary,
-} from '@proj-airi/stage-ui/stores/devtools/plugin-host-debug'
+} from '@anase/stage-ui/stores/devtools/plugin-host-debug'
 
-import { Section } from '@proj-airi/stage-ui/components'
-import { usePluginHostInspectorStore } from '@proj-airi/stage-ui/stores/devtools/plugin-host-debug'
-import { Button, Callout, Input } from '@proj-airi/ui'
+import { Section } from '@anase/stage-ui/components'
+import { usePluginHostInspectorStore } from '@anase/stage-ui/stores/devtools/plugin-host-debug'
+import { Button, Callout, Input } from '@anase/ui'
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 
