@@ -54,7 +54,11 @@
 - 启动时自动连接已启用的 MCP 服务器
 
 ### P3-2: 集成 Anima MCP Server
-- 将 createAnimaMcpServer 连接到 MCP Hub 插件系统
+- `plugins/airi-plugin-anima-mcp-server/` — 独立 MCP 服务器插件
+- 通过 InvokeEventa 桥接 AnimaMemoryAccess / AnimaContextAccess 依赖
+- 其他插件（context-engine）注册 handler 提供真实数据
+- 无 provider 时工具优雅降级返回空/默认值
+- 暴露 `animaMcpServerGet` 事件供应用层连接 transport (SSE/stdio)
 
 ### P3-3: Skill Registry 包装为 native plugin + 注入 system prompt
 - `plugins/airi-plugin-skills/` — definePlugin 包装 SkillRegistry
@@ -74,5 +78,5 @@
 - [ ] Phase 2: P2-4 版本协商支持降级
 - [x] Phase 3: P3-1 MCP Hub native plugin
 - [x] Phase 3: P3-3 Skill Registry native plugin + buildSkillsContext 集成
-- [ ] Phase 3: P3-2 集成 Anima MCP Server
+- [x] Phase 3: P3-2 集成 Anima MCP Server
 - [ ] Phase 3: P3-4 Context Engine 升级
