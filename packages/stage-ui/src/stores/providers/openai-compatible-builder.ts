@@ -1,8 +1,9 @@
 import type { ModelInfo, ProviderMetadata } from '../providers'
 
-import { generateText } from '../../libs/ai/generate-text'
+import { createOpenAI } from '@ai-sdk/openai'
+import { generateText } from 'ai'
+
 import { listModels } from '../../libs/ai/list-models'
-import { message } from '../../libs/ai/message-helpers'
 
 type ProviderCreator = (apiKey: string, baseUrl: string) => any
 
@@ -195,13 +196,11 @@ export function buildOpenAICompatibleProvider(
         asyncChecks.push((async () => {
           try {
             const model = await modelPromise
+            const aiProvider = createOpenAI({ apiKey, baseURL: baseUrl, headers: additionalHeaders })
             await generateText({
-              apiKey,
-              baseURL: baseUrl,
-              headers: additionalHeaders,
-              model,
-              messages: message.messages(message.user('ping')),
-              max_tokens: 1,
+              model: aiProvider(model),
+              messages: [{ role: 'user', content: 'ping' }],
+              maxOutputTokens: 1,
             })
             return null
           }

@@ -2,12 +2,12 @@ import type { ProviderDefinition, ProviderExtraMethods, ProviderInstance } from 
 
 import isNetworkError from 'is-network-error'
 
+import { createOpenAI } from '@ai-sdk/openai'
 import { errorMessageFrom } from '@moeru/std'
+import { generateText } from 'ai'
 import { Mutex } from 'es-toolkit'
 
-import { generateText } from '../../ai/generate-text'
 import { listModels } from '../../ai/list-models'
-import { message } from '../../ai/message-helpers'
 import { isModelProvider } from '../types'
 
 type OpenAICompatibleValidationCheck = 'connectivity' | 'model_list' | 'chat_completions'
@@ -25,6 +25,7 @@ function extractStatusCode(error: unknown): number | null {
   }
 
   const candidates = [
+    (error as any).statusCode,
     anyError.cause?.status,
     anyError.cause?.statusCode,
     anyError.cause?.response?.status,
@@ -118,19 +119,17 @@ export function createOpenAICompatibleValidators<TConfig extends { apiKey?: stri
     if (!cache) {
       const model = await pickValidationModel(config, provider, providerExtra)
       try {
+        const aiProvider = createOpenAI({ apiKey: config.apiKey!, baseURL: String(config.baseUrl!), headers: additionalHeaders })
         await generateText({
-          apiKey: config.apiKey,
-          baseURL: config.baseUrl!,
-          headers: additionalHeaders,
-          model,
-          messages: message.messages(message.user('ping')),
-          max_tokens: 1,
+          model: aiProvider(model),
+          messages: [{ role: 'user', content: 'ping' }],
+          maxOutputTokens: 1,
         })
 
         return { connectivityOk: true, chatOk: true }
       }
       catch (e) {
-        if (isNetworkError(e)) {
+        if (isNetworkError(e) || isNetworkError((e as any)?.cause)) {
           return { connectivityOk: false, chatOk: false, errorMessage: errorMessageFrom(e) }
         }
 
@@ -156,19 +155,17 @@ export function createOpenAICompatibleValidators<TConfig extends { apiKey?: stri
       const sharedCheck = (async () => {
         const model = await pickValidationModel(config, provider, providerExtra)
         try {
+          const aiProvider = createOpenAI({ apiKey: config.apiKey!, baseURL: String(config.baseUrl!), headers: additionalHeaders })
           await generateText({
-            apiKey: config.apiKey,
-            baseURL: config.baseUrl!,
-            headers: additionalHeaders,
-            model,
-            messages: message.messages(message.user('ping')),
-            max_tokens: 1,
+            model: aiProvider(model),
+            messages: [{ role: 'user', content: 'ping' }],
+            maxOutputTokens: 1,
           })
 
           return { connectivityOk: true, chatOk: true }
         }
         catch (e) {
-          if (isNetworkError(e)) {
+          if (isNetworkError(e) || isNetworkError((e as any)?.cause)) {
             return { connectivityOk: false, chatOk: false, errorMessage: errorMessageFrom(e) }
           }
 

@@ -84,7 +84,10 @@
 
 - [x] 架构分析完成
 - [x] Phase 0 主链路完成（AI SDK 主执行链、Tauri MCP 主路径移除）
-- [ ] Phase 0 尾项清理（残余 wrapper / 兼容层文件待收口：`stage-ui/src/libs/ai/tool.ts`, `generate-text.ts`, `stream-text.ts`, `use-ai-sdk.ts` 等薄 wrapper 仍在，xsAI 已替换为 AI SDK 但封装层未删除）
+- [x] Phase 0 尾项清理完成：
+  - 已删除：`stream-text.ts`（死代码）、`generate-text.ts`（消费者迁移到 AI SDK `generateText`）、`message-helpers.ts`（消费者内联）
+  - `openai-compatible-builder.ts` / `openai-compatible.ts` 验证器已改用 AI SDK `generateText` + `@ai-sdk/openai`
+  - 保留的合法工具（非兼容层）：`tool.ts`（AI SDK 原生）、`create-provider.ts`（配置工厂）、`generate-speech.ts`/`generate-transcription.ts`/`list-models.ts`（HTTP 工具，AI SDK 无等价物）
 - [x] Phase 1 完成（加密凭证存储、Brain 凭证管理、前端 Brain-first 同步）
 - [x] Phase 2 完成（WebSocket transport、capability offer/accept、config validate/plan/commit、版本协商降级）
 - [x] Phase 3 插件包实现完成（MCP Hub / Skills / Anima MCP Server / Context Engine 均已 definePlugin 包装）
