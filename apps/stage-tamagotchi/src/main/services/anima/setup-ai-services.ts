@@ -36,10 +36,12 @@ export async function setupAiServices(): Promise<AiServicesHandle> {
   log.log('CronService started', { dbPath: cronDbPath })
 
   // --- AiOrchestrator (owns McpHub + SkillRegistry internally) ---
+  const brainDbPath = resolve(dataDir, 'anima.db')
   const aiOrchestrator = createAiOrchestrator({
     mcpDbPath,
     builtinSkillsDir,
     userSkillsDir,
+    brainDbPath,
   })
 
   const initResult = await aiOrchestrator.initialize()

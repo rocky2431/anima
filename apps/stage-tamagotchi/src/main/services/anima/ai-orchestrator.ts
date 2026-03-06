@@ -1,5 +1,8 @@
 import type { LanguageModelV3 } from '@ai-sdk/provider'
 import type { Skill } from '@proj-airi/skills-engine'
+import type Database from 'better-sqlite3'
+
+import BetterSqlite3 from 'better-sqlite3'
 
 import { useLogg } from '@guiiai/logg'
 import { McpHub } from '@proj-airi/mcp-hub'
@@ -19,6 +22,8 @@ export interface AiOrchestratorConfig {
   readonly builtinSkillsDir: string
   /** Path to user skills directory */
   readonly userSkillsDir: string
+  /** Path to Brain's anima.db — read skill activation state from skills_state table */
+  readonly brainDbPath?: string
   /** Base system prompt prepended before skills context */
   readonly baseSystemPrompt?: string
 }
@@ -53,8 +58,8 @@ export interface AiOrchestrator {
   readonly skillRegistry: SkillRegistry
   /** Connect enabled MCP servers and load all skills */
   initialize: () => Promise<InitResult>
-  /** Build a system prompt with skills context injected */
-  buildSystemPrompt: (activeSkillIds?: string[]) => string
+  /** Build a system prompt with skills context injected (reads activation from Brain DB) */
+  buildSystemPrompt: () => string
   /** Get aggregated tools from all connected MCP servers */
   getTools: () => Promise<Record<string, unknown>>
   /** Generate text using AI SDK with system prompt + MCP tools */
@@ -67,6 +72,24 @@ export interface AiOrchestrator {
   shutdown: () => Promise<void>
 }
 
+/**
+ * Read skill activation states from Brain's skills_state table.
+ * Returns empty map if table doesn't exist yet (Brain hasn't started).
+ */
+function readSkillStatesFromBrainDb(db: Database.Database): Map<string, boolean> {
+  try {
+    const rows = db.prepare('SELECT id, active FROM skills_state').all() as Array<{ id: string, active: number }>
+    const map = new Map<string, boolean>()
+    for (const row of rows) {
+      map.set(row.id, row.active === 1)
+    }
+    return map
+  }
+  catch {
+    return new Map()
+  }
+}
+
 export function createAiOrchestrator(config: AiOrchestratorConfig): AiOrchestrator {
   const log = useLogg('ai-orchestrator').useGlobalConfig()
 
@@ -75,6 +98,19 @@ export function createAiOrchestrator(config: AiOrchestratorConfig): AiOrchestrat
     builtinSkillsDir: config.builtinSkillsDir,
     userSkillsDir: config.userSkillsDir,
   })
+
+  // Open Brain DB read-only for skill activation state (single source of truth)
+  let brainDb: Database.Database | null = null
+  if (config.brainDbPath) {
+    try {
+      brainDb = new BetterSqlite3(config.brainDbPath, { readonly: true })
+      brainDb.pragma('journal_mode = WAL')
+      log.log('Opened Brain DB for skill state sync', { path: config.brainDbPath })
+    }
+    catch (err) {
+      log.withError(err).warn('Failed to open Brain DB — skill activation will use local defaults')
+    }
+  }
 
   const basePrompt = config.baseSystemPrompt ?? ''
 
@@ -119,10 +155,17 @@ export function createAiOrchestrator(config: AiOrchestratorConfig): AiOrchestrat
       return result
     },
 
-    buildSystemPrompt(activeSkillIds?: string[]): string {
-      if (activeSkillIds) {
-        for (const id of activeSkillIds) {
-          skillRegistry.activate(id)
+    buildSystemPrompt(): string {
+      // Sync skill activation from Brain DB (single source of truth)
+      if (brainDb) {
+        const states = readSkillStatesFromBrainDb(brainDb)
+        for (const entry of skillRegistry.getAll()) {
+          const id = entry.skill.metadata.id
+          const active = states.get(id)
+          if (active === true)
+            skillRegistry.activate(id)
+          else if (active === false)
+            skillRegistry.deactivate(id)
         }
       }
 
@@ -192,6 +235,8 @@ export function createAiOrchestrator(config: AiOrchestratorConfig): AiOrchestrat
     async shutdown(): Promise<void> {
       log.log('Shutting down AI orchestrator...')
       try {
+        brainDb?.close()
+        brainDb = null
         await mcpHub.shutdown()
         log.log('AI orchestrator shut down')
       }

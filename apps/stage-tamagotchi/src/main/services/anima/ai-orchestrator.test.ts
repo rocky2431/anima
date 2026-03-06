@@ -317,8 +317,9 @@ describe('ai Orchestrator Integration: AI SDK + MCP + Skills', () => {
         expect(initResult.mcpFailed).toHaveLength(0)
         expect(initResult.skillsLoaded).toBeGreaterThanOrEqual(2)
 
-        // Build system prompt with skills activated
-        const systemPrompt = orchestrator.buildSystemPrompt(['companion-persona'])
+        // Activate skill and build system prompt
+        orchestrator.skillRegistry.activate('companion-persona')
+        const systemPrompt = orchestrator.buildSystemPrompt()
         expect(systemPrompt).toContain('You are Anima')
         expect(systemPrompt).toContain('companion-persona')
         expect(systemPrompt).toContain('warm, caring AI companion')
