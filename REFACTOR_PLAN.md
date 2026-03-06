@@ -212,7 +212,11 @@
 
 ### 状态
 
-- [~] 进行中
+- [x] P4-1: 主进程 McpHub 去重 + SkillRegistry 共享 DB 单一真相源
+- [x] P4-2: 前端 legacy MCP store 清理，Skills 纳入 data maintenance
+- [x] P4-3: 内建插件构建 + 部署闭环（dev + prod extraResources）
+- [x] P4-4: Skills context 注入聊天流（chat context provider）
+- [ ] P4-4 后续: Context-Engine LLM 调用注入 skills context、proactive 注入统一 context
 
 ---
 
@@ -253,10 +257,10 @@
 ### B. 架构验收
 
 - [x] AI SDK 成为主执行内核
-- [ ] 主进程只保留一个 MCP/Skills 能力入口
-- [ ] 前端只保留一个 Skills/MCP 使用入口
-- [ ] Context 成为统一事实源
-- [ ] 内建插件装载闭环完成
+- [x] 主进程只保留一个 MCP/Skills 能力入口
+- [x] 前端只保留一个 Skills/MCP 使用入口
+- [~] Context 成为统一事实源（聊天已接入 skills context，Context-Engine/proactive 待后续）
+- [x] 内建插件装载闭环完成
 
 ### C. 风险验收
 
@@ -271,7 +275,7 @@
 - [x] 能力迁移完成
 - [x] 执行层大方向收口完成
 - [x] plugin-native 能力包完成
-- [~] 运行时主路径收口中
+- [x] 运行时主路径收口完成（P4-1 ~ P4-4 核心落地）
 - [ ] 旧路径完全下线
 
 ---
