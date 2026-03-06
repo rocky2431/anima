@@ -45,6 +45,13 @@
 ### P2-2: 实现 capability offer/accept 协议
 ### P2-3: 实现 configuration validate/plan/commit
 ### P2-4: 版本协商支持降级
+- PluginHost 新增 `supportedProtocolVersions` / `supportedApiVersions` 选项
+- `negotiateVersion()` 算法：exact → downgraded → rejected 三级匹配
+- Plugin 通过 `PluginStartOptions.compatibility` 声明支持的版本范围
+- 无约束时默认 `exact`；host preferred 在 plugin list 中 → `exact`
+- 有交集但非 preferred → `downgraded`（选最高版本）；无交集 → `rejected`
+- `rejected` 时 throw + emit `module:status` phase=failed，中止初始化
+- 4 个新增测试覆盖 exact/downgrade/reject 路径
 
 ## Phase 3: Skill + MCP 作为 Native Plugin
 
@@ -81,7 +88,7 @@
 - [x] Phase 2: P2-1 WebSocket transport
 - [x] Phase 2: P2-2 capability offer/accept
 - [x] Phase 2: P2-3 configuration validate/plan/commit
-- [ ] Phase 2: P2-4 版本协商支持降级
+- [x] Phase 2: P2-4 版本协商支持降级（exact/downgraded/rejected 三级匹配 + 4 测试）
 - [x] Phase 3: P3-1 MCP Hub native plugin
 - [x] Phase 3: P3-3 Skill Registry native plugin + buildSkillsContext 集成
 - [x] Phase 3: P3-2 集成 Anima MCP Server

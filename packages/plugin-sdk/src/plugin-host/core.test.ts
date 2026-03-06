@@ -374,6 +374,95 @@ describe('for PluginHost', () => {
     host.stop(session.id)
   })
 
+  it('should accept plugin with exact version match (no constraints)', async () => {
+    const host = new PluginHost({
+      runtime: 'electron',
+      transport: { kind: 'in-memory' },
+      protocolVersion: 'v1',
+      apiVersion: 'v1',
+    })
+    reportPluginCapability(host, {
+      key: providersCapability,
+      state: 'ready',
+      metadata: { source: 'test' },
+    })
+
+    const session = await host.start(testManifest, { cwd: '' })
+    expect(session.phase).toBe('ready')
+    host.stop(session.id)
+  })
+
+  it('should accept plugin with exact version in supported list', async () => {
+    const host = new PluginHost({
+      runtime: 'electron',
+      transport: { kind: 'in-memory' },
+      protocolVersion: 'v1',
+      apiVersion: 'v1',
+    })
+    reportPluginCapability(host, {
+      key: providersCapability,
+      state: 'ready',
+      metadata: { source: 'test' },
+    })
+
+    const session = await host.start(testManifest, {
+      cwd: '',
+      compatibility: {
+        supportedProtocolVersions: ['v1', 'v2'],
+        supportedApiVersions: ['v1'],
+      },
+    })
+    expect(session.phase).toBe('ready')
+    host.stop(session.id)
+  })
+
+  it('should downgrade when host preferred not in plugin list but overlap exists', async () => {
+    const host = new PluginHost({
+      runtime: 'electron',
+      transport: { kind: 'in-memory' },
+      protocolVersion: 'v2',
+      apiVersion: 'v2',
+      supportedProtocolVersions: ['v2', 'v1'],
+      supportedApiVersions: ['v2', 'v1'],
+    })
+    reportPluginCapability(host, {
+      key: providersCapability,
+      state: 'ready',
+      metadata: { source: 'test' },
+    })
+
+    const session = await host.start(testManifest, {
+      cwd: '',
+      compatibility: {
+        supportedProtocolVersions: ['v1'],
+        supportedApiVersions: ['v1'],
+      },
+    })
+    expect(session.phase).toBe('ready')
+    host.stop(session.id)
+  })
+
+  it('should reject plugin when no compatible version exists', async () => {
+    const host = new PluginHost({
+      runtime: 'electron',
+      transport: { kind: 'in-memory' },
+      protocolVersion: 'v2',
+      apiVersion: 'v2',
+    })
+
+    const session = await host.load(testManifest, { cwd: '' })
+
+    await expect(host.init(session.id, {
+      compatibility: {
+        supportedProtocolVersions: ['v3'],
+        supportedApiVersions: ['v3'],
+      },
+    })).rejects.toThrow('rejected')
+
+    const latest = host.getSession(session.id)
+    expect(latest?.phase).toBe('failed')
+  })
+
   it('should handle commit failure in configuration flow', async () => {
     const host = new PluginHost({
       runtime: 'electron',

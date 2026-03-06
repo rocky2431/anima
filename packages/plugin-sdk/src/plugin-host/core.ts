@@ -417,6 +417,8 @@ export interface PluginHostOptions {
   transport?: PluginTransport
   protocolVersion?: string
   apiVersion?: string
+  supportedProtocolVersions?: string[]
+  supportedApiVersions?: string[]
 }
 
 export interface PluginStartOptions {
@@ -468,6 +470,8 @@ export class PluginHost {
   private readonly transport: PluginTransport
   private readonly protocolVersion: string
   private readonly apiVersion: string
+  private readonly supportedProtocolVersions: string[]
+  private readonly supportedApiVersions: string[]
   private readonly capabilities = new Map<string, CapabilityDescriptor>()
   private readonly capabilityWaiters = new Map<string, Set<(descriptor: CapabilityDescriptor) => void>>()
   private readonly offeredCapabilities = new Map<string, Map<string, ModuleCapability>>()
@@ -480,7 +484,103 @@ export class PluginHost {
     this.transport = options.transport ?? { kind: 'in-memory' }
     this.protocolVersion = options.protocolVersion ?? 'v1'
     this.apiVersion = options.apiVersion ?? 'v1'
+    this.supportedProtocolVersions = options.supportedProtocolVersions ?? [this.protocolVersion]
+    this.supportedApiVersions = options.supportedApiVersions ?? [this.apiVersion]
     this.markCapabilityReady(protocolListProvidersEventName, { source: 'plugin-host' })
+  }
+
+  /**
+   * Negotiate version compatibility between host and plugin.
+   *
+   * @param hostVersions All versions the host supports (preferred first).
+   * @param pluginVersions All versions the plugin accepts. Empty/undefined = accept anything.
+   * @param hostPreferred The host's preferred (current) version.
+   * @returns Accepted version string and compatibility mode.
+   */
+  private negotiateVersion(
+    hostVersions: string[],
+    pluginVersions: string[] | undefined,
+    hostPreferred: string,
+  ): { version: string, mode: 'exact' | 'downgraded' | 'rejected' } {
+    // Plugin declares no constraints — accept host's preferred version as-is
+    if (!pluginVersions || pluginVersions.length === 0) {
+      return { version: hostPreferred, mode: 'exact' }
+    }
+
+    // Exact match: host's preferred version is in plugin's accepted list
+    if (pluginVersions.includes(hostPreferred)) {
+      return { version: hostPreferred, mode: 'exact' }
+    }
+
+    // Downgrade: find highest version both sides support
+    const intersection = hostVersions.filter(v => pluginVersions.includes(v))
+    if (intersection.length > 0) {
+      // Sort descending by numeric suffix (v2 > v1), fall back to lexicographic
+      const sorted = [...intersection].sort((a, b) => {
+        const na = Number.parseInt(a.replace(/^v/, ''), 10)
+        const nb = Number.parseInt(b.replace(/^v/, ''), 10)
+        if (!Number.isNaN(na) && !Number.isNaN(nb))
+          return nb - na
+        return b.localeCompare(a)
+      })
+      return { version: sorted[0], mode: 'downgraded' }
+    }
+
+    // No overlap
+    return { version: hostPreferred, mode: 'rejected' }
+  }
+
+  /**
+   * Negotiate protocol + API compatibility for a plugin session.
+   * Returns the result event payload. Throws on rejection.
+   */
+  private negotiateCompatibility(
+    options: PluginStartOptions,
+  ): ModuleCompatibilityResult {
+    const protocol = this.negotiateVersion(
+      this.supportedProtocolVersions,
+      options.compatibility?.supportedProtocolVersions,
+      this.protocolVersion,
+    )
+
+    const api = this.negotiateVersion(
+      this.supportedApiVersions,
+      options.compatibility?.supportedApiVersions,
+      this.apiVersion,
+    )
+
+    // Both must pass — worst mode wins
+    if (protocol.mode === 'rejected' || api.mode === 'rejected') {
+      const reasons: string[] = []
+      if (protocol.mode === 'rejected') {
+        reasons.push(
+          `protocol: host supports [${this.supportedProtocolVersions.join(', ')}], `
+          + `plugin accepts [${options.compatibility?.supportedProtocolVersions?.join(', ') ?? 'any'}]`,
+        )
+      }
+      if (api.mode === 'rejected') {
+        reasons.push(
+          `api: host supports [${this.supportedApiVersions.join(', ')}], `
+          + `plugin accepts [${options.compatibility?.supportedApiVersions?.join(', ') ?? 'any'}]`,
+        )
+      }
+      return {
+        protocolVersion: protocol.version,
+        apiVersion: api.version,
+        mode: 'rejected',
+        reason: `Incompatible versions — ${reasons.join('; ')}`,
+      }
+    }
+
+    const mode = (protocol.mode === 'downgraded' || api.mode === 'downgraded')
+      ? 'downgraded'
+      : 'exact'
+
+    return {
+      protocolVersion: protocol.version,
+      apiVersion: api.version,
+      mode,
+    }
   }
 
   listSessions() {
@@ -609,11 +709,15 @@ export class PluginHost {
       }
 
       session.channels.host.emit(moduleCompatibilityRequest, compatibilityRequest)
-      session.channels.host.emit(moduleCompatibilityResult, {
-        protocolVersion: compatibilityRequest.protocolVersion,
-        apiVersion: compatibilityRequest.apiVersion,
-        mode: 'exact',
-      })
+
+      const compatibilityResult = this.negotiateCompatibility(options)
+      session.channels.host.emit(moduleCompatibilityResult, compatibilityResult)
+
+      if (compatibilityResult.mode === 'rejected') {
+        throw new Error(
+          `Plugin ${session.manifest.name} rejected: ${compatibilityResult.reason ?? 'incompatible version'}`,
+        )
+      }
 
       // Step 4: broadcast currently known modules for dependency discovery/bootstrap.
       session.channels.host.emit(registryModulesSync, {
