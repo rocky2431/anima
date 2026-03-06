@@ -133,13 +133,16 @@ describe('for PluginHost', () => {
     expect(latest?.phase).toBe('failed')
   })
 
-  it('should reject non in-memory transport for MVP', async () => {
+  it('should accept websocket transport and load plugin session', async () => {
     const host = new PluginHost({
       runtime: 'electron',
-      transport: { kind: 'websocket', url: 'ws://localhost:3000' },
+      transport: { kind: 'websocket', url: 'ws://localhost:19876' },
     })
 
-    await expect(host.start(testManifest, { cwd: '' })).rejects.toThrow('Only in-memory transport is currently supported by PluginHost alpha.')
+    const session = await host.load(testManifest, { cwd: '' })
+    expect(session.phase).toBe('loaded')
+    expect(session.transport.kind).toBe('websocket')
+    host.stop(session.id)
   })
 
   it('should be able to expose setupModules', async () => {
@@ -222,5 +225,193 @@ describe('for PluginHost', () => {
       requiredCapabilities: ['cap:missing'],
       capabilityWaitTimeoutMs: 10,
     })).rejects.toThrow('Capability `cap:missing` is not ready after 10ms.')
+  })
+
+  it('should register capability offers from plugins and allow accept/reject', async () => {
+    const host = new PluginHost({
+      runtime: 'electron',
+      transport: { kind: 'in-memory' },
+    })
+    reportPluginCapability(host, {
+      key: providersCapability,
+      state: 'ready',
+      metadata: { source: 'test' },
+    })
+
+    const session = await host.start(testManifest, { cwd: '' })
+
+    // Simulate plugin offering a capability via event
+    const { moduleContributeCapabilityOffer } = await import('@proj-airi/plugin-protocol/types')
+    session.channels.host.emit(moduleContributeCapabilityOffer, {
+      identity: session.identity,
+      capability: { id: 'test:cap:vision', name: 'Vision OCR' },
+    })
+
+    const offered = host.getOfferedCapabilities(session.id)
+    expect(offered).toHaveLength(1)
+    expect(offered[0].id).toBe('test:cap:vision')
+
+    // Capability should be announced
+    expect(host.isCapabilityReady('test:cap:vision')).toBe(false)
+    const caps = host.listCapabilities()
+    expect(caps.find(c => c.key === 'test:cap:vision')?.state).toBe('announced')
+
+    // Accept the capability
+    host.acceptCapabilityOffer(session.id, 'test:cap:vision')
+    expect(host.isCapabilityReady('test:cap:vision')).toBe(true)
+
+    host.stop(session.id)
+  })
+
+  it('should reject capability offer and notify plugin', async () => {
+    const host = new PluginHost({
+      runtime: 'electron',
+      transport: { kind: 'in-memory' },
+    })
+    reportPluginCapability(host, {
+      key: providersCapability,
+      state: 'ready',
+      metadata: { source: 'test' },
+    })
+
+    const session = await host.start(testManifest, { cwd: '' })
+
+    const { moduleContributeCapabilityOffer, moduleContributeCapabilityActivated } = await import('@proj-airi/plugin-protocol/types')
+    session.channels.host.emit(moduleContributeCapabilityOffer, {
+      identity: session.identity,
+      capability: { id: 'test:cap:reject', name: 'To be rejected' },
+    })
+
+    const activatedEvents: Array<{ active: boolean, reason?: string }> = []
+    session.channels.host.on(moduleContributeCapabilityActivated, (envelope) => {
+      if (envelope.body)
+        activatedEvents.push({ active: envelope.body.active, reason: envelope.body.reason })
+    })
+
+    host.rejectCapabilityOffer(session.id, 'test:cap:reject', 'Not supported')
+    expect(activatedEvents).toHaveLength(1)
+    expect(activatedEvents[0].active).toBe(false)
+    expect(activatedEvents[0].reason).toBe('Not supported')
+
+    // Rejected capability should NOT be marked ready
+    expect(host.isCapabilityReady('test:cap:reject')).toBe(false)
+
+    host.stop(session.id)
+  })
+
+  it('should run validate → plan → commit configuration flow', async () => {
+    const host = new PluginHost({
+      runtime: 'electron',
+      transport: { kind: 'in-memory' },
+    })
+    reportPluginCapability(host, {
+      key: providersCapability,
+      state: 'ready',
+      metadata: { source: 'test' },
+    })
+
+    const session = await host.start(testManifest, {
+      cwd: '',
+      requireConfiguration: true,
+    })
+    expect(session.phase).toBe('configuration-needed')
+
+    // Register plugin-side handlers via event listeners
+    const {
+      moduleConfigurationValidateRequest,
+      moduleConfigurationValidateResponse,
+      moduleConfigurationPlanRequest,
+      moduleConfigurationPlanResponse,
+      moduleConfigurationCommit,
+      moduleConfigurationCommitStatus,
+    } = await import('@proj-airi/plugin-protocol/types')
+
+    // Plugin validates
+    session.channels.host.on(moduleConfigurationValidateRequest, (envelope) => {
+      if (!envelope.body)
+        return
+      session.channels.host.emit(moduleConfigurationValidateResponse, {
+        identity: envelope.body.identity,
+        validation: { status: 'valid' },
+      })
+    })
+
+    // Plugin plans
+    session.channels.host.on(moduleConfigurationPlanRequest, (envelope) => {
+      if (!envelope.body)
+        return
+      session.channels.host.emit(moduleConfigurationPlanResponse, {
+        identity: envelope.body.identity,
+        plan: { schema: { id: 'test-config', version: 1 } },
+      })
+    })
+
+    // Plugin commits
+    session.channels.host.on(moduleConfigurationCommit, (envelope) => {
+      if (!envelope.body)
+        return
+      session.channels.host.emit(moduleConfigurationCommitStatus, {
+        identity: envelope.body.identity,
+        state: 'done',
+      })
+    })
+
+    // Host drives the flow
+    const validateResult = await host.validateConfiguration(session.id)
+    expect(validateResult.validation.status).toBe('valid')
+
+    const planResult = await host.planConfiguration(session.id)
+    expect(planResult.plan.schema.id).toBe('test-config')
+
+    await host.commitConfiguration(session.id, {
+      configId: 'test-config:1',
+      revision: 1,
+      schemaVersion: 1,
+      full: { key: 'value' },
+    })
+    expect(session.phase).toBe('configured')
+
+    host.stop(session.id)
+  })
+
+  it('should handle commit failure in configuration flow', async () => {
+    const host = new PluginHost({
+      runtime: 'electron',
+      transport: { kind: 'in-memory' },
+    })
+    reportPluginCapability(host, {
+      key: providersCapability,
+      state: 'ready',
+      metadata: { source: 'test' },
+    })
+
+    const session = await host.start(testManifest, {
+      cwd: '',
+      requireConfiguration: true,
+    })
+
+    const {
+      moduleConfigurationCommit,
+      moduleConfigurationCommitStatus,
+    } = await import('@proj-airi/plugin-protocol/types')
+
+    session.channels.host.on(moduleConfigurationCommit, (envelope) => {
+      if (!envelope.body)
+        return
+      session.channels.host.emit(moduleConfigurationCommitStatus, {
+        identity: envelope.body.identity,
+        state: 'failed',
+        note: 'Database connection refused',
+      })
+    })
+
+    await expect(host.commitConfiguration(session.id, {
+      configId: 'test:fail',
+      revision: 1,
+      schemaVersion: 1,
+      full: {},
+    })).rejects.toThrow('Configuration commit failed: Database connection refused')
+
+    host.stop(session.id)
   })
 })

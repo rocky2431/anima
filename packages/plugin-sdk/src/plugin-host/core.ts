@@ -1,4 +1,7 @@
 import type {
+  ModuleCapability,
+  ModuleConfigPlan,
+  ModuleConfigValidation,
   ProtocolEvents,
   ModuleConfigEnvelope as ProtocolModuleConfigEnvelope,
   ModuleIdentity as ProtocolModuleIdentity,
@@ -23,8 +26,16 @@ import {
   moduleAuthenticated,
   moduleCompatibilityRequest,
   moduleCompatibilityResult,
+  moduleConfigurationCommit,
+  moduleConfigurationCommitStatus,
   moduleConfigurationConfigured,
   moduleConfigurationNeeded,
+  moduleConfigurationPlanRequest,
+  moduleConfigurationPlanResponse,
+  moduleConfigurationValidateRequest,
+  moduleConfigurationValidateResponse,
+  moduleContributeCapabilityActivated,
+  moduleContributeCapabilityOffer,
   modulePrepared,
   moduleStatus,
   registryModulesSync,
@@ -459,6 +470,7 @@ export class PluginHost {
   private readonly apiVersion: string
   private readonly capabilities = new Map<string, CapabilityDescriptor>()
   private readonly capabilityWaiters = new Map<string, Set<(descriptor: CapabilityDescriptor) => void>>()
+  private readonly offeredCapabilities = new Map<string, Map<string, ModuleCapability>>()
   private providersListResolver: () => Promise<Array<{ name: string }>> | Array<{ name: string }> = () => []
   private sessionCounter = 0
 
@@ -484,13 +496,6 @@ export class PluginHost {
     const runtime = options.runtime ?? this.runtime
     const transport = this.transport
 
-    // TODO: implement other transports and runtime bindings.
-    // alpha scope guard:
-    // we intentionally fail fast for non in-memory transports while iterating on lifecycle design.
-    if (transport.kind !== 'in-memory') {
-      throw new Error(`Only in-memory transport is currently supported by PluginHost alpha. Got: ${transport.kind}`)
-    }
-
     // Build deterministic per-session identity.
     // `sessionCounter` gives stable ordering for registry sync and debugging.
     const sessionIndex = this.sessionCounter
@@ -512,6 +517,16 @@ export class PluginHost {
     })
     defineInvokeHandler(hostChannel, protocolProviders.listProviders, async () => {
       return await this.providersListResolver()
+    })
+
+    hostChannel.on(moduleContributeCapabilityOffer, (envelope) => {
+      if (!envelope.body)
+        return
+      const event = envelope.body
+      const sessionCaps = this.offeredCapabilities.get(id) ?? new Map<string, ModuleCapability>()
+      sessionCaps.set(event.capability.id, event.capability)
+      this.offeredCapabilities.set(id, sessionCaps)
+      this.announceCapability(event.capability.id, event.capability.metadata)
     })
 
     const session: PluginHostSession = {
@@ -874,6 +889,174 @@ export class PluginHost {
     return session
   }
 
+  // --- Capability Offer/Accept (P2-2) ---
+
+  acceptCapabilityOffer(sessionId: string, capabilityId: string) {
+    const session = this.sessions.get(sessionId)
+    if (!session) {
+      throw new Error(`Unable to accept capability: session ${sessionId} not found`)
+    }
+
+    const sessionCaps = this.offeredCapabilities.get(sessionId)
+    if (!sessionCaps?.has(capabilityId)) {
+      throw new Error(`Capability "${capabilityId}" was not offered by session ${sessionId}`)
+    }
+
+    this.markCapabilityReady(capabilityId, sessionCaps.get(capabilityId)!.metadata)
+
+    session.channels.host.emit(moduleContributeCapabilityActivated, {
+      identity: session.identity,
+      capabilityId,
+      active: true,
+    })
+  }
+
+  rejectCapabilityOffer(sessionId: string, capabilityId: string, reason?: string) {
+    const session = this.sessions.get(sessionId)
+    if (!session) {
+      throw new Error(`Unable to reject capability: session ${sessionId} not found`)
+    }
+
+    session.channels.host.emit(moduleContributeCapabilityActivated, {
+      identity: session.identity,
+      capabilityId,
+      active: false,
+      reason,
+    })
+  }
+
+  getOfferedCapabilities(sessionId: string): ModuleCapability[] {
+    return [...(this.offeredCapabilities.get(sessionId)?.values() ?? [])]
+  }
+
+  // --- Configuration Validate/Plan/Commit (P2-3) ---
+
+  async validateConfiguration(sessionId: string, config?: ModuleConfigEnvelope, timeoutMs = 30_000): Promise<{
+    validation: ModuleConfigValidation
+    plan?: ModuleConfigPlan
+  }> {
+    const session = this.sessions.get(sessionId)
+    if (!session) {
+      throw new Error(`Unable to validate configuration: session ${sessionId} not found`)
+    }
+
+    return new Promise<{ validation: ModuleConfigValidation, plan?: ModuleConfigPlan }>((resolve, reject) => {
+      let timeout: ReturnType<typeof setTimeout> | undefined
+
+      const off = session.channels.host.on(moduleConfigurationValidateResponse, (envelope) => {
+        if (!envelope.body)
+          return
+        const response = envelope.body
+        if (response.identity.id !== session.identity.id)
+          return
+        if (timeout)
+          clearTimeout(timeout)
+        off()
+        resolve({ validation: response.validation, plan: response.plan })
+      })
+
+      timeout = setTimeout(() => {
+        off()
+        reject(new Error(`Configuration validation timed out after ${timeoutMs}ms for session ${sessionId}`))
+      }, timeoutMs)
+
+      session.channels.host.emit(moduleConfigurationValidateRequest, {
+        identity: session.identity,
+        current: config as any,
+      })
+    })
+  }
+
+  async planConfiguration(sessionId: string, config?: ModuleConfigEnvelope, timeoutMs = 30_000): Promise<{
+    plan: ModuleConfigPlan
+  }> {
+    const session = this.sessions.get(sessionId)
+    if (!session) {
+      throw new Error(`Unable to plan configuration: session ${sessionId} not found`)
+    }
+
+    return new Promise<{ plan: ModuleConfigPlan }>((resolve, reject) => {
+      let timeout: ReturnType<typeof setTimeout> | undefined
+
+      const off = session.channels.host.on(moduleConfigurationPlanResponse, (envelope) => {
+        if (!envelope.body)
+          return
+        const response = envelope.body
+        if (response.identity.id !== session.identity.id)
+          return
+        if (timeout)
+          clearTimeout(timeout)
+        off()
+        resolve({ plan: response.plan })
+      })
+
+      timeout = setTimeout(() => {
+        off()
+        reject(new Error(`Configuration planning timed out after ${timeoutMs}ms for session ${sessionId}`))
+      }, timeoutMs)
+
+      session.channels.host.emit(moduleConfigurationPlanRequest, {
+        identity: session.identity,
+        current: config as any,
+      })
+    })
+  }
+
+  async commitConfiguration(sessionId: string, config: ModuleConfigEnvelope, timeoutMs = 30_000): Promise<void> {
+    const session = this.sessions.get(sessionId)
+    if (!session) {
+      throw new Error(`Unable to commit configuration: session ${sessionId} not found`)
+    }
+
+    if (!['prepared', 'configuration-needed', 'configured'].includes(session.phase)) {
+      throw new Error(`Session ${sessionId} cannot accept configuration during phase ${session.phase}.`)
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      let timeout: ReturnType<typeof setTimeout> | undefined
+
+      const off = session.channels.host.on(moduleConfigurationCommitStatus, (envelope) => {
+        if (!envelope.body)
+          return
+        const status = envelope.body
+        if (status.identity.id !== session.identity.id)
+          return
+        if (status.state === 'done') {
+          if (timeout)
+            clearTimeout(timeout)
+          off()
+
+          if (session.phase !== 'configured') {
+            assertTransition(session, 'configured')
+          }
+
+          session.channels.host.emit(moduleStatus, {
+            identity: session.identity,
+            phase: 'configured',
+          })
+
+          resolve()
+        }
+        else if (status.state === 'failed') {
+          if (timeout)
+            clearTimeout(timeout)
+          off()
+          reject(new Error(`Configuration commit failed: ${status.note ?? 'unknown reason'}`))
+        }
+      })
+
+      timeout = setTimeout(() => {
+        off()
+        reject(new Error(`Configuration commit timed out after ${timeoutMs}ms for session ${sessionId}`))
+      }, timeoutMs)
+
+      session.channels.host.emit(moduleConfigurationCommit, {
+        identity: session.identity,
+        config,
+      })
+    })
+  }
+
   stop(sessionId: string) {
     // Stop removes session from active registry. Lifecycle first transitions to `stopped`.
     const session = this.sessions.get(sessionId)
@@ -894,6 +1077,7 @@ export class PluginHost {
 
     session.lifecycle.stop()
     this.sessions.delete(session.id)
+    this.offeredCapabilities.delete(session.id)
     return session
   }
 
@@ -950,8 +1134,8 @@ export class FileSystemLoader {
         ?? manifest.entrypoints.electron
 
     if (!entrypoint) {
-      throw new Error(''
-        + `Plugin entrypoint is required for runtime \`${runtime}\`. `
+      throw new Error(
+        `Plugin entrypoint is required for runtime \`${runtime}\`. `
         + 'Define one of `entrypoints.<runtime>`, `entrypoints.default`, '
         + 'or `entrypoints.electron` in the plugin manifest.',
       )
