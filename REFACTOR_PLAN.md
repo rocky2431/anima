@@ -83,13 +83,13 @@
 ## 状态
 
 - [x] 架构分析完成
-- [x] Phase 0 完成（xsAI 清理、Tauri MCP 删除、Brain 迁移 AI SDK）
+- [x] Phase 0 主链路完成（AI SDK 主执行链、Tauri MCP 主路径移除）
+- [ ] Phase 0 尾项清理（残余 wrapper / 兼容层文件待收口：`stage-ui/src/libs/ai/tool.ts`, `generate-text.ts`, `stream-text.ts`, `use-ai-sdk.ts` 等薄 wrapper 仍在，xsAI 已替换为 AI SDK 但封装层未删除）
 - [x] Phase 1 完成（加密凭证存储、Brain 凭证管理、前端 Brain-first 同步）
-- [x] Phase 2: P2-1 WebSocket transport
-- [x] Phase 2: P2-2 capability offer/accept
-- [x] Phase 2: P2-3 configuration validate/plan/commit
-- [x] Phase 2: P2-4 版本协商支持降级（exact/downgraded/rejected 三级匹配 + 4 测试）
-- [x] Phase 3: P3-1 MCP Hub native plugin
-- [x] Phase 3: P3-3 Skill Registry native plugin + buildSkillsContext 集成
-- [x] Phase 3: P3-2 集成 Anima MCP Server
-- [x] Phase 3: P3-4 Context Engine 升级（插件化 + P3-2 bridge + 只读 DocumentStore）
+- [x] Phase 2 完成（WebSocket transport、capability offer/accept、config validate/plan/commit、版本协商降级）
+- [x] Phase 3 插件包实现完成（MCP Hub / Skills / Anima MCP Server / Context Engine 均已 definePlugin 包装）
+- [ ] Phase 3 运行时接管未完成：
+  - [ ] `ai-orchestrator.ts` 仍直接 `new McpHub()` / `new SkillRegistry()`，未切换到 plugin invoke 路径
+  - [ ] 前端 skills UI 仍走 `serverChannel` → brain handlers 旧事件流（`skills:list`/`skills:toggle`），未接入 plugin invoke
+  - [ ] workspace `plugins/*` 无自动部署到 `userData/plugins/v1` 的闭环
+  - [ ] brain `handlers/skills.ts` 直连 SkillRegistry，与 `airi-plugin-skills` 双轨并存
