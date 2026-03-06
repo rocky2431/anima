@@ -4,7 +4,6 @@ import { resolve } from 'node:path'
 
 import { useLogg } from '@guiiai/logg'
 import { CronService } from '@proj-airi/cron-service'
-import { McpHub } from '@proj-airi/mcp-hub'
 import { app } from 'electron'
 
 import { createAiOrchestrator } from './ai-orchestrator'
@@ -13,7 +12,6 @@ const log = useLogg('ai-services').useGlobalConfig()
 
 export interface AiServicesHandle {
   cronService: CronService
-  mcpHub: McpHub
   aiOrchestrator: AiOrchestrator
   stop: () => Promise<void>
 }
@@ -37,11 +35,7 @@ export async function setupAiServices(): Promise<AiServicesHandle> {
   cronService.start()
   log.log('CronService started', { dbPath: cronDbPath })
 
-  // --- McpHub ---
-  const mcpHub = new McpHub(mcpDbPath)
-  log.log('McpHub initialized', { dbPath: mcpDbPath })
-
-  // --- AiOrchestrator ---
+  // --- AiOrchestrator (owns McpHub + SkillRegistry internally) ---
   const aiOrchestrator = createAiOrchestrator({
     mcpDbPath,
     builtinSkillsDir,
@@ -57,7 +51,6 @@ export async function setupAiServices(): Promise<AiServicesHandle> {
 
   return {
     cronService,
-    mcpHub,
     aiOrchestrator,
     async stop() {
       try {
