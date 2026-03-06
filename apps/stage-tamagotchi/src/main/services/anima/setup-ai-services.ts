@@ -17,10 +17,8 @@ export interface AiServicesHandle {
 }
 
 /**
- * Initialize AI-layer services: CronService, McpHub, and AiOrchestrator.
- *
- * These were previously "orphan" modules — fully implemented and tested,
- * but never instantiated or wired into the running process.
+ * Initialize AI-layer services: CronService and AiOrchestrator.
+ * AiOrchestrator owns McpHub + SkillRegistry internally.
  */
 export async function setupAiServices(): Promise<AiServicesHandle> {
   const dataDir = resolve(app.getPath('userData'), 'data')

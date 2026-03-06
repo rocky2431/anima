@@ -56,6 +56,15 @@ async function main(): Promise<void> {
   const documentStore = new DocumentStore(dbPath)
   const brainStore = new BrainStore(documentStore.getDatabase())
 
+  // Validate encryption key for credential security
+  const encryptionKey = env.AIRI_ENCRYPTION_KEY
+  if (!encryptionKey) {
+    log.warn('AIRI_ENCRYPTION_KEY not set — credentials will be stored in plaintext. Set a 64-character hex key for production use.')
+  }
+  else if (encryptionKey.length !== 64 || !/^[\da-f]+$/i.test(encryptionKey)) {
+    log.error('AIRI_ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes for AES-256). Credential encryption will fail.')
+  }
+
   // Initialize LLM/Embedding provider configuration
   // Use mutable binding so handlers can update providers at runtime
   const providers = createBrainProviders() as ReturnType<typeof createBrainProviders>
