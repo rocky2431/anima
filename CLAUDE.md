@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Project Anase (`@anase/root`) — an open-source AI girlfriend & companion platform. It brings intelligent virtual characters to life across web, desktop, and mobile with long-term memory, proactive interactions, and screen awareness. Built with Vue 3, TypeScript, Electron. LLM interactions powered by Vercel AI SDK and [xsAI](https://github.com/moeru-ai/xsai).
+Project Anase (`@anase/root`) — an open-source AI girlfriend & companion platform. It brings intelligent virtual characters to life across web, desktop, and mobile with long-term memory, proactive interactions, and screen awareness. Built with Vue 3, TypeScript, Electron. LLM interactions powered by [Vercel AI SDK](https://sdk.vercel.ai/) (`@ai-sdk/openai`, `@ai-sdk/anthropic`).
 
 ## Monorepo Structure
 
@@ -79,7 +79,7 @@ Root `vitest.config.ts` defines test projects: `apps/server`, `apps/stage-tamago
 - **Mobile**: Capacitor (iOS/Android)
 - **Validation**: Valibot (not Zod for most packages)
 - **Bundling**: tsdown for library packages, Vite/electron-vite for apps
-- **LLM SDK**: xsAI (`@xsai/*` packages)
+- **LLM SDK**: Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`)
 - **Fonts**: DM Sans, Comfortaa, Kiwi Maru, Sniglet (via UnoCSS web fonts)
 
 ## Code Conventions

@@ -48,7 +48,7 @@ Anase is a full-stack AI companion platform that brings virtual characters to li
 | Frontend | Vue 3, Pinia, VueUse, UnoCSS |
 | Desktop | Electron |
 | Mobile | Capacitor (iOS/Android) |
-| LLM | Vercel AI SDK, xsAI |
+| LLM | [Vercel AI SDK](https://sdk.vercel.ai/) (`@ai-sdk/openai`, `@ai-sdk/anthropic`) |
 | 3D/Live2D | Three.js, PixiJS, Live2D Cubism |
 | Backend | Hono, Better SQLite3, LanceDB |
 | Build | pnpm workspaces, Turborepo, tsdown |
@@ -117,9 +117,9 @@ Model Context Protocol support for connecting external tools and data sources to
 
 ## Supported LLM Providers
 
-Powered by [xsAI](https://github.com/moeru-ai/xsai) and [Vercel AI SDK](https://sdk.vercel.ai/):
+Powered by [Vercel AI SDK](https://sdk.vercel.ai/) with OpenAI-compatible provider interface:
 
-OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Qwen, xAI, Groq, Mistral, OpenRouter, Ollama, vLLM, SGLang, Together.ai, Fireworks.ai, Cloudflare Workers AI, SiliconFlow, and many more.
+OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Qwen, xAI, Groq, Mistral, OpenRouter, Ollama, vLLM, SGLang, Together.ai, Fireworks.ai, Cloudflare Workers AI, SiliconFlow, and any OpenAI-compatible endpoint.
 
 ## Current Capabilities
 
@@ -136,7 +136,7 @@ See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
 
 - [Reka UI](https://github.com/unovue/reka-ui) for UI components
 - [pixiv/ChatVRM](https://github.com/pixiv/ChatVRM) for VRM inspiration
-- [xsAI](https://github.com/moeru-ai/xsai) for LLM SDK
+- [Vercel AI SDK](https://sdk.vercel.ai/) for LLM integration
 - UI design inspired by [Cookard](https://store.steampowered.com/app/2919650/Cookard/), [UNBEATABLE](https://store.steampowered.com/app/2240620/UNBEATABLE/)
 
 ## License
