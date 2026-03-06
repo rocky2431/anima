@@ -1,13 +1,16 @@
-import type { CommonContentPart, CompletionToolCall, Message, Tool } from '../types/ai-messages'
+import type { ToolSet } from 'ai'
+
+import type { NamedTool } from '../libs/ai/tool'
+import type { CommonContentPart, CompletionToolCall, Message } from '../types/ai-messages'
 import type { ChatProvider } from './providers/types'
 
 import { stepCountIs, streamText } from 'ai'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { convertXsaiToolsToAiSdk, createAiSdkModel } from '../composables/use-ai-sdk'
+import { createAiSdkModel } from '../composables/use-ai-sdk'
 import { listModels } from '../libs/ai/list-models'
-import { debug, mcp } from '../tools'
+import { debug } from '../tools'
 
 export type StreamEvent
   = | { type: 'text-delta', text: string }
@@ -22,7 +25,11 @@ export interface StreamOptions {
   toolsCompatibility?: Map<string, boolean>
   supportsTools?: boolean
   waitForTools?: boolean
-  tools?: Tool[] | (() => Promise<Tool[] | undefined>)
+  tools?: NamedTool[] | (() => Promise<NamedTool[] | undefined>)
+}
+
+function namedToolsToToolSet(tools: NamedTool[]): ToolSet {
+  return Object.fromEntries(tools.map(t => [t.name, t.tool]))
 }
 
 // Converts non-standard message roles (e.g. 'error') into valid user messages
@@ -42,8 +49,8 @@ function streamOptionsToolsCompatibilityOk(model: string, chatProvider: ChatProv
   return !!(options?.supportsTools || options?.toolsCompatibility?.get(`${chatProvider.chat(model).baseURL}-${model}`))
 }
 
-async function resolveXsaiTools(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions): Promise<Tool[] | undefined> {
-  const resolveTools = async () => {
+async function resolveTools(model: string, chatProvider: ChatProvider, messages: Message[], options?: StreamOptions): Promise<ToolSet | undefined> {
+  const resolveUserTools = async () => {
     const tools = typeof options?.tools === 'function'
       ? await options.tools()
       : options?.tools
@@ -55,11 +62,11 @@ async function resolveXsaiTools(model: string, chatProvider: ChatProvider, messa
     return undefined
 
   try {
-    return [
-      ...await mcp() as Tool[],
-      ...await debug() as Tool[],
-      ...await resolveTools(),
+    const allNamedTools: NamedTool[] = [
+      ...debug(),
+      ...await resolveUserTools(),
     ]
+    return namedToolsToToolSet(allNamedTools)
   }
   catch (err) {
     throw new Error(`Failed to resolve tools for model ${model}`, { cause: err })
@@ -86,8 +93,7 @@ async function streamFrom(model: string, chatProvider: ChatProvider, messages: M
   })
 
   const sanitized = sanitizeMessages(messages as unknown[])
-  const xsaiTools = await resolveXsaiTools(model, chatProvider, messages, options)
-  const aiSdkTools = xsaiTools ? convertXsaiToolsToAiSdk(xsaiTools as any) : undefined
+  const toolSet = await resolveTools(model, chatProvider, messages, options)
 
   return new Promise<void>((resolve, reject) => {
     let settled = false
@@ -98,7 +104,7 @@ async function streamFrom(model: string, chatProvider: ChatProvider, messages: M
       const result = streamText({
         model: aiModel,
         messages: sanitized as unknown as import('ai').ModelMessage[],
-        tools: aiSdkTools,
+        tools: toolSet,
         stopWhen: stepCountIs(10),
         onChunk: async ({ chunk }) => {
           try {
@@ -165,12 +171,9 @@ export async function attemptForToolsCompatibilityDiscovery(model: string, chatP
     catch (err) {
       if (err instanceof Error) {
         const errStr = String(err)
-        // Known provider-specific tool incompatibility errors
-        // Ollama: "does not support tools"
         if (errStr.includes('does not support tools')) {
           return false
         }
-        // OpenRouter: "No endpoints found that support tool use."
         if (errStr.includes('No endpoints found that support tool use.')) {
           return false
         }
@@ -224,7 +227,6 @@ export const useLLM = defineStore('llm', () => {
   const toolsCompatibility = ref<Map<string, boolean>>(new Map())
 
   async function discoverToolsCompatibility(model: string, chatProvider: ChatProvider, _: Message[], options?: Omit<StreamOptions, 'supportsTools'>) {
-    // Cached, no need to discover again
     if (toolsCompatibility.value.has(`${chatProvider.chat(model).baseURL}-${model}`)) {
       return
     }

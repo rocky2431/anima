@@ -17,4 +17,6 @@ const tools = [
   }),
 ]
 
-export const debug = async () => Promise.all(tools)
+export function debug() {
+  return tools
+}

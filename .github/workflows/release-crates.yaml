@@ -39,4 +39,4 @@ jobs:
       # TODO: cargo publish --workspace is still experimental
       - name: Crates publish
         run: |
-          cargo publish -p tauri-plugin-mcp
+          echo "No crates to publish currently"

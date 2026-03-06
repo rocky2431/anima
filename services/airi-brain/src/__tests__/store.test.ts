@@ -1,6 +1,8 @@
+import { randomBytes } from 'node:crypto'
+
 import Database from 'better-sqlite3'
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BrainStore } from '../store'
 
@@ -32,6 +34,7 @@ describe('brainStore', () => {
       expect(tableNames).toContain('embedding_config')
       expect(tableNames).toContain('llm_config')
       expect(tableNames).toContain('provider_configs')
+      expect(tableNames).toContain('provider_credentials')
     })
 
     it('initializes singleton rows for config tables', () => {
@@ -246,6 +249,85 @@ describe('brainStore', () => {
       expect(stats.total).toBe(100)
       expect(stats.uniqueCount).toBe(80)
       expect(stats.duplicates).toBe(20)
+    })
+  })
+
+  describe('provider credentials (no encryption key)', () => {
+    it('stores and retrieves credentials in plaintext without encryption key', () => {
+      const config = { apiKey: 'sk-test-123', baseUrl: 'https://api.example.com' }
+      store.setProviderCredentials('openai', config)
+      const result = store.getProviderCredentials('openai')
+      expect(result).toEqual(config)
+    })
+
+    it('returns null for unknown provider', () => {
+      expect(store.getProviderCredentials('nonexistent')).toBeNull()
+    })
+
+    it('lists provider IDs', () => {
+      store.setProviderCredentials('openai', { apiKey: 'sk-1' })
+      store.setProviderCredentials('anthropic', { apiKey: 'sk-2' })
+      const ids = store.listProviderIds()
+      expect(ids).toEqual(['anthropic', 'openai'])
+    })
+
+    it('deletes credentials', () => {
+      store.setProviderCredentials('openai', { apiKey: 'sk-1' })
+      store.deleteProviderCredentials('openai')
+      expect(store.getProviderCredentials('openai')).toBeNull()
+      expect(store.listProviderIds()).toEqual([])
+    })
+
+    it('upserts on conflict', () => {
+      store.setProviderCredentials('openai', { apiKey: 'sk-old' })
+      store.setProviderCredentials('openai', { apiKey: 'sk-new' })
+      const result = store.getProviderCredentials('openai')
+      expect(result).toEqual({ apiKey: 'sk-new' })
+    })
+  })
+
+  describe('provider credentials (with encryption key)', () => {
+    const testKey = randomBytes(32).toString('hex')
+
+    beforeEach(() => {
+      vi.stubEnv('AIRI_ENCRYPTION_KEY', testKey)
+    })
+
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    it('encrypts and decrypts credentials round-trip', () => {
+      // Need a fresh store so encryption key is picked up
+      const encDb = new Database(':memory:')
+      const encStore = new BrainStore(encDb)
+
+      const config = { apiKey: 'sk-secret-key', baseUrl: 'https://api.openai.com/v1' }
+      encStore.setProviderCredentials('openai', config)
+
+      // Verify stored data is not plaintext
+      const row = encDb.prepare('SELECT config_encrypted FROM provider_credentials WHERE provider_id = ?').get('openai') as { config_encrypted: string }
+      expect(row.config_encrypted).not.toContain('sk-secret-key')
+
+      // Verify decryption works
+      const result = encStore.getProviderCredentials('openai')
+      expect(result).toEqual(config)
+
+      encDb.close()
+    })
+
+    it('lists and deletes with encryption enabled', () => {
+      const encDb = new Database(':memory:')
+      const encStore = new BrainStore(encDb)
+
+      encStore.setProviderCredentials('a', { key: '1' })
+      encStore.setProviderCredentials('b', { key: '2' })
+      expect(encStore.listProviderIds()).toEqual(['a', 'b'])
+
+      encStore.deleteProviderCredentials('a')
+      expect(encStore.listProviderIds()).toEqual(['b'])
+
+      encDb.close()
     })
   })
 })

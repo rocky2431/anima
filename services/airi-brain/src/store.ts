@@ -1,8 +1,53 @@
 import type Database from 'better-sqlite3'
 
+import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
+import { env } from 'node:process'
+
 import { useLogg } from '@guiiai/logg'
 
 const log = useLogg('brain:store').useGlobalConfig()
+
+function getEncryptionKey(): Buffer | null {
+  const keyHex = env.AIRI_ENCRYPTION_KEY
+  if (!keyHex) {
+    return null
+  }
+  const buf = Buffer.from(keyHex, 'hex')
+  if (buf.length !== 32) {
+    throw new Error(`AIRI_ENCRYPTION_KEY must be 64 hex characters (32 bytes), got ${keyHex.length} characters`)
+  }
+  return buf
+}
+
+function encryptConfig(plaintext: string): string {
+  const key = getEncryptionKey()
+  if (!key) {
+    return plaintext
+  }
+  const iv = randomBytes(12)
+  const cipher = createCipheriv('aes-256-gcm', key, iv)
+  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
+  const authTag = cipher.getAuthTag()
+  // Format: base64(iv + authTag + ciphertext)
+  return Buffer.concat([iv, authTag, encrypted]).toString('base64')
+}
+
+function decryptConfig(stored: string): string {
+  const key = getEncryptionKey()
+  if (!key) {
+    return stored
+  }
+  const data = Buffer.from(stored, 'base64')
+  if (data.length < 28) {
+    throw new Error('Encrypted data too short')
+  }
+  const iv = data.subarray(0, 12)
+  const authTag = data.subarray(12, 28)
+  const ciphertext = data.subarray(28)
+  const decipher = createDecipheriv('aes-256-gcm', key, iv)
+  decipher.setAuthTag(authTag)
+  return decipher.update(ciphertext) + decipher.final('utf8')
+}
 
 export interface ActivityEvent {
   id: string
@@ -138,6 +183,12 @@ export class BrainStore {
         config_json TEXT NOT NULL DEFAULT '{}',
         added INTEGER NOT NULL DEFAULT 0,
         updated_at INTEGER NOT NULL DEFAULT 0
+      );
+
+      CREATE TABLE IF NOT EXISTS provider_credentials (
+        provider_id TEXT PRIMARY KEY,
+        config_encrypted TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
       );
     `)
   }
@@ -403,5 +454,58 @@ export class BrainStore {
   updateActivityEventDuration(id: string, durationMs: number): void {
     const stmt = this.db.prepare('UPDATE activity_events SET duration_ms = ? WHERE id = ?')
     stmt.run(durationMs, id)
+  }
+
+  // --- Provider Credentials (encrypted) ---
+
+  setProviderCredentials(providerId: string, config: Record<string, unknown>): void {
+    const plaintext = JSON.stringify(config)
+    let encrypted: string
+    try {
+      encrypted = encryptConfig(plaintext)
+    }
+    catch (err) {
+      throw new Error(`Failed to encrypt credentials for provider "${providerId}"`, { cause: err })
+    }
+
+    if (!getEncryptionKey()) {
+      log.withFields({ providerId }).warn('AIRI_ENCRYPTION_KEY not set — storing credentials in plaintext')
+    }
+
+    const stmt = this.db.prepare(`
+      INSERT INTO provider_credentials (provider_id, config_encrypted, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(provider_id) DO UPDATE SET
+        config_encrypted = excluded.config_encrypted,
+        updated_at = excluded.updated_at
+    `)
+    stmt.run(providerId, encrypted, Date.now())
+  }
+
+  getProviderCredentials(providerId: string): Record<string, unknown> | null {
+    const stmt = this.db.prepare('SELECT config_encrypted FROM provider_credentials WHERE provider_id = ?')
+    const row = stmt.get(providerId) as { config_encrypted: string } | undefined
+    if (!row)
+      return null
+
+    try {
+      const plaintext = decryptConfig(row.config_encrypted)
+      return JSON.parse(plaintext) as Record<string, unknown>
+    }
+    catch (err) {
+      log.withFields({ providerId, error: String(err) }).error('Failed to decrypt provider credentials')
+      throw new Error(`Failed to decrypt credentials for provider "${providerId}"`, { cause: err })
+    }
+  }
+
+  listProviderIds(): string[] {
+    const stmt = this.db.prepare('SELECT provider_id FROM provider_credentials ORDER BY provider_id')
+    const rows = stmt.all() as Array<{ provider_id: string }>
+    return rows.map(r => r.provider_id)
+  }
+
+  deleteProviderCredentials(providerId: string): void {
+    const stmt = this.db.prepare('DELETE FROM provider_credentials WHERE provider_id = ?')
+    stmt.run(providerId)
   }
 }

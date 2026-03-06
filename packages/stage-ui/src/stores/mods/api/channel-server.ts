@@ -80,6 +80,13 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
     'persona:template:set',
     // Activity Summary
     'activity:summary:trigger',
+    // Credentials
+    'credentials:store',
+    'credentials:get',
+    'credentials:get:result',
+    'credentials:list',
+    'credentials:list:result',
+    'credentials:delete',
   ]
 
   async function initialize(options?: { token?: string, possibleEvents?: Array<keyof WebSocketEvents> }) {

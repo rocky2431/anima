@@ -14,10 +14,10 @@ import { createTestingPinia } from '@pinia/testing'
 import { nanoid } from 'nanoid'
 import { setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { toJSONSchema } from 'zod'
 
 import { sparkCommandSchema, useCharacterOrchestratorStore } from '.'
 import { useCharacterStore } from '..'
-import { tool } from '../../../libs/ai/tool'
 import { useLLM } from '../../llm'
 import { useAiriCardStore, useConsciousnessStore } from '../../modules'
 import { useProvidersStore } from '../../providers'
@@ -76,15 +76,8 @@ function getArraySchema(schema?: Record<string, any>) {
 }
 
 describe('sparkCommandSchema', () => {
-  it('emits strict objects in the json schema', async () => {
-    const sparkTool = await tool({
-      name: 'builtIn_sparkCommand',
-      description: 'test',
-      parameters: sparkCommandSchema,
-      execute: async () => undefined,
-    })
-
-    const schema = sparkTool.function.parameters as Record<string, any>
+  it('emits strict objects in the json schema', () => {
+    const schema = toJSONSchema(sparkCommandSchema) as Record<string, any>
     const commandsSchema = getArraySchema(schema.properties?.commands)
     const commandItemSchema = getObjectSchema(commandsSchema?.items)
     const guidanceSchema = getObjectSchema(commandItemSchema?.properties?.guidance)
@@ -145,7 +138,7 @@ describe('store character-orchestrator', () => {
     mockedStore(useLLM).stream = mockStream
     mockedStore(useLLM).stream.mockImplementation(async (_model: string, _provider: unknown, _messages: unknown, options: any) => {
       if (options?.tools?.length) {
-        await options.tools[1].execute({ commands: [{
+        await options.tools[1].tool.execute!({ commands: [{
           destinations: ['minecraft'],
           intent: 'action',
           priority: 'critical',

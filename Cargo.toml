@@ -2,7 +2,6 @@
 members = [
   "crates/tauri-plugin-ipc-audio-transcription-ort",
   "crates/tauri-plugin-ipc-audio-vad-ort",
-  "crates/tauri-plugin-mcp",
   "crates/tauri-plugin-rdev",
   "crates/tauri-plugin-window-pass-through-on-hover",
   "crates/tauri-plugin-window-router-link"
@@ -17,9 +16,6 @@ path = "./crates/tauri-plugin-ipc-audio-transcription-ort"
 
 [workspace.dependencies.tauri-plugin-ipc-audio-vad-ort]
 path = "./crates/tauri-plugin-ipc-audio-vad-ort"
-
-[workspace.dependencies.tauri-plugin-mcp]
-path = "./crates/tauri-plugin-mcp"
 
 [workspace.dependencies.tauri-plugin-rdev]
 path = "./crates/tauri-plugin-rdev"

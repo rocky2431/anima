@@ -91,7 +91,6 @@ export const sparkCommandSchema = z.object({
         possibleOutcome: z.array(z.string()).nullable().describe('Simulate possible outcomes of following this option.'),
         risk: z.enum(['high', 'medium', 'low', 'none']).nullable(),
         fallback: z.array(z.string()).nullable().describe('Fallback steps if the main steps cannot be completed.'),
-        // TODO: consider to remove or enrich how triggers should work later
         triggers: z.array(z.string()).nullable().describe('Conditions or events that would trigger this option.'),
       }).strict()),
     }).strict().nullable().describe('Guidance for the sub-agent on how to interpret and execute the command with given context, persona settings, and reasoning.'),
@@ -114,7 +113,7 @@ export function setupAgentSparkNotifyHandler(deps: SparkNotifyAgentDeps) {
 
     let noResponse = false
 
-    const sparkNoResponseTool = await tool({
+    const sparkNoResponseTool = tool({
       name: 'builtIn_sparkNoResponse',
       description: 'Indicate that no response or action is needed for the current spark:notify event.',
       parameters: z.object({}).strict(),
@@ -124,7 +123,7 @@ export function setupAgentSparkNotifyHandler(deps: SparkNotifyAgentDeps) {
       },
     })
 
-    const sparkCommandTool = await tool({
+    const sparkCommandTool = tool({
       name: 'builtIn_sparkCommand',
       description: 'Issue a spark:command to sub-agents. You can call this tool multiple times to issue matrices of commands to different sub-agents as needed.',
       parameters: sparkCommandSchema,
@@ -151,7 +150,6 @@ export function setupAgentSparkNotifyHandler(deps: SparkNotifyAgentDeps) {
                     })),
                   }
                 : undefined,
-              // TODO: contexts can be added later
               contexts: [],
               priority: cmd.priority || 'normal',
               intent: cmd.intent || 'action',

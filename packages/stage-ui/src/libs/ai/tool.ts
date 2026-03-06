@@ -1,28 +1,29 @@
 /**
- * Local tool() factory — replaces `@xsai/tool`.
- *
- * Converts a Zod schema into the OpenAI-compatible Tool format
- * used throughout the codebase.
+ * Named tool factory -- wraps AI SDK's tool() and attaches a name
+ * so callers can build a ToolSet without an intermediate format.
  */
 
-import type { Tool, ToolExecuteOptions, ToolExecuteResult } from '../../types/ai-messages'
+import type { Tool as AiSdkTool } from 'ai'
 
-import { toJSONSchema } from 'zod'
+import { tool as aiSdkTool } from 'ai'
 
-export async function tool(options: {
+export interface NamedTool {
+  name: string
+  tool: AiSdkTool
+}
+
+export function tool(options: {
   name: string
   description: string
-
   parameters: any
-  execute: (input: any, options: ToolExecuteOptions) => Promise<ToolExecuteResult>
-}): Promise<Tool> {
+  execute: (input: any, options: any) => Promise<any>
+}): NamedTool {
   return {
-    type: 'function',
-    function: {
-      name: options.name,
+    name: options.name,
+    tool: aiSdkTool({
       description: options.description,
-      parameters: toJSONSchema(options.parameters) as Record<string, unknown>,
-    },
-    execute: options.execute,
+      inputSchema: options.parameters,
+      execute: options.execute,
+    }),
   }
 }

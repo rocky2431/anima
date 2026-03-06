@@ -1178,6 +1178,35 @@ interface ProvidersConfigsDataEvent {
   added: Record<string, boolean>
 }
 
+// ─── Credentials Events ─────────────────────────────────────────────────────
+
+interface CredentialsStoreEvent {
+  providerId: string
+  config: Record<string, unknown>
+}
+
+interface CredentialsGetEvent {
+  providerId: string
+}
+
+interface CredentialsGetResultEvent {
+  providerId: string
+  config: Record<string, unknown> | null
+  error?: string
+}
+
+interface CredentialsListEvent {
+  _placeholder?: never
+}
+
+interface CredentialsListResultEvent {
+  providerIds: string[]
+}
+
+interface CredentialsDeleteEvent {
+  providerId: string
+}
+
 // ─── Persona Template Events ───────────────────────────────────────────────
 
 interface PersonaTemplateSetEvent {
@@ -1197,6 +1226,12 @@ export const embeddingModelValidated = defineEventa<EmbeddingModelValidatedEvent
 export const providersConfigsSync = defineEventa<ProvidersConfigsSyncEvent>('providers:configs:sync')
 export const providersConfigsRequest = defineEventa<ProvidersConfigsRequestEvent>('providers:configs:request')
 export const providersConfigsData = defineEventa<ProvidersConfigsDataEvent>('providers:configs:data')
+export const credentialsStore = defineEventa<CredentialsStoreEvent>('credentials:store')
+export const credentialsGet = defineEventa<CredentialsGetEvent>('credentials:get')
+export const credentialsGetResult = defineEventa<CredentialsGetResultEvent>('credentials:get:result')
+export const credentialsList = defineEventa<CredentialsListEvent>('credentials:list')
+export const credentialsListResult = defineEventa<CredentialsListResultEvent>('credentials:list:result')
+export const credentialsDelete = defineEventa<CredentialsDeleteEvent>('credentials:delete')
 export const personaTemplateSet = defineEventa<PersonaTemplateSetEvent>('persona:template:set')
 
 // Thanks to:
@@ -1410,6 +1445,14 @@ export interface ProtocolEvents<C = undefined> {
   'providers:configs:sync': ProvidersConfigsSyncEvent
   'providers:configs:request': ProvidersConfigsRequestEvent
   'providers:configs:data': ProvidersConfigsDataEvent
+
+  // Credentials
+  'credentials:store': CredentialsStoreEvent
+  'credentials:get': CredentialsGetEvent
+  'credentials:get:result': CredentialsGetResultEvent
+  'credentials:list': CredentialsListEvent
+  'credentials:list:result': CredentialsListResultEvent
+  'credentials:delete': CredentialsDeleteEvent
 
   // LLM
   'llm:config:update': LlmConfigUpdateEvent

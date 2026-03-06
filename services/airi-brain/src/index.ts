@@ -9,6 +9,7 @@ import { DocumentStore, VectorStore } from '@proj-airi/context-engine'
 import { Client } from '@proj-airi/server-sdk'
 
 import { registerActivityHandler } from './handlers/activity'
+import { registerCredentialsHandler } from './handlers/credentials'
 import { disposeDesktopShellHandler, registerDesktopShellHandler } from './handlers/desktop-shell'
 import { registerEmbeddingHandler } from './handlers/embedding'
 import { registerEveningPipeline } from './handlers/evening-pipeline'
@@ -109,6 +110,13 @@ async function main(): Promise<void> {
       'providers:configs:sync',
       'providers:configs:request',
       'providers:configs:data',
+      // Credentials
+      'credentials:store',
+      'credentials:get',
+      'credentials:get:result',
+      'credentials:list',
+      'credentials:list:result',
+      'credentials:delete',
       // Activity Summary
       'activity:summary:trigger',
     ],
@@ -132,6 +140,7 @@ async function main(): Promise<void> {
     registerEmbeddingHandler(client, brainStore, providers)
     registerLlmHandler(client, brainStore, providers)
     registerProvidersHandler(client, brainStore)
+    registerCredentialsHandler(client, brainStore)
     registerDesktopShellHandler(client, brainStore)
 
     // Initialize VectorStore + Pipeline (async, non-blocking)

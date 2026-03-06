@@ -2,9 +2,12 @@ import type { EmbeddingProvider, LlmProvider } from '@proj-airi/context-engine'
 
 import type { BrainProviders } from './providers'
 
+import { createOpenAI } from '@ai-sdk/openai'
+import { embed, generateText } from 'ai'
+
 /**
  * Adapt BrainProviders.llm (ModelHandle) to context-engine's LlmProvider interface.
- * Uses OpenAI-compatible chat/completions API via fetch.
+ * Uses Vercel AI SDK for all LLM calls.
  */
 export function createLlmProviderAdapter(providers: BrainProviders): LlmProvider | null {
   if (!providers.llm)
@@ -14,65 +17,33 @@ export function createLlmProviderAdapter(providers: BrainProviders): LlmProvider
       if (!providers.llm)
         throw new Error('LLM provider was cleared after adapter creation')
       const { apiKey, baseURL, model } = providers.llm.requestDefaults()
-      const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`
-      const url = new URL('chat/completions', base)
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: prompt },
-          ],
-        }),
+      const openai = createOpenAI({ apiKey, baseURL })
+      const { text } = await generateText({
+        model: openai(model),
+        system,
+        prompt,
       })
-      if (!response.ok) {
-        const body = await response.text().catch(() => '')
-        throw new Error(`LLM generateText failed: HTTP ${response.status} — ${body}`)
+      if (text == null || text === '') {
+        throw new Error('LLM returned no content')
       }
-      const json = await response.json() as { choices?: Array<{ message?: { content?: string } }> }
-      const content = json.choices?.[0]?.message?.content
-      if (content == null) {
-        throw new Error(`LLM returned no content: choices=${JSON.stringify(json.choices?.length ?? 0)}`)
-      }
-      return content
+      return text
     },
     async generateStructured<T>({ system, prompt, schemaDescription }: { system: string, prompt: string, schemaDescription: string }) {
       if (!providers.llm)
         throw new Error('LLM provider was cleared after adapter creation')
       const { apiKey, baseURL, model } = providers.llm.requestDefaults()
-      const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`
-      const url = new URL('chat/completions', base)
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: `${system}\n\nRespond in JSON matching this schema: ${schemaDescription}` },
-            { role: 'user', content: prompt },
-          ],
-        }),
+      const openai = createOpenAI({ apiKey, baseURL })
+      const { text } = await generateText({
+        model: openai(model),
+        system: `${system}\n\nRespond in JSON matching this schema: ${schemaDescription}`,
+        prompt,
       })
-      if (!response.ok) {
-        const body = await response.text().catch(() => '')
-        throw new Error(`LLM generateStructured failed: HTTP ${response.status} — ${body}`)
-      }
-      const json = await response.json() as { choices?: Array<{ message?: { content?: string } }> }
-      const text = json.choices?.[0]?.message?.content ?? '{}'
+      const raw = text ?? '{}'
       try {
-        return JSON.parse(text) as T
+        return JSON.parse(raw) as T
       }
       catch {
-        throw new Error(`LLM returned invalid JSON: ${text.slice(0, 200)}`)
+        throw new Error(`LLM returned invalid JSON: ${raw.slice(0, 200)}`)
       }
     },
   }
@@ -80,7 +51,7 @@ export function createLlmProviderAdapter(providers: BrainProviders): LlmProvider
 
 /**
  * Adapt BrainProviders.embedding (ModelHandle) to context-engine's EmbeddingProvider interface.
- * Uses OpenAI-compatible embeddings API via fetch.
+ * Uses Vercel AI SDK for embedding calls.
  */
 export function createEmbeddingProviderAdapter(providers: BrainProviders): EmbeddingProvider | null {
   if (!providers.embedding)
@@ -95,22 +66,11 @@ export function createEmbeddingProviderAdapter(providers: BrainProviders): Embed
       if (!providers.embedding)
         throw new Error('Embedding provider was cleared after adapter creation')
       const { apiKey, baseURL, model } = providers.embedding.requestDefaults()
-      const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`
-      const url = new URL('embeddings', base)
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ model, input: text }),
+      const openai = createOpenAI({ apiKey, baseURL })
+      const { embedding } = await embed({
+        model: openai.embedding(model),
+        value: text,
       })
-      if (!response.ok) {
-        const body = await response.text().catch(() => '')
-        throw new Error(`Embedding failed: HTTP ${response.status} — ${body}`)
-      }
-      const json = await response.json() as { data?: Array<{ embedding?: number[] }> }
-      const embedding = json.data?.[0]?.embedding ?? []
       if (embedding.length === 0) {
         throw new Error('Embedding API returned empty vector')
       }

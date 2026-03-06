@@ -1,78 +1,31 @@
-import type { Tool as XsaiTool } from '../types/ai-messages'
-
 import { env } from 'node:process'
 
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import { tool as xsaiTool } from '../libs/ai/tool'
-import {
-  convertXsaiToolsToAiSdk,
-  createAiSdkModel,
-} from './use-ai-sdk'
+import { tool } from '../libs/ai/tool'
+import { createAiSdkModel } from './use-ai-sdk'
 
-// Test fixtures for unit testing model creation — no real HTTP calls are made.
+// Test fixtures for unit testing model creation -- no real HTTP calls are made.
 const TEST_BASE_URL = env.TEST_AI_SDK_BASE_URL ?? 'test-base-url'
 const TEST_API_KEY = env.TEST_AI_SDK_API_KEY ?? 'sk-test-000'
 
-describe('convertXsaiToolsToAiSdk', () => {
-  it('should convert a simple xsAI tool with empty parameters', async () => {
-    const resolved = await xsaiTool({
+describe('tool() factory', () => {
+  it('should produce a NamedTool with correct name and description', () => {
+    const result = tool({
       name: 'test_tool',
       description: 'A test tool',
       execute: async () => 'hello',
       parameters: z.object({}),
     })
 
-    const result = convertXsaiToolsToAiSdk([resolved])
-
-    expect(result).toHaveProperty('test_tool')
-    expect(result.test_tool).toBeDefined()
-    expect(result.test_tool.description).toBe('A test tool')
+    expect(result.name).toBe('test_tool')
+    expect(result.tool).toBeDefined()
+    expect(result.tool.description).toBe('A test tool')
   })
 
-  it('should convert a tool with complex parameters', async () => {
-    const resolved = await xsaiTool({
-      name: 'complex_tool',
-      description: 'A tool with complex params',
-      execute: async ({ name, count }: { name: string, count: number }) => {
-        return `${name}: ${count}`
-      },
-      parameters: z.object({
-        name: z.string().describe('The name'),
-        count: z.number().describe('The count'),
-      }),
-    })
-
-    const result = convertXsaiToolsToAiSdk([resolved])
-
-    expect(result).toHaveProperty('complex_tool')
-    expect(result.complex_tool.description).toBe('A tool with complex params')
-  })
-
-  it('should convert multiple tools into a keyed record', async () => {
-    const tool1 = await xsaiTool({
-      name: 'tool_alpha',
-      description: 'Alpha tool',
-      execute: async () => 'alpha',
-      parameters: z.object({}),
-    })
-    const tool2 = await xsaiTool({
-      name: 'tool_beta',
-      description: 'Beta tool',
-      execute: async () => 'beta',
-      parameters: z.object({}),
-    })
-
-    const result = convertXsaiToolsToAiSdk([tool1, tool2])
-
-    expect(Object.keys(result)).toEqual(['tool_alpha', 'tool_beta'])
-    expect(result.tool_alpha.description).toBe('Alpha tool')
-    expect(result.tool_beta.description).toBe('Beta tool')
-  })
-
-  it('should preserve execute functions that produce correct output', async () => {
-    const resolved = await xsaiTool({
+  it('should produce an AI SDK tool with working execute', async () => {
+    const result = tool({
       name: 'echo_tool',
       description: 'Echoes input',
       execute: async ({ message }: { message: string }) => message,
@@ -81,35 +34,32 @@ describe('convertXsaiToolsToAiSdk', () => {
       }),
     })
 
-    const result = convertXsaiToolsToAiSdk([resolved])
-    const tool = result.echo_tool
-
-    const output = await tool.execute!({ message: 'hello world' }, {
+    const output = await result.tool.execute!({ message: 'hello world' }, {
       toolCallId: 'test-id',
       messages: [],
     })
     expect(output).toBe('hello world')
   })
 
-  it('should handle tools without description', async () => {
-    const resolved: XsaiTool = {
-      type: 'function',
-      function: {
-        name: 'no_desc_tool',
-        parameters: { type: 'object', properties: {} },
-      },
-      execute: async () => 'ok',
-    }
+  it('should build a ToolSet from multiple NamedTools', () => {
+    const t1 = tool({
+      name: 'tool_alpha',
+      description: 'Alpha tool',
+      execute: async () => 'alpha',
+      parameters: z.object({}),
+    })
+    const t2 = tool({
+      name: 'tool_beta',
+      description: 'Beta tool',
+      execute: async () => 'beta',
+      parameters: z.object({}),
+    })
 
-    const result = convertXsaiToolsToAiSdk([resolved])
+    const toolSet = Object.fromEntries([t1, t2].map(t => [t.name, t.tool]))
 
-    expect(result).toHaveProperty('no_desc_tool')
-    expect(result.no_desc_tool.description).toBeUndefined()
-  })
-
-  it('should return empty record for empty tools array', () => {
-    const result = convertXsaiToolsToAiSdk([])
-    expect(result).toEqual({})
+    expect(Object.keys(toolSet)).toEqual(['tool_alpha', 'tool_beta'])
+    expect(toolSet.tool_alpha.description).toBe('Alpha tool')
+    expect(toolSet.tool_beta.description).toBe('Beta tool')
   })
 })
 

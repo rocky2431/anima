@@ -41,26 +41,6 @@ export interface CompletionToolCall {
   args: string
 }
 
-export interface ToolExecuteOptions {
-  toolCallId: string
-  messages: Message[]
-  abortSignal?: AbortSignal
-}
-
-export type ToolExecuteResult = unknown
-
-export interface ToolFunction {
-  name: string
-  description?: string
-  parameters: Record<string, unknown>
-}
-
-export interface Tool {
-  type: 'function'
-  function: ToolFunction
-  execute: (input: any, options: ToolExecuteOptions) => Promise<ToolExecuteResult>
-}
-
 // ---------------------------------------------------------------------------
 // Messages
 // ---------------------------------------------------------------------------
