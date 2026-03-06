@@ -6,8 +6,10 @@ import type {
   PluginRegistrySnapshot,
 } from '../../../../shared/eventa'
 
-import { mkdir, readdir, readFile } from 'node:fs/promises'
-import { dirname, extname, join } from 'node:path'
+import process from 'node:process'
+
+import { access, copyFile, cp, mkdir, readdir, readFile } from 'node:fs/promises'
+import { dirname, extname, join, resolve } from 'node:path'
 
 import { useLogg } from '@guiiai/logg'
 import { defineInvoke, defineInvokeHandler } from '@moeru/eventa'
@@ -67,6 +69,57 @@ const pluginConfigSchema = object({
     path: string(),
   })),
 })
+
+const BUILTIN_PLUGIN_NAMES = [
+  'airi-plugin-skills',
+  'airi-plugin-mcp-hub',
+  'airi-plugin-context-engine',
+  'airi-plugin-anima-mcp-server',
+]
+
+/**
+ * Copy built-in plugins from workspace (dev) or app resources (prod)
+ * into userData/plugins/v1/ so the PluginHost can discover them.
+ * Returns the list of successfully deployed plugin names.
+ */
+async function deployBuiltinPlugins(
+  pluginsRoot: string,
+  log: ReturnType<typeof useLogg>,
+): Promise<string[]> {
+  const sourceDir = app.isPackaged
+    ? join(process.resourcesPath, 'builtin-plugins')
+    : resolve(app.getAppPath(), '..', '..', 'plugins')
+
+  const deployed: string[] = []
+
+  for (const name of BUILTIN_PLUGIN_NAMES) {
+    const source = join(sourceDir, name)
+    const target = join(pluginsRoot, name)
+    const manifestSrc = join(source, 'manifest.json')
+    const distSrc = join(source, 'dist')
+
+    try {
+      await access(manifestSrc)
+      await access(distSrc)
+    }
+    catch {
+      log.warn('Built-in plugin source not found, skipping (run pnpm build:plugins)', { plugin: name })
+      continue
+    }
+
+    try {
+      await mkdir(target, { recursive: true })
+      await copyFile(manifestSrc, join(target, 'manifest.json'))
+      await cp(distSrc, join(target, 'dist'), { recursive: true })
+      deployed.push(name)
+    }
+    catch (err) {
+      log.withError(err).withFields({ plugin: name }).error('Failed to deploy built-in plugin')
+    }
+  }
+
+  return deployed
+}
 
 function isManifestV1(value: unknown): value is ManifestV1 {
   return safeParse(manifestV1Schema, value).success
@@ -155,6 +208,12 @@ export async function setupPluginHost(): Promise<PluginHostService> {
   })
 
   pluginConfig.setup()
+
+  // Deploy built-in plugins from workspace or app resources before scanning
+  const deployed = await deployBuiltinPlugins(pluginsRoot, log)
+  if (deployed.length > 0) {
+    log.log('Built-in plugins deployed', { count: deployed.length, plugins: deployed })
+  }
 
   const host = new PluginHost({ runtime: 'electron' })
   // NOTICE: stage-tamagotchi currently typechecks against package exports while plugin-sdk changes
@@ -318,6 +377,28 @@ export async function setupPluginHost(): Promise<PluginHostService> {
 
   onAppReady(async () => {
     await refreshManifests()
+
+    // Auto-enable newly deployed built-in plugins (first-time only per plugin)
+    if (deployed.length > 0) {
+      const config = getConfig()
+      const enabled = new Set(config.enabled)
+      const known = { ...config.known }
+      let changed = false
+
+      for (const name of deployed) {
+        if (!known[name]) {
+          enabled.add(name)
+          known[name] = { path: join(pluginsRoot, name, 'manifest.json') }
+          changed = true
+          log.log('Auto-enabled built-in plugin', { plugin: name })
+        }
+      }
+
+      if (changed) {
+        pluginConfig.update({ enabled: [...enabled], known })
+      }
+    }
+
     await loadEnabled()
   })
 

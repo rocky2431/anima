@@ -114,6 +114,16 @@ export default {
   appImage: {
     artifactName: '${productName}-${version}-linux-${arch}.${ext}',
   },
+  extraResources: [
+    'airi-plugin-skills',
+    'airi-plugin-mcp-hub',
+    'airi-plugin-context-engine',
+    'airi-plugin-anima-mcp-server',
+  ].map(name => ({
+    from: `../../plugins/${name}`,
+    to: `builtin-plugins/${name}`,
+    filter: ['manifest.json', 'dist/**'],
+  })),
   npmRebuild: false,
   publish: {
     provider: 'github',
