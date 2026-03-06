@@ -16,6 +16,7 @@ export interface MemoryExtractorOptions {
   llm: LlmProvider
   embedding: EmbeddingProvider
   persona: PersonaConfig
+  additionalSystemContext?: string
   /** Cosine similarity threshold for dedup against existing memories (default 0.85) */
   dedupThreshold?: number
   onExtraction?: (result: ExtractionResult) => void
@@ -92,6 +93,7 @@ export class MemoryExtractor {
   private readonly llm: LlmProvider
   private readonly embedding: EmbeddingProvider
   private readonly persona: PersonaConfig
+  private readonly additionalSystemContext?: string
   private readonly dedupThreshold: number
   private readonly onExtraction?: (result: ExtractionResult) => void
   private readonly onError?: (error: Error) => void
@@ -100,6 +102,7 @@ export class MemoryExtractor {
     this.llm = options.llm
     this.embedding = options.embedding
     this.persona = options.persona
+    this.additionalSystemContext = options.additionalSystemContext
     this.dedupThreshold = options.dedupThreshold ?? 0.85
     this.onExtraction = options.onExtraction
     this.onError = options.onError
@@ -202,7 +205,7 @@ export class MemoryExtractor {
   }
 
   private buildSystemPrompt(): string {
-    return [
+    const lines = [
       `你是${this.persona.name}，一个虚拟 AI 角色。`,
       `性格: ${this.persona.personality}`,
       `说话风格: ${this.persona.speakingStyle}`,
@@ -210,7 +213,11 @@ export class MemoryExtractor {
       '你的任务是从今天的对话和活动中提取重要记忆。',
       '重要记忆包括: 用户偏好、重要事件、人际关系、重要日期。',
       '只提取 importance >= 7 的记忆。',
-    ].join('\n')
+    ]
+    if (this.additionalSystemContext) {
+      lines.push('', this.additionalSystemContext)
+    }
+    return lines.join('\n')
   }
 
   private buildUserPrompt(input: ExtractionInput): string {

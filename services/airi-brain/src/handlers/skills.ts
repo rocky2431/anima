@@ -4,7 +4,7 @@ import type { SkillRegistryEntry } from '@proj-airi/skills-engine'
 import type { BrainStore } from '../store'
 
 import { useLogg } from '@guiiai/logg'
-import { SkillRegistry } from '@proj-airi/skills-engine'
+import { buildSkillsContext, SkillRegistry } from '@proj-airi/skills-engine'
 
 const log = useLogg('brain:skills').useGlobalConfig()
 
@@ -35,6 +35,11 @@ function broadcastList(client: Client): void {
 }
 
 export function registerSkillsHandler(client: Client, brainStore: BrainStore): void {
+  if (registry) {
+    log.warn('Skills handler already registered, skipping duplicate registration')
+    return
+  }
+
   const builtinDir = process.env.AIRI_SKILLS_BUILTIN_DIR ?? './skills/builtin'
   const userDir = process.env.AIRI_SKILLS_USER_DIR ?? './skills/user'
 
@@ -84,4 +89,16 @@ export function registerSkillsHandler(client: Client, brainStore: BrainStore): v
     log.log('Toggled skill', { id, active, success })
     client.send({ type: 'skills:toggled', data: { id, active, success } })
   })
+}
+
+/**
+ * Build a skills context string from the current registry state.
+ * Returns empty string if no skills are loaded.
+ */
+export function getSkillsContextText(): string {
+  if (!registry)
+    return ''
+  const allSkills = registry.getAll().map(e => e.skill)
+  const activeSkills = registry.getActive()
+  return buildSkillsContext(allSkills, activeSkills)
 }

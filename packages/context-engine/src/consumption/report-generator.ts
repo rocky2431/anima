@@ -3,6 +3,7 @@ import type { ActivityBreakdownEntry, DailySummary, LlmProvider, PersonaConfig, 
 export interface ReportGeneratorOptions {
   llm: LlmProvider
   persona: PersonaConfig
+  additionalSystemContext?: string
   onReport?: (report: DailySummary) => void
   onError?: (error: Error) => void
 }
@@ -42,12 +43,14 @@ function isValidDailySummary(value: unknown): value is DailySummary {
 export class ReportGenerator {
   private readonly llm: LlmProvider
   private readonly persona: PersonaConfig
+  private readonly additionalSystemContext?: string
   private readonly onReport?: (report: DailySummary) => void
   private readonly onError?: (error: Error) => void
 
   constructor(options: ReportGeneratorOptions) {
     this.llm = options.llm
     this.persona = options.persona
+    this.additionalSystemContext = options.additionalSystemContext
     this.onReport = options.onReport
     this.onError = options.onError
   }
@@ -109,7 +112,7 @@ export class ReportGenerator {
   }
 
   private buildSystemPrompt(): string {
-    return [
+    const lines = [
       `你是${this.persona.name}，一个虚拟 AI 角色。`,
       `性格: ${this.persona.personality}`,
       `说话风格: ${this.persona.speakingStyle}`,
@@ -117,7 +120,11 @@ export class ReportGenerator {
       '你的任务是根据用户一天的活动数据，生成一份角色化的每日总结。',
       '总结应该包含今天的亮点、活动分布和一段充满个性的结语。',
       '请保持角色一致性，用你的说话风格来写结语。',
-    ].join('\n')
+    ]
+    if (this.additionalSystemContext) {
+      lines.push('', this.additionalSystemContext)
+    }
+    return lines.join('\n')
   }
 
   private buildUserPrompt(activities: ProcessedContext[]): string {

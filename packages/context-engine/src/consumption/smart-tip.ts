@@ -3,6 +3,7 @@ import type { LlmProvider, PersonaConfig, ProcessedContext, SmartTipResult } fro
 export interface SmartTipOptions {
   llm: LlmProvider
   persona: PersonaConfig
+  additionalSystemContext?: string
   onTip?: (tip: SmartTipResult) => void
   onError?: (error: Error) => void
 }
@@ -33,12 +34,14 @@ function isValidSmartTipResult(value: unknown): value is SmartTipResult {
 export class SmartTip {
   private readonly llm: LlmProvider
   private readonly persona: PersonaConfig
+  private readonly additionalSystemContext?: string
   private readonly onTip?: (tip: SmartTipResult) => void
   private readonly onError?: (error: Error) => void
 
   constructor(options: SmartTipOptions) {
     this.llm = options.llm
     this.persona = options.persona
+    this.additionalSystemContext = options.additionalSystemContext
     this.onTip = options.onTip
     this.onError = options.onError
   }
@@ -99,7 +102,7 @@ export class SmartTip {
   }
 
   private buildSystemPrompt(): string {
-    return [
+    const lines = [
       `你是${this.persona.name}，一个虚拟 AI 角色。`,
       `性格: ${this.persona.personality}`,
       `说话风格: ${this.persona.speakingStyle}`,
@@ -107,7 +110,11 @@ export class SmartTip {
       '你的任务是根据用户当前的活动状态，生成一条贴心的智能提示。',
       '提示应该自然、关怀、符合你的角色性格。',
       '如果当前情况不需要提示，返回 null。',
-    ].join('\n')
+    ]
+    if (this.additionalSystemContext) {
+      lines.push('', this.additionalSystemContext)
+    }
+    return lines.join('\n')
   }
 
   private buildUserPrompt(context: ProcessedContext): string {

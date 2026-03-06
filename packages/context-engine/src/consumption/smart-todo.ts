@@ -12,6 +12,7 @@ export interface SmartTodoOptions {
   llm: LlmProvider
   embedding: EmbeddingProvider
   persona: PersonaConfig
+  additionalSystemContext?: string
   /** Cosine similarity threshold for dedup (0-1, default 0.95) */
   similarityThreshold?: number
   /** Maximum number of recent embeddings to keep for dedup (default 200) */
@@ -70,6 +71,7 @@ export class SmartTodo {
   private llm: LlmProvider
   private readonly embedding: EmbeddingProvider
   private readonly persona: PersonaConfig
+  private readonly additionalSystemContext?: string
   private readonly similarityThreshold: number
   private readonly maxHistorySize: number
   private readonly onTodo?: (result: SmartTodoResult) => void
@@ -80,6 +82,7 @@ export class SmartTodo {
     this.llm = options.llm
     this.embedding = options.embedding
     this.persona = options.persona
+    this.additionalSystemContext = options.additionalSystemContext
     this.similarityThreshold = options.similarityThreshold ?? 0.95
     this.maxHistorySize = options.maxHistorySize ?? DEFAULT_MAX_HISTORY_SIZE
     this.onTodo = options.onTodo
@@ -184,7 +187,7 @@ export class SmartTodo {
   }
 
   private buildSystemPrompt(): string {
-    return [
+    const lines = [
       `你是${this.persona.name}，一个虚拟 AI 角色。`,
       `性格: ${this.persona.personality}`,
       `说话风格: ${this.persona.speakingStyle}`,
@@ -192,7 +195,11 @@ export class SmartTodo {
       '你的任务是根据用户当前的活动状态，提取出可能的待办事项建议。',
       '建议应该具体、可操作、与用户当前活动相关。',
       '避免与已有待办事项重复。',
-    ].join('\n')
+    ]
+    if (this.additionalSystemContext) {
+      lines.push('', this.additionalSystemContext)
+    }
+    return lines.join('\n')
   }
 
   private buildUserPrompt(context: ProcessedContext, existingTodos: Todo[]): string {

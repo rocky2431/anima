@@ -8,6 +8,13 @@ import { createEmbeddingProviderAdapter, createLlmProviderAdapter } from './adap
 
 const log = useLogg('brain:pipeline').useGlobalConfig()
 
+/**
+ * Pipeline components for context-engine consumers.
+ *
+ * Note: SmartTip and SmartTodo also support `additionalSystemContext` in their
+ * Options interfaces (forward-wired), but are not yet instantiated here.
+ * They will be added when cron-driven tip/todo generation is integrated.
+ */
 export interface PipelineComponents {
   vectorStore: VectorStore
   orchestrator: MemoryOrchestrator | null
@@ -32,9 +39,11 @@ export async function createPipeline(opts: {
   documentStore: DocumentStore
   providers: BrainProviders
   persona?: PersonaConfig
+  additionalSystemContext?: string
 }): Promise<PipelineComponents> {
   const { vectorStore, documentStore, providers } = opts
   const persona = opts.persona ?? DEFAULT_PERSONA
+  const additionalSystemContext = opts.additionalSystemContext
 
   const llmAdapter = createLlmProviderAdapter(providers)
   const embeddingAdapter = createEmbeddingProviderAdapter(providers)
@@ -66,7 +75,7 @@ export async function createPipeline(opts: {
   if (llmAdapter) {
     try {
       const { ReportGenerator: ReportClass } = await import('@proj-airi/context-engine')
-      reportGenerator = new ReportClass({ llm: llmAdapter, persona })
+      reportGenerator = new ReportClass({ llm: llmAdapter, persona, additionalSystemContext })
       log.log('ReportGenerator initialized')
     }
     catch (err) {
@@ -85,6 +94,7 @@ export async function createPipeline(opts: {
         llm: llmAdapter,
         embedding: embeddingAdapter,
         persona,
+        additionalSystemContext,
         dedupThreshold: 0.85,
       })
       log.log('MemoryExtractor initialized')
@@ -111,6 +121,7 @@ export async function rebuildPipeline(
     documentStore: DocumentStore
     providers: BrainProviders
     persona?: PersonaConfig
+    additionalSystemContext?: string
   },
 ): Promise<PipelineComponents> {
   log.log('Rebuilding pipeline due to provider change')
@@ -119,5 +130,6 @@ export async function rebuildPipeline(
     documentStore: opts.documentStore,
     providers: opts.providers,
     persona: opts.persona,
+    additionalSystemContext: opts.additionalSystemContext,
   })
 }

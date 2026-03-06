@@ -216,7 +216,8 @@
 - [x] P4-2: 前端 legacy MCP store 清理，Skills 纳入 data maintenance
 - [x] P4-3: 内建插件构建 + 部署闭环（dev + prod extraResources）
 - [x] P4-4: Skills context 注入聊天流（chat context provider）
-- [ ] P4-4 后续: Context-Engine LLM 调用注入 skills context、proactive 注入统一 context
+- [x] P4-4 后续: Context-Engine LLM 调用注入 skills context（ReportGenerator / MemoryExtractor / SmartTip / SmartTodo）
+- [ ] P4-4 后续: proactive 注入统一 context
 
 ---
 

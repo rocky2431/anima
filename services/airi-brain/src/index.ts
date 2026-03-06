@@ -17,7 +17,7 @@ import { registerLlmHandler } from './handlers/llm'
 import { registerMemoryHandler } from './handlers/memory'
 import { disposePersonaHandler, registerPersonaHandler } from './handlers/persona'
 import { registerProvidersHandler } from './handlers/providers'
-import { registerSkillsHandler } from './handlers/skills'
+import { getSkillsContextText, registerSkillsHandler } from './handlers/skills'
 import { registerTodoHandler } from './handlers/todo'
 import { disposeVisionHandler, registerVisionHandler } from './handlers/vision'
 import { createPipeline, rebuildPipeline } from './pipeline'
@@ -59,6 +59,9 @@ async function main(): Promise<void> {
   // Initialize LLM/Embedding provider configuration
   // Use mutable binding so handlers can update providers at runtime
   const providers = createBrainProviders() as ReturnType<typeof createBrainProviders>
+
+  // Shared timer reference so graceful shutdown can cancel pending pipeline rebuilds
+  let rebuildTimer: ReturnType<typeof setTimeout> | null = null
 
   log.withFields({ url, tokenPresent: !!env.AIRI_TOKEN, dataDir, dbPath, llmConfigured: !!providers.llm, embeddingConfigured: !!providers.embedding }).log('Starting airi-brain bridge')
 
@@ -147,20 +150,25 @@ async function main(): Promise<void> {
     VectorStore.create(dataDir).then(async (vectorStore) => {
       log.log('VectorStore created', { dataDir })
 
-      const pipelineRef = { current: await createPipeline({ vectorStore, documentStore, providers }) }
+      const pipelineRef = { current: await createPipeline({ vectorStore, documentStore, providers, additionalSystemContext: getSkillsContextText() }) }
 
       // Register evening pipeline for daily summaries
       registerEveningPipeline(brainStore, pipelineRef, client)
 
-      // Rebuild pipeline when LLM or embedding config changes (debounced)
-      let rebuildTimer: ReturnType<typeof setTimeout> | null = null
+      // Rebuild pipeline when LLM, embedding, or skills config changes (debounced).
+      // Generation counter ensures stale rebuilds don't overwrite newer ones.
+      let rebuildGeneration = 0
       function scheduleRebuild(): void {
         if (rebuildTimer)
           clearTimeout(rebuildTimer)
         rebuildTimer = setTimeout(() => {
           rebuildTimer = null
-          rebuildPipeline(pipelineRef.current, { documentStore, providers })
-            .then((rebuilt) => { pipelineRef.current = rebuilt })
+          const gen = ++rebuildGeneration
+          rebuildPipeline(pipelineRef.current, { documentStore, providers, additionalSystemContext: getSkillsContextText() })
+            .then((rebuilt) => {
+              if (gen === rebuildGeneration)
+                pipelineRef.current = rebuilt
+            })
             .catch((err) => {
               const msg = err instanceof Error ? err.message : String(err)
               log.withFields({ error: msg }).warn('Pipeline rebuild failed')
@@ -169,6 +177,9 @@ async function main(): Promise<void> {
       }
       client.onEvent('llm:config:update', scheduleRebuild)
       client.onEvent('embedding:config:update', scheduleRebuild)
+      // skills:toggle handler in skills.ts synchronously mutates the registry,
+      // so getSkillsContextText() in the debounced callback always sees the updated state.
+      client.onEvent('skills:toggle', scheduleRebuild)
 
       log.log('Pipeline initialized')
     }).catch((err) => {
@@ -183,6 +194,10 @@ async function main(): Promise<void> {
   // Graceful shutdown
   async function gracefulShutdown(signal: string): Promise<void> {
     log.log(`Received ${signal}, shutting down...`)
+    if (rebuildTimer) {
+      clearTimeout(rebuildTimer)
+      rebuildTimer = null
+    }
     const disposers = [
       { name: 'persona', fn: disposePersonaHandler },
       { name: 'vision', fn: disposeVisionHandler },
