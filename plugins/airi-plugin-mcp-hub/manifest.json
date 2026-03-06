@@ -1,0 +1,9 @@
+{
+  "apiVersion": "v1",
+  "kind": "manifest.plugin.airi.moeru.ai",
+  "name": "airi-plugin-mcp-hub",
+  "entrypoints": {
+    "node": "./dist/index.mjs",
+    "electron": "./dist/index.mjs"
+  }
+}

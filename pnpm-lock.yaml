@@ -3007,6 +3007,30 @@ importers:
         specifier: workspace:*
         version: link:../../packages/server-sdk
 
+  plugins/airi-plugin-mcp-hub:
+    dependencies:
+      '@moeru/eventa':
+        specifier: 'catalog:'
+        version: 1.0.0-alpha.14(electron@40.0.0)(h3@2.0.1-rc.5(crossws@0.4.3(srvx@0.10.1)))
+      '@proj-airi/mcp-hub':
+        specifier: workspace:*
+        version: link:../../packages/mcp-hub
+      '@proj-airi/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
+
+  plugins/airi-plugin-skills:
+    dependencies:
+      '@moeru/eventa':
+        specifier: 'catalog:'
+        version: 1.0.0-alpha.14(electron@40.0.0)(h3@2.0.1-rc.5(crossws@0.4.3(srvx@0.10.1)))
+      '@proj-airi/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
+      '@proj-airi/skills-engine':
+        specifier: workspace:*
+        version: link:../../packages/skills-engine
+
   plugins/airi-plugin-web-extension:
     devDependencies:
       '@iconify-json/solar':

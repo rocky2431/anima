@@ -49,8 +49,18 @@
 ## Phase 3: Skill + MCP 作为 Native Plugin
 
 ### P3-1: MCP Hub 包装为 native plugin
+- `plugins/airi-plugin-mcp-hub/` — definePlugin 包装 McpHub
+- 通过 InvokeEventa 暴露 servers:list/add/remove/connect + tools:aggregate
+- 启动时自动连接已启用的 MCP 服务器
+
 ### P3-2: 集成 Anima MCP Server
+- 将 createAnimaMcpServer 连接到 MCP Hub 插件系统
+
 ### P3-3: Skill Registry 包装为 native plugin + 注入 system prompt
+- `plugins/airi-plugin-skills/` — definePlugin 包装 SkillRegistry
+- 通过 InvokeEventa 暴露 skills:list/toggle/get-by-id/context
+- `skillsGetContext` 事件调用 buildSkillsContext()，修复"从未被调用"问题
+
 ### P3-4: Context Engine 升级为实时对话参与
 
 ## 状态
@@ -62,4 +72,7 @@
 - [x] Phase 2: P2-2 capability offer/accept
 - [x] Phase 2: P2-3 configuration validate/plan/commit
 - [ ] Phase 2: P2-4 版本协商支持降级
-- [ ] Phase 3
+- [x] Phase 3: P3-1 MCP Hub native plugin
+- [x] Phase 3: P3-3 Skill Registry native plugin + buildSkillsContext 集成
+- [ ] Phase 3: P3-2 集成 Anima MCP Server
+- [ ] Phase 3: P3-4 Context Engine 升级

@@ -1,0 +1,16 @@
+{
+  "name": "@proj-airi/airi-plugin-skills",
+  "type": "module",
+  "version": "0.8.4",
+  "private": true,
+  "description": "Skills Engine plugin: wraps SkillRegistry and injects skill context into system prompts",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@moeru/eventa": "catalog:",
+    "@proj-airi/plugin-sdk": "workspace:*",
+    "@proj-airi/skills-engine": "workspace:*"
+  }
+}
