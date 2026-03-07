@@ -6,6 +6,9 @@
   <a href="https://github.com/rocky2431/anima/blob/main/LICENSE"><img src="https://img.shields.io/github/license/rocky2431/anima.svg?style=flat&colorA=080f12&colorB=1fa669"></a>
 </p>
 
+> [!NOTE]
+> This project is built upon [Project AIRI](https://github.com/moeru-ai/airi) by the moeru-ai team. We deeply appreciate the original team's outstanding work in building such a comprehensive AI companion foundation. Project Anase extends and customizes it with a focus on the AI girlfriend & companion experience.
+
 > [!WARNING]
 > This project is under active development. APIs and features may change without notice.
 
@@ -134,6 +137,7 @@ See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
 
 ## Acknowledgements
 
+- [Project AIRI](https://github.com/moeru-ai/airi) — the upstream project this work is based on. Thanks to the moeru-ai team for building the foundational architecture, plugin system, and multi-platform infrastructure.
 - [Reka UI](https://github.com/unovue/reka-ui) for UI components
 - [pixiv/ChatVRM](https://github.com/pixiv/ChatVRM) for VRM inspiration
 - [Vercel AI SDK](https://sdk.vercel.ai/) for LLM integration
