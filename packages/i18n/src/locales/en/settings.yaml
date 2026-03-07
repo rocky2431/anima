@@ -38,7 +38,12 @@ dialogs:
     character-aria-desc: Energetic and curious. Loves learning and tech. Quick-witted with playful humor.
     character-mochi-desc: Calm and healing. Relaxed pace with a soothing presence. Sensitive to when you are tired.
     features-summary: You're All Set!
-    features-summary-description: These core modules will be automatically enabled for the best experience.
+    features-summary-description: Here's what your AI companion can do. You can configure more features in Settings later.
+    features-tier-ready: Ready Now
+    features-tier-recommended: Recommended Next
+    features-tier-experimental: Experimental
+    features-module-chat: Chat
+    features-module-chat-desc: Conversational AI with your chosen model
     features-module-persona: Persona
     features-module-persona-desc: Character personality and emotions
     features-module-todo: Todo
@@ -49,8 +54,12 @@ dialogs:
     features-module-activity-desc: Tracks your daily patterns
     features-module-skills: Skills
     features-module-skills-desc: Extensible AI capabilities
-    features-module-screenshot: Screenshot
-    features-module-screenshot-desc: Vision requires VLM model (disabled by default)
+    features-module-embedding: Semantic Memory
+    features-module-embedding-desc: Deep understanding via vector embeddings
+    features-module-tts: Voice
+    features-module-tts-desc: Text-to-speech output (requires TTS provider)
+    features-module-screenshot: Screen Awareness
+    features-module-screenshot-desc: Vision-based screen understanding (in development)
     features-ready: Get Started
 language:
   title: Language

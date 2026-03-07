@@ -5,12 +5,11 @@ import { computed, nextTick, provide, ref } from 'vue'
 import StepCharacterSelection from './step-character-selection.vue'
 import StepFeaturesSummary from './step-features-summary.vue'
 import StepModelSelection from './step-model-selection.vue'
-import StepProviderConfiguration from './step-provider-configuration.vue'
 import StepProviderSelection from './step-provider-selection.vue'
 import StepWelcome from './step-welcome.vue'
 
 import { useConsciousnessStore } from '../../../../stores/modules/consciousness'
-import { useProvidersStore } from '../../../../stores/providers'
+import { useUnifiedProvidersStore } from '../../../../stores/unified-providers'
 import { OnboardingContextKey } from './utils'
 
 interface Emits {
@@ -23,19 +22,23 @@ const emit = defineEmits<Emits>()
 const step = ref(1)
 const direction = ref<'next' | 'previous'>('next')
 
-const providersStore = useProvidersStore()
-const { providers, allChatProvidersMetadata } = storeToRefs(providersStore)
+const unifiedStore = useUnifiedProvidersStore()
 const consciousnessStore = useConsciousnessStore()
 const {
   activeProvider,
 } = storeToRefs(consciousnessStore)
 
-// Popular providers for first-time setup
-const popularProviders = computed(() => {
-  const popular = ['openai', 'anthropic', 'google-generative-ai', 'openrouter-ai', 'ollama', 'deepseek', 'player2', 'openai-compatible']
-  return allChatProvidersMetadata.value
-    .filter(provider => popular.includes(provider.id))
-    .sort((a, b) => popular.indexOf(a.id) - popular.indexOf(b.id))
+// Providers shown during onboarding: primary + local + compatible (chat-capable only)
+const onboardingProviders = computed(() => {
+  const targetIds = ['openrouter', 'dashscope', 'ollama', 'lm-studio', 'openai-compatible']
+  return targetIds
+    .map(id => unifiedStore.getProvider(id))
+    .filter((p): p is NonNullable<typeof p> => !!p && p.capabilities.chat)
+    .map(p => ({
+      ...p,
+      localizedName: p.name,
+      localizedDescription: p.description,
+    }))
 })
 
 // Selected provider and form data
@@ -43,7 +46,7 @@ const selectedProviderId = ref('')
 
 // Computed selected provider
 const selectedProvider = computed(() => {
-  return allChatProvidersMetadata.value.find(p => p.id === selectedProviderId.value) || null
+  return onboardingProviders.value.find(p => p.id === selectedProviderId.value) || null
 })
 
 // Reset validation state when provider changes
@@ -59,8 +62,8 @@ function handlePreviousStep() {
 }
 
 async function handleNextStep(configData?: { apiKey: string, baseUrl: string, accountId: string }) {
-  // Step 3: Provider configuration - validate and save before proceeding
-  if (step.value === 3 && configData) {
+  // Step 2: Provider setup (merged selection + configuration) — validate and save before proceeding
+  if (step.value === 2 && configData) {
     await saveProviderConfiguration(configData)
     direction.value = 'next'
     step.value++
@@ -68,7 +71,7 @@ async function handleNextStep(configData?: { apiKey: string, baseUrl: string, ac
   }
 
   // Other steps: just proceed
-  if (step.value < 6) {
+  if (step.value < 5) {
     direction.value = 'next'
     step.value++
   }
@@ -90,16 +93,18 @@ async function saveProviderConfiguration(data: { apiKey: string, baseUrl: string
   if (data.accountId)
     config.accountId = data.accountId.trim()
 
-  providers.value[selectedProvider.value.id] = {
-    ...providers.value[selectedProvider.value.id],
+  // Save credentials to unified provider store
+  unifiedStore.providers[selectedProvider.value.id] = {
+    ...unifiedStore.providers[selectedProvider.value.id],
     ...config,
   }
 
+  unifiedStore.markProviderAdded(selectedProvider.value.id)
   activeProvider.value = selectedProvider.value.id
   await nextTick()
 
   try {
-    await consciousnessStore.loadModelsForProvider(selectedProvider.value.id)
+    await unifiedStore.fetchModelsForProvider(selectedProvider.value.id, 'chat')
   }
   catch (err) {
     console.error('error', err)
@@ -113,8 +118,8 @@ async function handleSave() {
 provide(OnboardingContextKey, {
   selectedProviderId,
   selectedProvider,
+  onboardingProviders,
   selectProvider,
-  popularProviders,
   handleNextStep,
   handlePreviousStep,
   handleSave,
@@ -126,10 +131,9 @@ provide(OnboardingContextKey, {
     <Transition :name="direction === 'next' ? 'slide-next' : 'slide-prev'" mode="out-in">
       <StepWelcome v-if="step === 1" :key="1" />
       <StepProviderSelection v-else-if="step === 2" :key="2" />
-      <StepProviderConfiguration v-else-if="step === 3" :key="3" />
-      <StepModelSelection v-else-if="step === 4" :key="4" />
-      <StepCharacterSelection v-else-if="step === 5" :key="5" />
-      <StepFeaturesSummary v-else-if="step === 6" :key="6" />
+      <StepModelSelection v-else-if="step === 3" :key="3" />
+      <StepCharacterSelection v-else-if="step === 4" :key="4" />
+      <StepFeaturesSummary v-else-if="step === 5" :key="5" />
     </Transition>
   </div>
 </template>

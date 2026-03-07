@@ -10,10 +10,10 @@ import { useMemoryModuleStore } from './modules/memory'
 import { usePersonaModuleStore } from './modules/persona'
 import { useSkillsModuleStore } from './modules/skills'
 import { useTodoModuleStore } from './modules/todo'
-import { useProvidersStore } from './providers'
+import { useUnifiedProvidersStore } from './unified-providers'
 
 export const useOnboardingStore = defineStore('onboarding', () => {
-  const providersStore = useProvidersStore()
+  const unifiedStore = useUnifiedProvidersStore()
 
   // Track if first-time setup has been completed or skipped
   const hasCompletedSetup = useLocalStorage('onboarding/completed', false)
@@ -25,10 +25,10 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   // Track if we should show the setup dialog
   const shouldShowSetup = ref(false)
 
-  // Check if any essential provider is configured
+  // Check if any essential provider is configured (unified IDs)
   const hasEssentialProviderConfigured = computed(() => {
-    const essentialProviders = ['openai', 'anthropic', 'google-generative-ai', 'openrouter-ai', 'ollama', 'deepseek', 'openai-compatible']
-    return essentialProviders.some(providerId => providersStore.configuredProviders[providerId])
+    const essentialProviders = ['openrouter', 'dashscope', 'ollama', 'lm-studio', 'openai-compatible']
+    return essentialProviders.some(providerId => unifiedStore.configuredProviders[providerId])
   })
 
   // Check if first-time setup should be shown

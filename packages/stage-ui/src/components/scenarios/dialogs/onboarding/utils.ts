@@ -1,12 +1,12 @@
 import type { InjectionKey, Ref } from 'vue'
 
-import type { ProviderMetadata } from '../../../../stores/providers'
+import type { UnifiedProviderMetadata } from '../../../../stores/providers/types'
 
 export interface OnboardingContext {
   selectedProviderId: Ref<string>
-  selectedProvider: Ref<ProviderMetadata | null>
-  popularProviders: Ref<ProviderMetadata[]>
-  selectProvider: (provider: ProviderMetadata) => void
+  selectedProvider: Ref<(UnifiedProviderMetadata & { localizedName?: string, localizedDescription?: string }) | null>
+  onboardingProviders: Ref<(UnifiedProviderMetadata & { localizedName?: string, localizedDescription?: string })[]>
+  selectProvider: (provider: { id: string }) => void
   handleNextStep: (configData?: { apiKey: string, baseUrl: string, accountId: string }) => Promise<void>
   handlePreviousStep: () => void
   handleSave: () => void
