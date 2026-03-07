@@ -100,7 +100,6 @@ const emit = defineEmits<{
       </button>
 
       <button
-        v-if="id !== 'default'"
         rounded-lg p-1.5 transition-colors hover="bg-neutral-200 dark:bg-neutral-700/50"
         @click.stop="emit('delete')"
       >

@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { CHARACTER_TEMPLATES } from '../../../../stores/modules/anase-card'
 import { useOnboardingStore } from '../../../../stores/onboarding'
 import { OnboardingContextKey } from './utils'
 
@@ -12,26 +13,12 @@ const context = inject(OnboardingContextKey)!
 const onboardingStore = useOnboardingStore()
 const { selectedCharacterTemplate } = storeToRefs(onboardingStore)
 
-const characters = [
-  {
-    id: 'xiaorou',
-    name: '小柔',
-    icon: 'i-solar:heart-pulse-bold-duotone',
-    descKey: 'settings.dialogs.onboarding.character-xiaorou-desc',
-  },
-  {
-    id: 'aria',
-    name: 'Aria',
-    icon: 'i-solar:star-bold-duotone',
-    descKey: 'settings.dialogs.onboarding.character-aria-desc',
-  },
-  {
-    id: 'mochi',
-    name: 'Mochi',
-    icon: 'i-solar:cloud-bold-duotone',
-    descKey: 'settings.dialogs.onboarding.character-mochi-desc',
-  },
-] as const
+const characters = CHARACTER_TEMPLATES.map(tpl => ({
+  id: tpl.id,
+  name: tpl.name,
+  icon: tpl.icon,
+  descKey: `settings.dialogs.onboarding.character-${tpl.id}-desc`,
+}))
 </script>
 
 <template>

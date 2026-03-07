@@ -11,6 +11,42 @@ import SystemPromptV2 from '../../constants/prompts/system-v2'
 import { useConsciousnessStore } from './consciousness'
 import { useSpeechStore } from './speech'
 
+export interface CharacterTemplate {
+  id: string
+  name: string
+  icon: string
+  descriptionKey: string
+  personalityKey: string
+  scenarioKey: string
+}
+
+export const CHARACTER_TEMPLATES: CharacterTemplate[] = [
+  {
+    id: 'xiaorou',
+    name: '小柔',
+    icon: 'i-solar:heart-pulse-bold-duotone',
+    descriptionKey: 'base.characters.xiaorou.description',
+    personalityKey: 'base.characters.xiaorou.personality',
+    scenarioKey: 'base.characters.xiaorou.scenario',
+  },
+  {
+    id: 'aria',
+    name: 'Aria',
+    icon: 'i-solar:star-bold-duotone',
+    descriptionKey: 'base.characters.aria.description',
+    personalityKey: 'base.characters.aria.personality',
+    scenarioKey: 'base.characters.aria.scenario',
+  },
+  {
+    id: 'mochi',
+    name: 'Mochi',
+    icon: 'i-solar:cloud-bold-duotone',
+    descriptionKey: 'base.characters.mochi.description',
+    personalityKey: 'base.characters.mochi.personality',
+    scenarioKey: 'base.characters.mochi.scenario',
+  },
+]
+
 export interface AnaseExtension {
   modules: {
     consciousness: {
@@ -60,7 +96,7 @@ export const useAiriCardStore = defineStore('anase-card', () => {
   const { t } = useI18n()
 
   const cards = useLocalStorageManualReset<Map<string, AiriCard>>('anase-cards', new Map())
-  const activeCardId = useLocalStorageManualReset<string>('anase-card-active-id', 'default')
+  const activeCardId = useLocalStorageManualReset<string>('anase-card-active-id', CHARACTER_TEMPLATES[0].id)
 
   const activeCard = computed(() => cards.value.get(activeCardId.value))
 
@@ -205,26 +241,40 @@ export const useAiriCardStore = defineStore('anase-card', () => {
   }
 
   function initialize() {
-    if (cards.value.has('default'))
+    if (cards.value.has(CHARACTER_TEMPLATES[0].id))
       return
-    cards.value.set('default', newAiriCard({
-      name: 'ReLU',
-      version: '1.0.0',
-      description: SystemPromptV2(
-        t('base.prompt.prefix'),
-        t('base.prompt.suffix'),
-      ).content,
-    }))
+
+    const systemPromptContent = SystemPromptV2(
+      t('base.prompt.prefix'),
+      t('base.prompt.suffix'),
+    ).content
+
+    for (const template of CHARACTER_TEMPLATES) {
+      cards.value.set(template.id, newAiriCard({
+        name: template.name,
+        version: '1.0.0',
+        description: t(template.descriptionKey),
+        personality: t(template.personalityKey),
+        scenario: t(template.scenarioKey),
+        systemPrompt: systemPromptContent,
+      }))
+    }
+
     if (!activeCardId.value)
-      activeCardId.value = 'default'
+      activeCardId.value = CHARACTER_TEMPLATES[0].id
+  }
+
+  function activateCharacterTemplate(templateId: string) {
+    const template = CHARACTER_TEMPLATES.find(t => t.id === templateId)
+    if (template && cards.value.has(template.id)) {
+      activeCardId.value = template.id
+    }
   }
 
   watch(activeCard, (newCard: AiriCard | undefined) => {
     if (!newCard)
       return
 
-    // TODO: live2d, vrm
-    // TODO: Minecraft Agent, etc
     const extension = resolveAnaseExtension(newCard)
     if (!extension)
       return
@@ -252,6 +302,7 @@ export const useAiriCardStore = defineStore('anase-card', () => {
     getCard,
     resetState,
     initialize,
+    activateCharacterTemplate,
 
     currentModels: computed(() => {
       return {

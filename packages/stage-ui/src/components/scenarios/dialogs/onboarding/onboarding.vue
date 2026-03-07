@@ -8,7 +8,9 @@ import StepModelSelection from './step-model-selection.vue'
 import StepProviderSelection from './step-provider-selection.vue'
 import StepWelcome from './step-welcome.vue'
 
+import { useAiriCardStore } from '../../../../stores/modules/anase-card'
 import { useConsciousnessStore } from '../../../../stores/modules/consciousness'
+import { useOnboardingStore } from '../../../../stores/onboarding'
 import { useUnifiedProvidersStore } from '../../../../stores/unified-providers'
 import { OnboardingContextKey } from './utils'
 
@@ -24,6 +26,8 @@ const direction = ref<'next' | 'previous'>('next')
 
 const unifiedStore = useUnifiedProvidersStore()
 const consciousnessStore = useConsciousnessStore()
+const cardStore = useAiriCardStore()
+const onboardingStore = useOnboardingStore()
 const {
   activeProvider,
 } = storeToRefs(consciousnessStore)
@@ -112,6 +116,7 @@ async function saveProviderConfiguration(data: { apiKey: string, baseUrl: string
 }
 
 async function handleSave() {
+  cardStore.activateCharacterTemplate(onboardingStore.selectedCharacterTemplate)
   emit('configured')
 }
 
