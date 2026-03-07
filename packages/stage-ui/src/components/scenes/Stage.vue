@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DuckDBWasmDrizzleDatabase } from '@anase/drizzle-duckdb-wasm'
+import type { DuckDBWasmDrizzleDatabase } from '@proj-airi/drizzle-duckdb-wasm'
 import type { Live2DLipSync, Live2DLipSyncOptions } from '@anase/model-driver-lipsync'
 import type { Profile } from '@anase/model-driver-lipsync/shared/wlipsync'
 import type { UnElevenLabsOptions } from 'unspeech'
@@ -7,8 +7,8 @@ import type { UnElevenLabsOptions } from 'unspeech'
 import type { EmotionPayload } from '../../constants/emotions'
 import type { SpeechProviderWithExtraOptions } from '../../stores/providers/types'
 
-import { drizzle } from '@anase/drizzle-duckdb-wasm'
-import { getImportUrlBundles } from '@anase/drizzle-duckdb-wasm/bundles/import-url-browser'
+import { drizzle } from '@proj-airi/drizzle-duckdb-wasm'
+import { getImportUrlBundles } from '@proj-airi/drizzle-duckdb-wasm/bundles/import-url-browser'
 import { createLive2DLipSync } from '@anase/model-driver-lipsync'
 import { wlipsyncProfile } from '@anase/model-driver-lipsync/shared/wlipsync'
 import { createPlaybackManager, createSpeechPipeline } from '@anase/pipelines-audio'

@@ -529,8 +529,8 @@ nix run --extra-experimental-features 'nix-command flakes' github:moeru-ai/airi
 
 > 大声喊出 [@sumimakito](https://github.com/sumimakito)，她做了这么多惊人的事情... 我甚至数不清...
 
-- [`@anase/chromatic`](https://github.com/proj-airi/chromatic)（由 [@sumimakito](https://github.com/sumimakito) 制作）
-- [`@anase/unocss-preset-chromatic`](https://github.com/proj-airi/chromatic)（由 [@sumimakito](https://github.com/sumimakito) 制作）
+- [`@proj-airi/chromatic`](https://github.com/proj-airi/chromatic)（由 [@sumimakito](https://github.com/sumimakito) 制作）
+- [`@proj-airi/unocss-preset-chromatic`](https://github.com/proj-airi/chromatic)（由 [@sumimakito](https://github.com/sumimakito) 制作）
 - [`@moeru-ai/jem`](https://github.com/moeru-ai/inventory/tree/main/packages/jem-validator)（由 [@LemonNekoGH](https://github.com/LemonNekoGH) 制作），统一模型目录
 - [`clustr`](https://github.com/sumimakito/clustr)（由 [@sumimakito](https://github.com/sumimakito) 制作）
 - [`@anase/drizzle-orm-browser`](https://github.com/proj-airi/drizzle-orm-browser)（由我制作）

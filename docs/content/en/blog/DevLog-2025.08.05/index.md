@@ -571,8 +571,8 @@ New packages born between this release:
 
 > Big shout out to [@sumimakito](https://github.com/sumimakito), she did so many fantastic things... I can't even count them all...
 
-- [`@anase/chromatic`](https://github.com/proj-airi/chromatic) (by [@sumimakito](https://github.com/sumimakito))
-- [`@anase/unocss-preset-chromatic`](https://github.com/proj-airi/chromatic) (by [@sumimakito](https://github.com/sumimakito))
+- [`@proj-airi/chromatic`](https://github.com/proj-airi/chromatic) (by [@sumimakito](https://github.com/sumimakito))
+- [`@proj-airi/unocss-preset-chromatic`](https://github.com/proj-airi/chromatic) (by [@sumimakito](https://github.com/sumimakito))
 - [`@moeru-ai/jem`](https://github.com/moeru-ai/inventory/tree/main/packages/jem-validator) (by [@LemonNekoGH](https://github.com/LemonNekoGH)), unified model catalog
 - [`clustr`](https://github.com/sumimakito/clustr) (by [@sumimakito](https://github.com/sumimakito))
 - [`@anase/drizzle-orm-browser`](https://github.com/proj-airi/drizzle-orm-browser) (by me)

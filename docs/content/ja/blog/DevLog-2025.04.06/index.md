@@ -401,8 +401,8 @@ const combinedScore = sql<number>`((1.2 * ${similarity}) + (0.2 * ${timeRelevanc
 
   HuggingFace Spaces へのプロジェクトのデプロイを支援する [`hfup`](https://github.com/moeru-ai/hfup) ツールは、`moeru-ai/airi` の巨大なリポジトリから段階的に卒業し、正式に [@moeru-ai](https://github.com/moeru-ai) 組織の下に移行しました（移行操作は不要で、`hfup` をインストールし続けるだけで使用できます）。非常に有意義なことに、`hfup` は時代についていくために、開発支援として [rolldown](https://rolldown.rs/) と [oxlint](https://oxc.rs/docs/guide/usage/linter) も採用しました。これを機に rolldown、rolldown-vite、oxc の開発に参加できることを願っています。移行プロセス中の [@sxzz](https://github.com/sxzz) の支援に深く感謝します。
 
-- `@anase/drizzle-duckdb-wasm`, `@anase/duckdb-wasm`
-  Drizzle に DuckDB WASM ドライバーサポートを追加するための `@anase/drizzle-duckdb-wasm` と `@anase/duckdb-wasm` も段階的に卒業し、正式に [@proj-airi](https://github.com/proj-airi) 組織の下に移行しました（移行操作は不要で、元のパッケージをインストールし続けるだけで使用できます）。
+- `@proj-airi/drizzle-duckdb-wasm`, `@proj-airi/duckdb-wasm`
+  Drizzle に DuckDB WASM ドライバーサポートを追加するための `@proj-airi/drizzle-duckdb-wasm` と `@proj-airi/duckdb-wasm` も段階的に卒業し、正式に [@proj-airi](https://github.com/proj-airi) 組織の下に移行しました（移行操作は不要で、元のパッケージをインストールし続けるだけで使用できます）。
 
 プロジェクトの速度は大幅に向上しました。今月中に `@anase/providers-transformers` を `xsai` の下に正式に卒業させる予定です。
 
