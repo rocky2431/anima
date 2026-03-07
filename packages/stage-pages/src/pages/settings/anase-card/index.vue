@@ -166,7 +166,7 @@ function getModuleShortName(id: string, module: 'consciousness' | 'voice') {
   if (!card || !card.extensions?.airi?.modules)
     return 'default'
 
-  const anaseExt = card.extensions.anase.modules
+  const anaseExt = card.extensions.airi.modules
 
   if (module === 'consciousness') {
     return anaseExt.consciousness?.model ? anaseExt.consciousness.model.split('-').pop() || 'default' : 'default'

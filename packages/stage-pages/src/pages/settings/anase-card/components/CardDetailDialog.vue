@@ -58,7 +58,7 @@ const moduleSettings = computed(() => {
     }
   }
 
-  const anaseExt = selectedCard.value.extensions.anase.modules
+  const anaseExt = selectedCard.value.extensions.airi.modules
   return {
     consciousnessProvider: anaseExt.consciousness?.provider || '',
     consciousness: anaseExt.consciousness?.model || '',
