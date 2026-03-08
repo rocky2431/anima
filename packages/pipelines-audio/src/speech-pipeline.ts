@@ -35,6 +35,7 @@ export interface SpeechPipelineOptions<TAudio> {
   logger?: LoggerLike
   priority?: ReturnType<typeof createPriorityResolver>
   segmenter?: (tokens: ReadableStream<TextToken>, meta: { streamId: string, intentId: string }) => ReadableStream<TextSegment>
+  prefetchSegments?: number
 }
 
 interface IntentState {
@@ -86,64 +87,88 @@ export function createSpeechPipeline<TAudio>(options: SpeechPipelineOptions<TAud
 
     const tokenStream = intent.stream
     const segmentStream = segmenter(tokenStream, { streamId: intent.streamId, intentId: intent.intentId })
+    const maxPrefetch = options.prefetchSegments ?? 2
 
     try {
       const reader = segmentStream.getReader()
 
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done)
-          break
-        if (!value)
-          continue
+      // Prefetch TTS: fire up to `maxPrefetch` concurrent TTS requests,
+      // but schedule playback in strict order so audio plays sequentially.
+      const pendingTts: Promise<{ request: TtsRequest, audio: TAudio | null } | null>[] = []
+      let readerDone = false
+
+      // Fill the prefetch window
+      async function fillPrefetch() {
+        while (pendingTts.length < maxPrefetch && !readerDone) {
+          if (intent.canceled || intent.controller.signal.aborted)
+            break
+
+          const { value, done } = await reader.read()
+          if (done) {
+            readerDone = true
+            break
+          }
+          if (!value)
+            continue
+
+          context.emit(speechPipelineEventMap.onSegment, value)
+
+          if (value.text === '' && value.special) {
+            context.emit(speechPipelineEventMap.onSpecial, value)
+            continue
+          }
+
+          const request: TtsRequest = {
+            streamId: value.streamId,
+            intentId: value.intentId,
+            segmentId: value.segmentId,
+            text: value.text,
+            special: value.special,
+            priority: intent.priority,
+            createdAt: Date.now(),
+          }
+
+          context.emit(speechPipelineEventMap.onTtsRequest, request)
+
+          // Fire TTS request without awaiting — concurrent prefetch
+          const ttsPromise = options.tts(request, intent.controller.signal)
+            .then(audio => ({ request, audio }))
+            .catch((err) => {
+              logger.warn('TTS generation failed:', err)
+              return null
+            })
+
+          pendingTts.push(ttsPromise)
+        }
+      }
+
+      await fillPrefetch()
+
+      // Process results in order, refilling the prefetch window as we go
+      while (pendingTts.length > 0) {
         if (intent.canceled || intent.controller.signal.aborted) {
           await reader.cancel()
           break
         }
 
-        context.emit(speechPipelineEventMap.onSegment, value)
+        const result = await pendingTts.shift()!
 
-        if (value.text === '' && value.special) {
-          context.emit(speechPipelineEventMap.onSpecial, value)
+        // Refill prefetch window after consuming one slot
+        await fillPrefetch()
+
+        if (!result || !result.audio)
           continue
-        }
-
-        const request: TtsRequest = {
-          streamId: value.streamId,
-          intentId: value.intentId,
-          segmentId: value.segmentId,
-          text: value.text,
-          special: value.special,
-          priority: intent.priority,
-          createdAt: Date.now(),
-        }
-
-        context.emit(speechPipelineEventMap.onTtsRequest, request)
-
-        let audio: TAudio | null = null
-        try {
-          audio = await options.tts(request, intent.controller.signal)
-        }
-        catch (err) {
-          logger.warn('TTS generation failed:', err)
-          if (intent.controller.signal.aborted)
-            break
-          continue
-        }
 
         if (intent.controller.signal.aborted)
           break
 
-        if (!audio)
-          continue
-
         const ttsResult: TtsResult<TAudio> = {
-          streamId: request.streamId,
-          intentId: request.intentId,
-          segmentId: request.segmentId,
-          text: request.text,
-          special: request.special,
-          audio,
+          streamId: result.request.streamId,
+          intentId: result.request.intentId,
+          segmentId: result.request.segmentId,
+          text: result.request.text,
+          special: result.request.special,
+          audio: result.audio,
           createdAt: Date.now(),
         }
 

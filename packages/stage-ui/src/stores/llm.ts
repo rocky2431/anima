@@ -17,7 +17,7 @@ export type StreamEvent
     | { type: 'finish', finishReason: string, usage?: { promptTokens: number, completionTokens: number, totalTokens: number } }
     | ({ type: 'tool-call' } & CompletionToolCall)
     | { type: 'tool-result', toolCallId: string, result?: string | CommonContentPart[] }
-    | { type: 'error', error: any }
+    | { type: 'error', error: unknown }
 
 export interface StreamOptions {
   headers?: Record<string, string>
@@ -26,6 +26,7 @@ export interface StreamOptions {
   supportsTools?: boolean
   waitForTools?: boolean
   tools?: NamedTool[] | (() => Promise<NamedTool[] | undefined>)
+  abortSignal?: AbortSignal
 }
 
 function namedToolsToToolSet(tools: NamedTool[]): ToolSet {
@@ -105,6 +106,7 @@ async function streamFrom(model: string, chatProvider: ChatProvider, messages: M
         model: aiModel,
         messages: sanitized as unknown as import('ai').ModelMessage[],
         tools: toolSet,
+        abortSignal: options?.abortSignal,
         stopWhen: stepCountIs(10),
         onChunk: async ({ chunk }) => {
           try {
@@ -146,7 +148,7 @@ async function streamFrom(model: string, chatProvider: ChatProvider, messages: M
           try {
             await options?.onStreamEvent?.({ type: 'error', error })
           }
-          catch { /* ignore callback error during error reporting */ }
+          catch (cbErr) { console.warn('[LLM] Error in onStreamEvent error callback:', cbErr) }
           rejectOnce(error)
         },
       })

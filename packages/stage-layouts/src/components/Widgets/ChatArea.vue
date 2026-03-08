@@ -2,6 +2,7 @@
 import type { ChatProvider } from '@anase/stage-ui/stores/providers/types'
 
 import { isStageTamagotchi } from '@anase/stage-shared'
+import { VoiceModeOverlay } from '@anase/stage-ui/components/voice'
 import { useAudioAnalyzer } from '@anase/stage-ui/composables'
 import { useAudioContext } from '@anase/stage-ui/stores/audio'
 import { useChatOrchestratorStore } from '@anase/stage-ui/stores/chat'
@@ -23,6 +24,7 @@ const messageInput = ref('')
 const hearingTooltipOpen = ref(false)
 const isComposing = ref(false)
 const isListening = ref(false) // Transcription listening state (separate from microphone enabled)
+const voiceModeOpen = ref(false)
 
 const providersStore = useProvidersStore()
 const { activeProvider, activeModel } = storeToRefs(useConsciousnessStore())
@@ -32,7 +34,7 @@ const { askPermission, startStream } = useSettingsAudioDevice()
 const { enabled, selectedAudioInput, stream, audioInputs } = storeToRefs(useSettingsAudioDevice())
 const chatOrchestrator = useChatOrchestratorStore()
 const chatSession = useChatSessionStore()
-const { ingest, onAfterMessageComposed, discoverToolsCompatibility } = chatOrchestrator
+const { ingest, discoverToolsCompatibility } = chatOrchestrator
 const { messages } = storeToRefs(chatSession)
 const { audioContext } = useAudioContext()
 const { t } = useI18n()
@@ -45,59 +47,61 @@ const { supportsStreamInput } = storeToRefs(hearingPipeline)
 const { configured: hearingConfigured, autoSendEnabled, autoSendDelay } = storeToRefs(hearingStore)
 const shouldUseStreamInput = computed(() => supportsStreamInput.value && !!stream.value)
 
-// Auto-send logic
-let autoSendTimeout: ReturnType<typeof setTimeout> | undefined
+// Auto-send logic: VAD speech-end driven instead of timer
+let speechEndTimeout: ReturnType<typeof setTimeout> | undefined
 const pendingAutoSendText = ref('')
 
 function clearPendingAutoSend() {
-  if (autoSendTimeout) {
-    clearTimeout(autoSendTimeout)
-    autoSendTimeout = undefined
+  if (speechEndTimeout) {
+    clearTimeout(speechEndTimeout)
+    speechEndTimeout = undefined
   }
   pendingAutoSendText.value = ''
 }
 
-async function debouncedAutoSend(text: string) {
-  // Double-check auto-send is enabled before proceeding
+function accumulateAutoSendText(text: string) {
+  if (!autoSendEnabled.value)
+    return
+  pendingAutoSendText.value = pendingAutoSendText.value ? `${pendingAutoSendText.value} ${text}` : text
+}
+
+async function commitAutoSend() {
   if (!autoSendEnabled.value) {
     clearPendingAutoSend()
     return
   }
 
-  // Add text to pending buffer
-  pendingAutoSendText.value = pendingAutoSendText.value ? `${pendingAutoSendText.value} ${text}` : text
+  const textToSend = (pendingAutoSendText.value || messageInput.value).trim()
+  if (!textToSend)
+    return
 
-  // Clear existing timeout
-  if (autoSendTimeout) {
-    clearTimeout(autoSendTimeout)
+  try {
+    const providerConfig = providersStore.getProviderConfig(activeProvider.value)
+    await ingest(textToSend, {
+      chatProvider: await providersStore.getProviderInstance(activeProvider.value) as ChatProvider,
+      model: activeModel.value,
+      providerConfig,
+    })
+    messageInput.value = ''
+    pendingAutoSendText.value = ''
   }
+  catch (err) {
+    console.error('[ChatArea] Auto-send error:', err)
+  }
+}
 
-  // Set new timeout
-  autoSendTimeout = setTimeout(async () => {
-    // Final check before sending - auto-send might have been disabled while waiting
-    if (!autoSendEnabled.value) {
-      clearPendingAutoSend()
-      return
-    }
+function scheduleSpeechEndCommit() {
+  if (!autoSendEnabled.value)
+    return
 
-    const textToSend = pendingAutoSendText.value.trim()
-    if (textToSend && autoSendEnabled.value) {
-      try {
-        const providerConfig = providersStore.getProviderConfig(activeProvider.value)
-        await ingest(textToSend, {
-          chatProvider: await providersStore.getProviderInstance(activeProvider.value) as ChatProvider,
-          model: activeModel.value,
-          providerConfig,
-        })
-        // Clear the message input after sending
-        messageInput.value = ''
-        pendingAutoSendText.value = ''
-      }
-      catch (err) {
-        console.error('[ChatArea] Auto-send error:', err)
-      }
-    }
-    autoSendTimeout = undefined
+  // Clear any existing speech-end timer
+  if (speechEndTimeout)
+    clearTimeout(speechEndTimeout)
+
+  // Short confirmation window: if no new speech within the configured delay, commit
+  speechEndTimeout = setTimeout(() => {
+    void commitAutoSend()
+    speechEndTimeout = undefined
   }, autoSendDelay.value)
 }
 
@@ -143,18 +147,16 @@ watch([activeProvider, activeModel], async () => {
   }
 })
 
-onAfterMessageComposed(async () => {
-})
-
-const { startAnalyzer, stopAnalyzer, volumeLevel } = useAudioAnalyzer()
-const normalizedVolume = computed(() => Math.min(1, Math.max(0, (volumeLevel.value ?? 0) / 100)))
+const { startAnalyzer, stopAnalyzer } = useAudioAnalyzer()
 let analyzerSource: MediaStreamAudioSourceNode | undefined
 
 function teardownAnalyzer() {
   try {
     analyzerSource?.disconnect()
   }
-  catch {}
+  catch (err) {
+    console.warn('[ChatArea] Error disconnecting audio analyzer:', err)
+  }
   analyzerSource = undefined
   stopAnalyzer()
 }
@@ -179,12 +181,7 @@ watch([hearingTooltipOpen, enabled, stream], () => {
 onUnmounted(() => {
   teardownAnalyzer()
   stopListening()
-
-  // Clear auto-send timeout on unmount
-  if (autoSendTimeout) {
-    clearTimeout(autoSendTimeout)
-    autoSendTimeout = undefined
-  }
+  clearPendingAutoSend()
 })
 
 // Transcription listening functions
@@ -292,23 +289,27 @@ async function startListening() {
       await transcribeForMediaStream(stream.value, {
         onSentenceEnd: (delta) => {
           if (delta && delta.trim()) {
-            // Append transcribed text to message input
             const currentText = messageInput.value.trim()
             messageInput.value = currentText ? `${currentText} ${delta}` : delta
             console.info('[ChatArea] Received transcription delta:', delta)
 
-            // Auto-send if enabled - check the current value (not captured in closure)
-            // This ensures we always respect the current setting, even if callbacks are reused
-            if (autoSendEnabled.value) {
-              debouncedAutoSend(delta)
-            }
-            else {
-              // If auto-send is disabled, clear any pending auto-send text to prevent accidental sends
-              clearPendingAutoSend()
+            // Accumulate for VAD-driven auto-send
+            accumulateAutoSendText(delta)
+
+            // Reset speech-end timer on new speech activity
+            if (speechEndTimeout) {
+              clearTimeout(speechEndTimeout)
+              speechEndTimeout = undefined
             }
           }
         },
-        // Omit onSpeechEnd to avoid re-adding user-deleted text; use sentence deltas only.
+        onSpeechEnd: () => {
+          // VAD detected speech end — schedule auto-send after confirmation window
+          if (autoSendEnabled.value && pendingAutoSendText.value.trim()) {
+            console.info('[ChatArea] Speech end detected, scheduling auto-send')
+            scheduleSpeechEndCommit()
+          }
+        },
       })
 
       // Only set listening to true if transcription started successfully
@@ -425,80 +426,79 @@ watch(autoSendEnabled, (enabled) => {
         @compositionend="isComposing = false"
       />
 
-      <!-- Bottom-left action button: Microphone -->
+      <!-- Bottom action bar -->
       <div
-        absolute bottom-2 left-2 z-10 flex items-center gap-2
+        absolute bottom-2 left-2 right-2 z-10 flex items-center justify-between
       >
-        <!-- Microphone icon button -->
-        <TooltipProvider :delay-duration="0" :skip-delay-duration="0">
-          <TooltipRoot v-model:open="hearingTooltipOpen">
-            <TooltipTrigger as-child>
-              <button
-                class="h-8 w-8 flex items-center justify-center rounded-md outline-none transition-all duration-200 active:scale-95"
-                text="lg neutral-500 dark:neutral-400"
-                :title="t('settings.hearing.title')"
-              >
-                <Transition name="fade" mode="out-in">
-                  <IndicatorMicVolume v-if="enabled" class="h-5 w-5" />
-                  <div v-else class="i-ph:microphone-slash h-5 w-5" />
-                </Transition>
-              </button>
-            </TooltipTrigger>
-            <Transition name="fade">
-              <TooltipContent
-                side="top"
-                :side-offset="8"
-                :class="[
-                  'w-72 max-w-[18rem] rounded-xl border border-neutral-200/60 bg-neutral-50/90 p-4',
-                  'shadow-lg backdrop-blur-md dark:border-neutral-800/30 dark:bg-neutral-900/80',
-                  'flex flex-col gap-3',
-                ]"
-              >
-                <div class="flex flex-col items-center justify-center">
-                  <div class="relative h-28 w-28 select-none">
-                    <div
-                      class="absolute left-1/2 top-1/2 h-20 w-20 rounded-full transition-all duration-150 -translate-x-1/2 -translate-y-1/2"
-                      :style="{ transform: `translate(-50%, -50%) scale(${1 + normalizedVolume * 0.35})`, opacity: String(0.25 + normalizedVolume * 0.25) }"
-                      :class="enabled ? 'bg-primary-500/15 dark:bg-primary-600/20' : 'bg-neutral-300/20 dark:bg-neutral-700/20'"
-                    />
-                    <div
-                      class="absolute left-1/2 top-1/2 h-24 w-24 rounded-full transition-all duration-200 -translate-x-1/2 -translate-y-1/2"
-                      :style="{ transform: `translate(-50%, -50%) scale(${1.2 + normalizedVolume * 0.55})`, opacity: String(0.15 + normalizedVolume * 0.2) }"
-                      :class="enabled ? 'bg-primary-500/10 dark:bg-primary-600/15' : 'bg-neutral-300/10 dark:bg-neutral-700/10'"
-                    />
-                    <div
-                      class="absolute left-1/2 top-1/2 h-28 w-28 rounded-full transition-all duration-300 -translate-x-1/2 -translate-y-1/2"
-                      :style="{ transform: `translate(-50%, -50%) scale(${1.5 + normalizedVolume * 0.8})`, opacity: String(0.08 + normalizedVolume * 0.15) }"
-                      :class="enabled ? 'bg-primary-500/5 dark:bg-primary-600/10' : 'bg-neutral-300/5 dark:bg-neutral-700/5'"
-                    />
-                    <button
-                      class="absolute left-1/2 top-1/2 grid h-16 w-16 place-items-center rounded-full shadow-md outline-none transition-all duration-200 -translate-x-1/2 -translate-y-1/2"
-                      :class="enabled
-                        ? 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95'
-                        : 'bg-neutral-200 text-neutral-600 hover:bg-neutral-300 active:scale-95 dark:bg-neutral-700 dark:text-neutral-200'"
-                      @click="enabled = !enabled"
-                    >
-                      <div :class="enabled ? 'i-ph:microphone' : 'i-ph:microphone-slash'" class="h-6 w-6" />
-                    </button>
-                  </div>
-                  <p class="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
-                    {{ enabled ? 'Microphone enabled' : 'Microphone disabled' }}
-                  </p>
-                </div>
-
-                <FieldSelect
-                  v-model="selectedAudioInput"
-                  label="Input device"
-                  description="Select the microphone you want to use."
-                  :options="audioInputs.map(device => ({ label: device.label || 'Unknown Device', value: device.deviceId }))"
-                  layout="vertical"
-                  placeholder="Select microphone"
-                />
-              </TooltipContent>
+        <div flex items-center gap-1>
+          <!-- Microphone toggle — prominent, always visible -->
+          <button
+            class="relative h-9 w-9 flex items-center justify-center rounded-lg outline-none transition-all duration-200 active:scale-95"
+            :class="[
+              enabled
+                ? 'bg-primary-500/15 text-primary-500 hover:bg-primary-500/25 dark:bg-primary-400/15 dark:text-primary-400'
+                : 'text-neutral-500 hover:bg-neutral-200/50 dark:text-neutral-400 dark:hover:bg-neutral-700/50',
+            ]"
+            :title="enabled ? t('settings.hearing.micDisable', 'Disable microphone') : t('settings.hearing.micEnable', 'Enable microphone')"
+            @click="enabled = !enabled"
+          >
+            <Transition name="fade" mode="out-in">
+              <IndicatorMicVolume v-if="enabled" class="h-5 w-5" />
+              <div v-else class="i-ph:microphone-slash h-5 w-5" />
             </Transition>
-          </TooltipRoot>
-        </TooltipProvider>
+            <!-- Active pulse indicator -->
+            <span
+              v-if="enabled && isListening"
+              class="absolute h-2.5 w-2.5 rounded-full bg-green-500 -right-0.5 -top-0.5"
+            >
+              <span class="absolute inset-0 animate-ping rounded-full bg-green-400 opacity-75" />
+            </span>
+          </button>
+
+          <!-- Voice mode (full-screen conversation) -->
+          <button
+            class="h-9 w-9 flex items-center justify-center rounded-lg text-neutral-500 outline-none transition-all duration-200 active:scale-95 hover:bg-primary-500/15 dark:text-neutral-400 hover:text-primary-500 dark:hover:bg-primary-400/15 dark:hover:text-primary-400"
+            :title="t('settings.hearing.voiceMode', 'Voice Mode')"
+            @click="voiceModeOpen = true"
+          >
+            <div class="i-lucide-audio-waveform h-5 w-5" />
+          </button>
+
+          <!-- Audio device selector (popover) -->
+          <TooltipProvider :delay-duration="0" :skip-delay-duration="0">
+            <TooltipRoot v-model:open="hearingTooltipOpen">
+              <TooltipTrigger as-child>
+                <button
+                  class="h-9 w-9 flex items-center justify-center rounded-lg text-neutral-400 outline-none transition-all duration-200 active:scale-95 hover:bg-neutral-200/50 dark:text-neutral-500 dark:hover:bg-neutral-700/50"
+                  :title="t('settings.hearing.title')"
+                >
+                  <div class="i-ph:gear h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <Transition name="fade">
+                <TooltipContent
+                  side="top"
+                  :side-offset="8"
+                  :class="[
+                    'w-64 max-w-[16rem] rounded-xl border border-neutral-200/60 bg-neutral-50/90 p-3',
+                    'shadow-lg backdrop-blur-md dark:border-neutral-800/30 dark:bg-neutral-900/80',
+                  ]"
+                >
+                  <FieldSelect
+                    v-model="selectedAudioInput"
+                    label="Input device"
+                    :options="audioInputs.map(device => ({ label: device.label || 'Unknown Device', value: device.deviceId }))"
+                    layout="vertical"
+                    placeholder="Select microphone"
+                  />
+                </TooltipContent>
+              </Transition>
+            </TooltipRoot>
+          </TooltipProvider>
+        </div>
       </div>
     </div>
+    <!-- Voice Mode Overlay -->
+    <VoiceModeOverlay v-if="voiceModeOpen" @close="voiceModeOpen = false" />
   </div>
 </template>

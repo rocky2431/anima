@@ -43,10 +43,17 @@ interface QueuedSend {
   generation: number
   sessionId: string
   cancelled?: boolean
+  abortController?: AbortController
   deferred: {
     resolve: () => void
     reject: (error: unknown) => void
   }
+}
+
+export interface ChatTurnHandle {
+  id: string
+  done: Promise<void>
+  abort: (reason?: string) => void
 }
 
 export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
@@ -68,9 +75,9 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
   const sendQueue = createQueue<QueuedSend>({
     handlers: [
       async ({ data }) => {
-        const { sendingMessage, options, generation, deferred, sessionId, cancelled } = data
+        const { sendingMessage, options, generation, deferred, sessionId, cancelled, abortController } = data
 
-        if (cancelled)
+        if (cancelled || abortController?.signal.aborted)
           return
 
         if (chatSession.getSessionGeneration(sessionId) !== generation) {
@@ -79,7 +86,7 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
         }
 
         try {
-          await performSend(sendingMessage, options, generation, sessionId)
+          await performSend(sendingMessage, options, generation, sessionId, abortController?.signal)
           deferred.resolve()
         }
         catch (error) {
@@ -102,6 +109,7 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
     options: SendOptions,
     generation: number,
     sessionId: string,
+    abortSignal?: AbortSignal,
   ) {
     if (!sendingMessage && !options.attachments?.length)
       return
@@ -124,7 +132,7 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
     }
 
     const isStaleGeneration = () => chatSession.getSessionGeneration(sessionId) !== generation
-    const shouldAbort = () => isStaleGeneration()
+    const shouldAbort = () => isStaleGeneration() || abortSignal?.aborted
     if (shouldAbort())
       return
 
@@ -292,7 +300,7 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
       await hooks.emitBeforeSendHooks(sendingMessage, streamingMessageContext)
 
       let fullText = ''
-      const headers = (options.providerConfig?.headers || {}) as Record<string, string>
+      const headers = (options.providerConfig?.headers ?? {}) as Record<string, string>
 
       if (shouldAbort())
         return
@@ -300,6 +308,7 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
       await llmStore.stream(options.model, options.chatProvider, newMessages as Message[], {
         headers,
         tools: options.tools,
+        abortSignal,
         onStreamEvent: async (event: StreamEvent) => {
           switch (event.type) {
             case 'tool-call':
@@ -351,7 +360,7 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
       }, streamingMessageContext)
 
       if (isForegroundSession()) {
-        streamingMessage.value = { role: 'assistant', content: '', slices: [], tool_results: [] }
+        streamingMessage.value = { role: 'assistant', content: '', slices: [], tool_results: [], createdAt: 0, id: '' }
       }
     }
     catch (error) {
@@ -380,6 +389,45 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
         deferred: { resolve, reject },
       })
     })
+  }
+
+  function startTurn(
+    sendingMessage: string,
+    options: SendOptions,
+    targetSessionId?: string,
+  ): ChatTurnHandle {
+    const sessionId = targetSessionId || activeSessionId.value
+    const generation = chatSession.getSessionGeneration(sessionId)
+    const abortController = new AbortController()
+    const id = nanoid()
+
+    const done = new Promise<void>((resolve, reject) => {
+      sendQueue.enqueue({
+        sendingMessage,
+        options,
+        generation,
+        sessionId,
+        abortController,
+        deferred: {
+          resolve,
+          reject: (error: unknown) => {
+            // Don't reject on intentional abort — resolve silently
+            if (abortController.signal.aborted)
+              resolve()
+            else
+              reject(error)
+          },
+        },
+      })
+    })
+
+    return {
+      id,
+      done,
+      abort(reason?: string) {
+        abortController.abort(reason ?? 'aborted')
+      },
+    }
   }
 
   async function ingestOnFork(
@@ -420,6 +468,7 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
     discoverToolsCompatibility: llmStore.discoverToolsCompatibility,
 
     ingest,
+    startTurn,
     ingestOnFork,
     cancelPendingSends,
 
